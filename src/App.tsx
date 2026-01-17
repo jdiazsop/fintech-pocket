@@ -4,7 +4,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewLoan from "./pages/NewLoan";
@@ -36,11 +35,28 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Root redirect component
+const RootRedirect = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="w-16 h-16 rounded-2xl bg-primary/20" />
+        </div>
+      </div>
+    );
+  }
+
+  return <Navigate to={user ? "/dashboard" : "/auth"} replace />;
+};
+
 // App Routes
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      <Route path="/" element={<RootRedirect />} />
       <Route path="/auth" element={<Auth />} />
       <Route
         path="/dashboard"
