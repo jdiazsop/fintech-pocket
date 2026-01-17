@@ -329,7 +329,7 @@ export default function LoanDetail() {
               )}
             </div>
           </div>
-          <StatusBadge variant={getStatusVariant(loan.status)} dot>
+          <StatusBadge variant={getStatusVariant(loan.status)} dot className="hidden">
             {getStatusLabel(loan.status)}
           </StatusBadge>
         </div>
