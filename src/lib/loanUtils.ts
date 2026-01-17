@@ -1,5 +1,3 @@
-import { parseISO, startOfDay } from "date-fns";
-
 export interface Installment {
   id: string;
   due_date: string;
@@ -7,6 +5,13 @@ export interface Installment {
   amount_paid: number;
   status: string;
 }
+
+// Obtener fecha actual en zona horaria de Lima, Perú (UTC-5)
+export const getTodayInLima = (): string => {
+  const now = new Date();
+  const limaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+  return `${limaDate.getFullYear()}-${String(limaDate.getMonth() + 1).padStart(2, '0')}-${String(limaDate.getDate()).padStart(2, '0')}`;
+};
 
 export type LoanDisplayStatus = "paid" | "overdue" | "partial" | "on_time";
 
@@ -28,15 +33,13 @@ export function calculateLoanDisplayStatus(
     return "paid";
   }
 
-  const today = startOfDay(new Date());
+  const todayStr = getTodayInLima();
 
   // Verificar cuotas vencidas (fecha ANTERIOR a hoy y no completamente pagadas)
-  // Una cuota con fecha de hoy NO está vencida hasta las 23:59:59
   const hasOverdueInstallments = installments.some(installment => {
-    const dueDate = startOfDay(parseISO(installment.due_date));
+    const dueDateStr = installment.due_date.split('T')[0];
     const isPaid = installment.amount_paid >= installment.amount;
-    // Solo está vencida si la fecha es ESTRICTAMENTE menor a hoy
-    return dueDate < today && !isPaid;
+    return dueDateStr < todayStr && !isPaid;
   });
 
   if (hasOverdueInstallments) {
@@ -45,8 +48,8 @@ export function calculateLoanDisplayStatus(
 
   // Verificar pagos parciales solo en cuotas ya vencidas (fecha < hoy)
   const hasPartialPaymentsOnOverdue = installments.some(installment => {
-    const dueDate = startOfDay(parseISO(installment.due_date));
-    const isOverdue = dueDate < today;
+    const dueDateStr = installment.due_date.split('T')[0];
+    const isOverdue = dueDateStr < todayStr;
     return isOverdue && installment.amount_paid > 0 && installment.amount_paid < installment.amount;
   });
 
