@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateLoanDisplayStatus, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
 
 interface Loan {
   id: string;
@@ -21,13 +22,18 @@ interface Loan {
   created_at: string;
 }
 
-type StatusFilter = "all" | "active" | "overdue" | "paid";
+interface LoanWithInstallments extends Loan {
+  installments: Installment[];
+  displayStatus: LoanDisplayStatus;
+}
+
+type StatusFilter = "all" | "on_time" | "overdue" | "paid";
 type SortOption = "recent" | "amount";
 
 export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<Loan[]>([]);
+  const [loans, setLoans] = useState<LoanWithInstallments[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -42,13 +48,40 @@ export default function Portfolio() {
 
   const fetchLoans = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch loans with their installments
+      const { data: loansData, error: loansError } = await supabase
         .from("loans")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setLoans(data || []);
+      if (loansError) throw loansError;
+
+      // Fetch all installments for these loans
+      const loanIds = (loansData || []).map(l => l.id);
+      const { data: installmentsData, error: installmentsError } = await supabase
+        .from("installments")
+        .select("*")
+        .in("loan_id", loanIds);
+
+      if (installmentsError) throw installmentsError;
+
+      // Map loans with their installments and calculate display status
+      const loansWithStatus: LoanWithInstallments[] = (loansData || []).map(loan => {
+        const loanInstallments = (installmentsData || []).filter(i => i.loan_id === loan.id);
+        const displayStatus = calculateLoanDisplayStatus(
+          loan.status,
+          loanInstallments,
+          loan.amount_returned,
+          loan.amount_to_return
+        );
+        return {
+          ...loan,
+          installments: loanInstallments,
+          displayStatus
+        };
+      });
+
+      setLoans(loansWithStatus);
     } catch (error) {
       console.error("Error fetching loans:", error);
     } finally {
@@ -67,8 +100,8 @@ export default function Portfolio() {
           return false;
         }
       }
-      // Status filter
-      if (statusFilter !== "all" && loan.status !== statusFilter) {
+      // Status filter - now based on displayStatus
+      if (statusFilter !== "all" && loan.displayStatus !== statusFilter) {
         return false;
       }
       return true;
@@ -85,7 +118,7 @@ export default function Portfolio() {
 
   const statusOptions: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "Todos" },
-    { value: "active", label: "Activos" },
+    { value: "on_time", label: "Al día" },
     { value: "overdue", label: "Vencidos" },
     { value: "paid", label: "Pagados" },
   ];
@@ -215,7 +248,7 @@ export default function Portfolio() {
                 amountLent={loan.amount_lent}
                 amountToReturn={loan.amount_to_return}
                 amountReturned={loan.amount_returned}
-                status={loan.status}
+                status={loan.displayStatus}
                 startDate={loan.start_date}
                 onClick={() => navigate(`/loan/${loan.id}`)}
                 delay={index * 0.05}
