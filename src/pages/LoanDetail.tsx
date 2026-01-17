@@ -421,6 +421,11 @@ export default function LoanDetail() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium tabular-nums">{formatCurrency(inst.amount)}</p>
+                  {inst.amount_paid > 0 && inst.amount_paid < inst.amount && (
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      Falta: {formatCurrency(inst.amount - inst.amount_paid)}
+                    </p>
+                  )}
                   {(() => {
                     const displayStatus = getInstallmentDisplayStatus(inst);
                     return (
