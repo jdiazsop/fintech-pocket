@@ -8,9 +8,12 @@ export interface Installment {
 
 // Obtener fecha actual en zona horaria de Lima, Perú (UTC-5)
 export const getTodayInLima = (): string => {
-  const now = new Date();
-  const limaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
-  return `${limaDate.getFullYear()}-${String(limaDate.getMonth() + 1).padStart(2, '0')}-${String(limaDate.getDate()).padStart(2, '0')}`;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 };
 
 export type LoanDisplayStatus = "paid" | "overdue" | "partial" | "on_time";

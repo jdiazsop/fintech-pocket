@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { format, parseISO, startOfDay } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface Loan {
@@ -53,9 +53,12 @@ const formatCurrency = (amount: number) => {
 
 const getTodayInLima = (): string => {
   // Obtener fecha actual en zona horaria de Lima, Perú (UTC-5)
-  const now = new Date();
-  const limaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
-  return `${limaDate.getFullYear()}-${String(limaDate.getMonth() + 1).padStart(2, '0')}-${String(limaDate.getDate()).padStart(2, '0')}`;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Lima",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
 };
 
 const getInstallmentDisplayStatus = (installment: Installment): { status: string; variant: string; label: string } => {
@@ -406,7 +409,14 @@ export default function LoanDetail() {
                 <div>
                   <p className="font-medium">Cuota {inst.number}</p>
                   <p className="text-xs text-muted-foreground">
-                    {format(new Date(inst.due_date), "dd MMM yyyy", { locale: es })}
+                    {new Intl.DateTimeFormat("es-PE", {
+                      timeZone: "America/Lima",
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                      .format(new Date(`${inst.due_date.split("T")[0]}T12:00:00Z`))
+                      .replace(/\./g, "")}
                   </p>
                 </div>
                 <div className="text-right">
