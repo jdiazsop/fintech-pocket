@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { format, parseISO, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface Loan {
@@ -49,6 +49,29 @@ const formatCurrency = (amount: number) => {
     currency: "PEN",
     minimumFractionDigits: 2,
   }).format(amount);
+};
+
+const getInstallmentDisplayStatus = (installment: Installment): { status: string; variant: string; label: string } => {
+  const today = startOfDay(new Date());
+  const dueDate = startOfDay(parseISO(installment.due_date));
+  
+  // Si está completamente pagado
+  if (installment.amount_paid >= installment.amount) {
+    return { status: "paid", variant: "success", label: "Pagado" };
+  }
+  
+  // Si tiene pago parcial
+  if (installment.amount_paid > 0) {
+    return { status: "partial", variant: "warning", label: "Parcial" };
+  }
+  
+  // Si la fecha de vencimiento es anterior a hoy, está vencido
+  if (dueDate < today) {
+    return { status: "overdue", variant: "danger", label: "Vencido" };
+  }
+  
+  // Si la fecha es hoy o futura, está pendiente
+  return { status: "pending", variant: "default", label: "Pendiente" };
 };
 
 const getStatusVariant = (status: string) => {
@@ -379,9 +402,14 @@ export default function LoanDetail() {
                 </div>
                 <div className="text-right">
                   <p className="font-medium tabular-nums">{formatCurrency(inst.amount)}</p>
-                  <StatusBadge variant={getStatusVariant(inst.status)} className="text-[10px] px-1.5 py-0.5">
-                    {getStatusLabel(inst.status)}
-                  </StatusBadge>
+                  {(() => {
+                    const displayStatus = getInstallmentDisplayStatus(inst);
+                    return (
+                      <StatusBadge variant={displayStatus.variant as any} className="text-[10px] px-1.5 py-0.5">
+                        {displayStatus.label}
+                      </StatusBadge>
+                    );
+                  })()}
                 </div>
               </motion.div>
             ))}
