@@ -52,25 +52,29 @@ const formatCurrency = (amount: number) => {
 };
 
 const getInstallmentDisplayStatus = (installment: Installment): { status: string; variant: string; label: string } => {
-  const today = startOfDay(new Date());
-  const dueDate = startOfDay(parseISO(installment.due_date));
+  // Obtener fecha de hoy en formato YYYY-MM-DD (zona horaria local)
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
-  // Si está completamente pagado
+  // due_date viene como "YYYY-MM-DD" desde la base de datos
+  const dueDateStr = installment.due_date.split('T')[0]; // Por si viene con timestamp
+  
+  // 1. Si tiene pago completo → 'Pagado'
   if (installment.amount_paid >= installment.amount) {
     return { status: "paid", variant: "success", label: "Pagado" };
   }
   
-  // Si tiene pago parcial
+  // 2. Si tiene pago parcial → 'Parcial'
   if (installment.amount_paid > 0) {
     return { status: "partial", variant: "warning", label: "Parcial" };
   }
   
-  // Si la fecha de vencimiento es anterior a hoy, está vencido
-  if (dueDate < today) {
+  // 3. Si NO tiene pago y fecha < hoy → 'Vencido'
+  if (dueDateStr < todayStr) {
     return { status: "overdue", variant: "danger", label: "Vencido" };
   }
   
-  // Si la fecha es hoy o futura, está pendiente
+  // 4. Si NO tiene pago y fecha >= hoy → 'Pendiente'
   return { status: "pending", variant: "default", label: "Pendiente" };
 };
 
