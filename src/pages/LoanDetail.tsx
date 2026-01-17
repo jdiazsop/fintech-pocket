@@ -51,13 +51,18 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const getInstallmentDisplayStatus = (installment: Installment): { status: string; variant: string; label: string } => {
-  // Obtener fecha de hoy en formato YYYY-MM-DD (zona horaria local)
+const getTodayInLima = (): string => {
+  // Obtener fecha actual en zona horaria de Lima, Perú (UTC-5)
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const limaDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Lima' }));
+  return `${limaDate.getFullYear()}-${String(limaDate.getMonth() + 1).padStart(2, '0')}-${String(limaDate.getDate()).padStart(2, '0')}`;
+};
+
+const getInstallmentDisplayStatus = (installment: Installment): { status: string; variant: string; label: string } => {
+  const todayStr = getTodayInLima();
   
   // due_date viene como "YYYY-MM-DD" desde la base de datos
-  const dueDateStr = installment.due_date.split('T')[0]; // Por si viene con timestamp
+  const dueDateStr = installment.due_date.split('T')[0];
   
   // 1. Si tiene pago completo → 'Pagado'
   if (installment.amount_paid >= installment.amount) {
