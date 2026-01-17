@@ -30,10 +30,12 @@ export function calculateLoanDisplayStatus(
 
   const today = startOfDay(new Date());
 
-  // Verificar cuotas vencidas (fecha < hoy y no completamente pagadas)
+  // Verificar cuotas vencidas (fecha ANTERIOR a hoy y no completamente pagadas)
+  // Una cuota con fecha de hoy NO está vencida hasta las 23:59:59
   const hasOverdueInstallments = installments.some(installment => {
     const dueDate = startOfDay(parseISO(installment.due_date));
     const isPaid = installment.amount_paid >= installment.amount;
+    // Solo está vencida si la fecha es ESTRICTAMENTE menor a hoy
     return dueDate < today && !isPaid;
   });
 
@@ -41,16 +43,18 @@ export function calculateLoanDisplayStatus(
     return "overdue";
   }
 
-  // Si tiene pagos parciales (algún pago > 0 pero < monto total)
-  const hasPartialPayments = installments.some(installment => {
-    return installment.amount_paid > 0 && installment.amount_paid < installment.amount;
+  // Verificar pagos parciales solo en cuotas ya vencidas (fecha < hoy)
+  const hasPartialPaymentsOnOverdue = installments.some(installment => {
+    const dueDate = startOfDay(parseISO(installment.due_date));
+    const isOverdue = dueDate < today;
+    return isOverdue && installment.amount_paid > 0 && installment.amount_paid < installment.amount;
   });
 
-  if (hasPartialPayments || loanStatus === "partial") {
+  if (hasPartialPaymentsOnOverdue) {
     return "partial";
   }
 
-  // Si no hay cuotas vencidas y no hay pagos parciales, está al día
+  // Si no hay cuotas vencidas sin pagar, está al día
   return "on_time";
 }
 
