@@ -8,8 +8,8 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { format, isToday, isTomorrow, isPast, parseISO } from "date-fns";
-import { es } from "date-fns/locale";
+import { isToday, isTomorrow, parseISO } from "date-fns";
+import { calculateLoanDisplayStatus, formatCurrency, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
 
 interface Loan {
   id: string;
@@ -22,7 +22,11 @@ interface Loan {
   start_date: string;
 }
 
-interface Installment {
+interface LoanWithDisplayStatus extends Loan {
+  displayStatus: LoanDisplayStatus;
+}
+
+interface InstallmentWithLoan {
   id: string;
   loan_id: string;
   due_date: string;
@@ -36,20 +40,11 @@ interface Installment {
 
 type FilterType = "today" | "tomorrow";
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(amount);
-};
-
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<Loan[]>([]);
-  const [upcomingInstallments, setUpcomingInstallments] = useState<Installment[]>([]);
-  const [overdueLoans, setOverdueLoans] = useState<Loan[]>([]);
+  const [loans, setLoans] = useState<LoanWithDisplayStatus[]>([]);
+  const [upcomingInstallments, setUpcomingInstallments] = useState<InstallmentWithLoan[]>([]);
   const [filter, setFilter] = useState<FilterType>("today");
   const [loading, setLoading] = useState(true);
 
@@ -68,11 +63,29 @@ export default function Dashboard() {
         .order("created_at", { ascending: false });
 
       if (loansError) throw loansError;
-      setLoans(loansData || []);
 
-      // Find overdue loans
-      const overdue = (loansData || []).filter(loan => loan.status === "overdue");
-      setOverdueLoans(overdue);
+      // Fetch all installments for these loans
+      const loanIds = (loansData || []).map(l => l.id);
+      const { data: allInstallments, error: allInstError } = await supabase
+        .from("installments")
+        .select("*")
+        .in("loan_id", loanIds);
+
+      if (allInstError) throw allInstError;
+
+      // Calculate display status for each loan
+      const loansWithStatus: LoanWithDisplayStatus[] = (loansData || []).map(loan => {
+        const loanInstallments = (allInstallments || []).filter(i => i.loan_id === loan.id);
+        const displayStatus = calculateLoanDisplayStatus(
+          loan.status,
+          loanInstallments,
+          loan.amount_returned,
+          loan.amount_to_return
+        );
+        return { ...loan, displayStatus };
+      });
+
+      setLoans(loansWithStatus);
 
       // Fetch upcoming installments
       const { data: installmentsData, error: installmentsError } = await supabase
@@ -94,6 +107,12 @@ export default function Dashboard() {
     }
   };
 
+  // Calculate overdue loans based on displayStatus
+  const overdueLoans = loans.filter(loan => loan.displayStatus === "overdue");
+  const overdueTotal = overdueLoans.reduce((sum, loan) =>
+    sum + (loan.amount_to_return - loan.amount_returned), 0
+  );
+
   // Calculate KPIs
   const totalPending = loans.reduce((sum, loan) => 
     sum + (loan.amount_to_return - loan.amount_returned), 0
@@ -105,9 +124,6 @@ export default function Dashboard() {
   );
   const totalProfit = loans.reduce((sum, loan) => 
     sum + (loan.amount_to_return - loan.amount_lent), 0
-  );
-  const overdueTotal = overdueLoans.reduce((sum, loan) =>
-    sum + (loan.amount_to_return - loan.amount_returned), 0
   );
 
   // Filter installments
@@ -259,22 +275,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Overdue/Partial Loans */}
+        {/* Overdue Loans based on displayStatus */}
         {(() => {
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          
-          const overdueOrPartialLoans = loans.filter(loan => {
-            // Mostrar préstamos con status "partial"
-            if (loan.status === "partial") return true;
-            
-            // O préstamos con fecha anterior a hoy que estén pendientes o activos
-            const startDate = parseISO(loan.start_date);
-            startDate.setHours(0, 0, 0, 0);
-            const isBeforeToday = startDate < today;
-            
-            return isBeforeToday && (loan.status === "pending" || loan.status === "active" || loan.status === "overdue");
-          });
+          const overdueOrPartialLoans = loans.filter(loan => 
+            loan.displayStatus === "overdue" || loan.displayStatus === "partial"
+          );
           
           return overdueOrPartialLoans.length > 0 ? (
             <div className="space-y-4">
@@ -289,7 +294,7 @@ export default function Dashboard() {
                     amountLent={loan.amount_lent}
                     amountToReturn={loan.amount_to_return}
                     amountReturned={loan.amount_returned}
-                    status={loan.status}
+                    status={loan.displayStatus}
                     startDate={loan.start_date}
                     onClick={() => navigate(`/loan/${loan.id}`)}
                     delay={index * 0.1}

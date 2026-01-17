@@ -3,6 +3,13 @@ import { ChevronRight, Calendar } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { 
+  getStatusVariant, 
+  getStatusLabel, 
+  formatCurrency,
+  LoanDisplayStatus,
+  Installment
+} from "@/lib/loanUtils";
 
 interface LoanCardProps {
   id: string;
@@ -11,45 +18,11 @@ interface LoanCardProps {
   amountLent: number;
   amountToReturn: number;
   amountReturned: number;
-  status: string;
+  status: LoanDisplayStatus | string;
   startDate: string;
   onClick?: () => void;
   delay?: number;
 }
-
-const getStatusVariant = (status: string) => {
-  switch (status) {
-    case "paid":
-      return "success";
-    case "overdue":
-      return "danger";
-    case "partial":
-      return "warning";
-    default:
-      return "default";
-  }
-};
-
-const getStatusLabel = (status: string) => {
-  switch (status) {
-    case "paid":
-      return "Pagado";
-    case "overdue":
-      return "Vencido";
-    case "partial":
-      return "Parcial";
-    default:
-      return "Activo";
-  }
-};
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    minimumFractionDigits: 2,
-  }).format(amount);
-};
 
 export const LoanCard = ({
   name,
@@ -117,6 +90,7 @@ export const LoanCard = ({
                   status === "paid" ? "bg-emerald-500" :
                   status === "overdue" ? "bg-red-500" :
                   status === "partial" ? "bg-orange-500" :
+                  status === "on_time" ? "bg-primary" :
                   "bg-primary"
                 }`}
               />
