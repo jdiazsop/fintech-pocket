@@ -98,7 +98,11 @@ export default function Dashboard() {
   const totalPending = loans.reduce((sum, loan) => 
     sum + (loan.amount_to_return - loan.amount_returned), 0
   );
-  const totalLent = loans.reduce((sum, loan) => sum + loan.amount_lent, 0);
+  // Capital Prestado = suma de (amount_lent - amount_returned) para préstamos activos
+  // Refleja el capital real que aún está circulando
+  const totalLent = loans.reduce((sum, loan) => 
+    sum + Math.max(0, loan.amount_lent - loan.amount_returned), 0
+  );
   const totalProfit = loans.reduce((sum, loan) => 
     sum + (loan.amount_to_return - loan.amount_lent), 0
   );
