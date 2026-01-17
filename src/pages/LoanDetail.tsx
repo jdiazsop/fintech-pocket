@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2 } from "lucide-react";
+import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -103,6 +103,90 @@ const getStatusLabel = (status: string) => {
     case "pending": return "Pendiente";
     default: return "Activo";
   }
+};
+
+// Componente para la sección de cuotas con filtro
+interface InstallmentsSectionProps {
+  installments: Installment[];
+  getInstallmentDisplayStatus: (inst: Installment) => { status: string; variant: string; label: string };
+  formatCurrency: (amount: number) => string;
+}
+
+const InstallmentsSection = ({ installments, getInstallmentDisplayStatus, formatCurrency }: InstallmentsSectionProps) => {
+  const [showPaid, setShowPaid] = useState(false);
+  
+  const filteredInstallments = useMemo(() => {
+    if (showPaid) {
+      return installments;
+    }
+    return installments.filter(inst => {
+      const displayStatus = getInstallmentDisplayStatus(inst);
+      return displayStatus.status !== "paid";
+    });
+  }, [installments, showPaid, getInstallmentDisplayStatus]);
+
+  const paidCount = installments.filter(inst => getInstallmentDisplayStatus(inst).status === "paid").length;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-primary" />
+          Cuotas ({filteredInstallments.length})
+        </h2>
+        {paidCount > 0 && (
+          <button
+            onClick={() => setShowPaid(!showPaid)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showPaid ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            {showPaid ? "Ocultar pagadas" : `Ver pagadas (${paidCount})`}
+          </button>
+        )}
+      </div>
+      <div className="space-y-2">
+        {filteredInstallments.map((inst, index) => (
+          <motion.div
+            key={inst.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="fintech-card p-3 flex items-center justify-between"
+          >
+            <div>
+              <p className="font-medium">Cuota {inst.number}</p>
+              <p className="text-xs text-muted-foreground">
+                {new Intl.DateTimeFormat("es-PE", {
+                  timeZone: "America/Lima",
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+                  .format(new Date(`${inst.due_date.split("T")[0]}T12:00:00Z`))
+                  .replace(/\./g, "")}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="font-medium tabular-nums">{formatCurrency(inst.amount)}</p>
+              {inst.amount_paid > 0 && inst.amount_paid < inst.amount && (
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  Falta: {formatCurrency(inst.amount - inst.amount_paid)}
+                </p>
+              )}
+              {(() => {
+                const displayStatus = getInstallmentDisplayStatus(inst);
+                return (
+                  <StatusBadge variant={displayStatus.variant as any} className="text-[10px] px-1.5 py-0.5">
+                    {displayStatus.label}
+                  </StatusBadge>
+                );
+              })()}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default function LoanDetail() {
@@ -392,53 +476,11 @@ export default function LoanDetail() {
         )}
 
         {/* Installments */}
-        <div className="space-y-3">
-          <h2 className="font-semibold flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            Cuotas ({installments.length})
-          </h2>
-          <div className="space-y-2">
-            {installments.map((inst, index) => (
-              <motion.div
-                key={inst.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="fintech-card p-3 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-medium">Cuota {inst.number}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Intl.DateTimeFormat("es-PE", {
-                      timeZone: "America/Lima",
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })
-                      .format(new Date(`${inst.due_date.split("T")[0]}T12:00:00Z`))
-                      .replace(/\./g, "")}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-medium tabular-nums">{formatCurrency(inst.amount)}</p>
-                  {inst.amount_paid > 0 && inst.amount_paid < inst.amount && (
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      Falta: {formatCurrency(inst.amount - inst.amount_paid)}
-                    </p>
-                  )}
-                  {(() => {
-                    const displayStatus = getInstallmentDisplayStatus(inst);
-                    return (
-                      <StatusBadge variant={displayStatus.variant as any} className="text-[10px] px-1.5 py-0.5">
-                        {displayStatus.label}
-                      </StatusBadge>
-                    );
-                  })()}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
+        <InstallmentsSection 
+          installments={installments} 
+          getInstallmentDisplayStatus={getInstallmentDisplayStatus}
+          formatCurrency={formatCurrency}
+        />
 
         {/* Payments History */}
         {payments.length > 0 && (
