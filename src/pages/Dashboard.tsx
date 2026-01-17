@@ -259,29 +259,46 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Recent Loans */}
-        {loans.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold">Préstamos Recientes</h2>
-            <div className="space-y-3">
-              {loans.slice(0, 3).map((loan, index) => (
-                <LoanCard
-                  key={loan.id}
-                  id={loan.id}
-                  name={loan.name}
-                  concept={loan.concept}
-                  amountLent={loan.amount_lent}
-                  amountToReturn={loan.amount_to_return}
-                  amountReturned={loan.amount_returned}
-                  status={loan.status}
-                  startDate={loan.start_date}
-                  onClick={() => navigate(`/loan/${loan.id}`)}
-                  delay={index * 0.1}
-                />
-              ))}
+        {/* Overdue/Partial Loans */}
+        {(() => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          const overdueOrPartialLoans = loans.filter(loan => {
+            // Mostrar préstamos con status "partial"
+            if (loan.status === "partial") return true;
+            
+            // O préstamos con fecha anterior a hoy que estén pendientes o activos
+            const startDate = parseISO(loan.start_date);
+            startDate.setHours(0, 0, 0, 0);
+            const isBeforeToday = startDate < today;
+            
+            return isBeforeToday && (loan.status === "pending" || loan.status === "active" || loan.status === "overdue");
+          });
+          
+          return overdueOrPartialLoans.length > 0 ? (
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold text-red-400">Préstamos Vencidos</h2>
+              <div className="space-y-3">
+                {overdueOrPartialLoans.map((loan, index) => (
+                  <LoanCard
+                    key={loan.id}
+                    id={loan.id}
+                    name={loan.name}
+                    concept={loan.concept}
+                    amountLent={loan.amount_lent}
+                    amountToReturn={loan.amount_to_return}
+                    amountReturned={loan.amount_returned}
+                    status={loan.status}
+                    startDate={loan.start_date}
+                    onClick={() => navigate(`/loan/${loan.id}`)}
+                    delay={index * 0.1}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          ) : null;
+        })()}
 
         {/* Empty State */}
         {!loading && loans.length === 0 && (
