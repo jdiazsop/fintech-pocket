@@ -369,7 +369,7 @@ export default function NewLoan() {
                     <button
                       onClick={() => {
                         updateForm("paymentType", "single");
-                        updateForm("daysOrInstallments", 30);
+                        updateForm("daysOrInstallments", 7);
                         setShowCustomInput(false);
                       }}
                       className={`chip-button ${formData.paymentType === "single" ? "active" : ""}`}
@@ -379,7 +379,7 @@ export default function NewLoan() {
                     <button
                       onClick={() => {
                         updateForm("paymentType", "installments");
-                        updateForm("daysOrInstallments", 4);
+                        updateForm("daysOrInstallments", 2);
                         setShowCustomInput(false);
                       }}
                       className={`chip-button ${formData.paymentType === "installments" ? "active" : ""}`}
@@ -409,7 +409,10 @@ export default function NewLoan() {
                         </button>
                       ))}
                       <button
-                        onClick={() => setShowCustomInput(true)}
+                        onClick={() => {
+                          setShowCustomInput(true);
+                          updateForm("daysOrInstallments", 1);
+                        }}
                         className={`chip-button ${showCustomInput ? "active" : ""}`}
                       >
                         Otro
@@ -419,9 +422,17 @@ export default function NewLoan() {
                       <Input
                         type="number"
                         min="1"
+                        max="200"
                         placeholder="Días"
-                        value={formData.daysOrInstallments}
-                        onChange={(e) => updateForm("daysOrInstallments", parseInt(e.target.value) || 0)}
+                        value={formData.daysOrInstallments === 0 ? "" : formData.daysOrInstallments}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value) || 0;
+                          updateForm("daysOrInstallments", Math.min(200, Math.max(0, val)));
+                        }}
+                        onBlur={(e) => {
+                          const val = parseInt(e.target.value) || 1;
+                          updateForm("daysOrInstallments", Math.min(200, Math.max(1, val)));
+                        }}
                         className="bg-muted/50 w-24"
                       />
                     )}
@@ -439,7 +450,7 @@ export default function NewLoan() {
                             key={freq}
                             onClick={() => {
                               updateForm("frequency", freq);
-                              updateForm("daysOrInstallments", freq === "daily" ? 10 : 4);
+                              updateForm("daysOrInstallments", freq === "daily" ? 1 : 2);
                               setShowCustomInput(false);
                             }}
                             className={`chip-button flex-1 ${formData.frequency === freq ? "active" : ""}`}
@@ -458,9 +469,17 @@ export default function NewLoan() {
                         <Input
                           type="number"
                           min="1"
+                          max="200"
                           placeholder="Cuotas"
-                          value={formData.daysOrInstallments}
-                          onChange={(e) => updateForm("daysOrInstallments", parseInt(e.target.value) || 0)}
+                          value={formData.daysOrInstallments === 0 ? "" : formData.daysOrInstallments}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            updateForm("daysOrInstallments", Math.min(200, Math.max(0, val)));
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            updateForm("daysOrInstallments", Math.min(200, Math.max(1, val)));
+                          }}
                           className="bg-muted/50 w-full"
                         />
                       ) : (
@@ -480,7 +499,10 @@ export default function NewLoan() {
                             </button>
                           ))}
                           <button
-                            onClick={() => setShowCustomInput(true)}
+                            onClick={() => {
+                              setShowCustomInput(true);
+                              updateForm("daysOrInstallments", 1);
+                            }}
                             className={`chip-button ${showCustomInput ? "active" : ""}`}
                           >
                             Otro
@@ -491,9 +513,17 @@ export default function NewLoan() {
                         <Input
                           type="number"
                           min="1"
+                          max="200"
                           placeholder="Cuotas"
-                          value={formData.daysOrInstallments}
-                          onChange={(e) => updateForm("daysOrInstallments", parseInt(e.target.value) || 0)}
+                          value={formData.daysOrInstallments === 0 ? "" : formData.daysOrInstallments}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value) || 0;
+                            updateForm("daysOrInstallments", Math.min(200, Math.max(0, val)));
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.target.value) || 1;
+                            updateForm("daysOrInstallments", Math.min(200, Math.max(1, val)));
+                          }}
                           className="bg-muted/50 w-24"
                         />
                       )}
