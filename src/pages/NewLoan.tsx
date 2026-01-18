@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,9 +44,15 @@ export default function NewLoan() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  
+  // Step 0 state
+  const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
+  const [existingDebtors, setExistingDebtors] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isNameLocked, setIsNameLocked] = useState(false);
 
   const [formData, setFormData] = useState<LoanFormData>({
     name: "",
@@ -58,6 +64,36 @@ export default function NewLoan() {
     frequency: "weekly",
     daysOrInstallments: 30,
   });
+
+  // Fetch existing debtors
+  useEffect(() => {
+    const fetchDebtors = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("loans")
+        .select("name")
+        .eq("user_id", user.id);
+      if (data) {
+        const uniqueNames = [...new Set(data.map((l) => l.name))];
+        setExistingDebtors(uniqueNames);
+      }
+    };
+    fetchDebtors();
+  }, [user]);
+
+  // Filtered debtors for search
+  const filteredDebtors = useMemo(() => {
+    if (!searchQuery.trim()) return existingDebtors;
+    return existingDebtors.filter((name) =>
+      name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, existingDebtors]);
+
+  const handleSelectDebtor = (name: string) => {
+    updateForm("name", name);
+    setIsNameLocked(true);
+    setStep(1);
+  };
 
   const updateForm = (field: keyof LoanFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -216,30 +252,137 @@ export default function NewLoan() {
 
   const summary = step === 2 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
 
+  const handleBackNavigation = () => {
+    if (step === 0) {
+      navigate(-1);
+    } else if (step === 1) {
+      setStep(0);
+      setContactType(null);
+      setSearchQuery("");
+      setIsNameLocked(false);
+      updateForm("name", "");
+    } else {
+      setStep(1);
+    }
+  };
+
+  const currentStepDisplay = step === 0 ? 1 : step === 1 ? 2 : 3;
+
   return (
     <AppLayout>
       <div className="px-4 py-6">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button
-            onClick={() => step === 1 ? navigate(-1) : setStep(1)}
+            onClick={handleBackNavigation}
             className="p-2 rounded-xl bg-card hover:bg-muted transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-xl font-bold">Nuevo Préstamo</h1>
-            <p className="text-sm text-muted-foreground">Paso {step} de 2</p>
+            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
           </div>
         </div>
 
         {/* Progress */}
         <div className="flex gap-2 mb-6">
+          <div className={`h-1 flex-1 rounded-full ${step >= 0 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
+          {/* Step 0: Contact Type Selection */}
+          {step === 0 && (
+            <motion.div
+              key="step0"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              <div className="fintech-card p-5 space-y-5">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="font-semibold">Tipo de Contacto</h2>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => {
+                      setContactType("new");
+                      setIsNameLocked(false);
+                      updateForm("name", "");
+                      setStep(1);
+                    }}
+                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      contactType === "new"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <UserPlus className="w-6 h-6 text-primary" />
+                    <span className="font-medium text-sm">Contacto nuevo</span>
+                  </button>
+                  <button
+                    onClick={() => setContactType("existing")}
+                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
+                      contactType === "existing"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <Users className="w-6 h-6 text-primary" />
+                    <span className="font-medium text-sm">Contacto existente</span>
+                  </button>
+                </div>
+
+                {contactType === "existing" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="space-y-3"
+                  >
+                    <Label>Buscar deudor</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Escribe un nombre..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-muted/50 pl-9"
+                      />
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
+                      {filteredDebtors.length > 0 ? (
+                        filteredDebtors.map((name) => (
+                          <button
+                            key={name}
+                            onClick={() => handleSelectDebtor(name)}
+                            className="w-full text-left p-3 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2"
+                          >
+                            <User className="w-4 h-4 text-muted-foreground" />
+                            <span>{name}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          {existingDebtors.length === 0
+                            ? "No hay deudores registrados"
+                            : "No se encontraron coincidencias"}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
           {step === 1 && (
             <motion.div
               key="step1"
@@ -264,7 +407,8 @@ export default function NewLoan() {
                     placeholder="Ej: Juan Pérez"
                     value={formData.name}
                     onChange={(e) => updateForm("name", e.target.value)}
-                    className="bg-muted/50"
+                    className={`bg-muted/50 ${isNameLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isNameLocked}
                   />
                 </div>
 
