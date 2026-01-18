@@ -167,12 +167,6 @@ export default function Dashboard() {
 
         {/* Upcoming Payments */}
         <div className="space-y-3 sm:space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-1.5 sm:gap-2">
-              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-              Vencimientos Próximos
-            </h2>
-          </div>
 
           {/* Filter Tabs */}
           <div className="flex gap-2">
