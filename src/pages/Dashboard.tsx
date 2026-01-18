@@ -134,28 +134,9 @@ export default function Dashboard() {
     return false;
   });
 
-  const greeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Buenos días";
-    if (hour < 19) return "Buenas tardes";
-    return "Buenas noches";
-  };
-
   return (
     <AppLayout>
       <div className="px-4 py-6 space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-1"
-        >
-          <p className="text-muted-foreground">{greeting()}</p>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            Dashboard
-            <Sparkles className="w-5 h-5 text-primary" />
-          </h1>
-        </motion.div>
 
 
         {/* KPI Cards */}
