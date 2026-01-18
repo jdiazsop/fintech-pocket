@@ -1,12 +1,15 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, LogOut, Shield, Sparkles } from "lucide-react";
+import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 export default function Profile() {
+  const [isSendingReport, setIsSendingReport] = useState(false);
   const {
     user,
     signOut
@@ -15,6 +18,7 @@ export default function Profile() {
   const {
     toast
   } = useToast();
+
   const handleSignOut = async () => {
     await signOut();
     toast({
@@ -23,6 +27,32 @@ export default function Profile() {
     });
     navigate("/auth");
   };
+
+  const handleSendReport = async () => {
+    if (!user) return;
+    
+    setIsSendingReport(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-loan-report");
+      
+      if (error) throw error;
+      
+      toast({
+        title: "¡Reporte enviado!",
+        description: `Se ha enviado el resumen a ${user.email}`,
+      });
+    } catch (error: any) {
+      console.error("Error sending report:", error);
+      toast({
+        title: "Error al enviar",
+        description: error.message || "No se pudo enviar el reporte",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
+
   return <AppLayout>
       <div className="px-4 py-6 space-y-6">
         {/* Header */}
@@ -98,7 +128,7 @@ export default function Profile() {
           </div>
         </motion.div>
 
-        {/* Sign Out */}
+        {/* Send Report Button */}
         <motion.div initial={{
         opacity: 0,
         y: 20
@@ -107,6 +137,30 @@ export default function Profile() {
         y: 0
       }} transition={{
         delay: 0.3
+      }}>
+          <Button 
+            onClick={handleSendReport} 
+            disabled={isSendingReport}
+            className="w-full bg-primary hover:bg-primary/90"
+          >
+            {isSendingReport ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4 mr-2" />
+            )}
+            {isSendingReport ? "Enviando..." : "Enviar Reporte"}
+          </Button>
+        </motion.div>
+
+        {/* Sign Out */}
+        <motion.div initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.4
       }}>
           <Button onClick={handleSignOut} variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10">
             <LogOut className="w-4 h-4 mr-2" />
@@ -120,7 +174,7 @@ export default function Profile() {
       }} animate={{
         opacity: 1
       }} transition={{
-        delay: 0.4
+        delay: 0.5
       }} className="text-center text-sm text-muted-foreground pt-4">
           <p>CREDIFY v1.0</p>
           <p className="text-xs mt-1">Tu cuaderno digital de préstamos</p>

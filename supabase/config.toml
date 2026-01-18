@@ -1,1 +1,4 @@
 project_id = "vzmpxqnmwqvbxjyqazww"
+
+[functions.send-loan-report]
+verify_jwt = false
