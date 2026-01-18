@@ -1,7 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Filter, SortDesc, Wallet, Plus } from "lucide-react";
+import { Search, Filter, SortDesc, Wallet, Plus, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { LoanCard } from "@/components/loans/LoanCard";
 import { Input } from "@/components/ui/input";
@@ -28,7 +34,7 @@ interface LoanWithInstallments extends Loan {
 }
 
 type StatusFilter = "all" | "on_time" | "overdue" | "paid";
-type SortOption = "recent" | "amount";
+type SortOption = "recent" | "amount" | "last7" | "last15" | "last30";
 
 export default function Portfolio() {
   const { user } = useAuth();
@@ -107,14 +113,34 @@ export default function Portfolio() {
       return true;
     })
     .sort((a, b) => {
-      if (sortOption === "recent") {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      } else {
+      if (sortOption === "amount") {
         const pendingA = a.amount_to_return - a.amount_returned;
         const pendingB = b.amount_to_return - b.amount_returned;
         return pendingB - pendingA;
+      } else {
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
     });
+
+  // Filter by date range for "last X days" options
+  const finalFilteredLoans = useMemo(() => {
+    if (sortOption === "last7" || sortOption === "last15" || sortOption === "last30") {
+      const now = new Date();
+      const daysMap = { last7: 7, last15: 15, last30: 30 };
+      const days = daysMap[sortOption];
+      const cutoffDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      return filteredLoans.filter(loan => new Date(loan.created_at) >= cutoffDate);
+    }
+    return filteredLoans;
+  }, [filteredLoans, sortOption]);
+
+  const sortOptions: { value: SortOption; label: string }[] = [
+    { value: "recent", label: "Más recientes" },
+    { value: "amount", label: "Mayor deuda" },
+    { value: "last7", label: "Últimos 7 días" },
+    { value: "last15", label: "Últimos 15 días" },
+    { value: "last30", label: "Últimos 30 días" },
+  ];
 
   const statusOptions: { value: StatusFilter; label: string }[] = [
     { value: "all", label: "Todos" },
@@ -172,13 +198,26 @@ export default function Portfolio() {
             <Filter className="w-4 h-4" />
             Filtros
           </button>
-          <button
-            onClick={() => setSortOption(sortOption === "recent" ? "amount" : "recent")}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <SortDesc className="w-4 h-4" />
-            {sortOption === "recent" ? "Más recientes" : "Mayor deuda"}
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                <SortDesc className="w-4 h-4" />
+                {sortOptions.find(o => o.value === sortOption)?.label}
+                <ChevronDown className="w-3 h-3" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-card border-border">
+              {sortOptions.map((option) => (
+                <DropdownMenuItem
+                  key={option.value}
+                  onClick={() => setSortOption(option.value)}
+                  className={sortOption === option.value ? "bg-primary/20 text-primary" : ""}
+                >
+                  {option.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Filters */}
@@ -211,7 +250,7 @@ export default function Portfolio() {
                 <div className="h-2 bg-muted rounded w-full" />
               </div>
             ))
-          ) : filteredLoans.length === 0 ? (
+          ) : finalFilteredLoans.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -239,7 +278,7 @@ export default function Portfolio() {
               )}
             </motion.div>
           ) : (
-            filteredLoans.map((loan, index) => (
+            finalFilteredLoans.map((loan, index) => (
               <LoanCard
                 key={loan.id}
                 id={loan.id}
