@@ -108,7 +108,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/fintech-pocket">
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
