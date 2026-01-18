@@ -157,28 +157,6 @@ export default function Dashboard() {
           </h1>
         </motion.div>
 
-        {/* Overdue Alert */}
-        {overdueLoans.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="fintech-card p-4 bg-gradient-to-r from-red-500/20 to-red-500/5 border-red-500/30"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-red-500/20">
-                <AlertTriangle className="w-5 h-5 text-red-400" />
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-red-400">
-                  {overdueLoans.length} préstamo{overdueLoans.length > 1 ? "s" : ""} vencido{overdueLoans.length > 1 ? "s" : ""}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Total pendiente: {formatCurrency(overdueTotal)}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-3">
