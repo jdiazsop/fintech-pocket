@@ -158,17 +158,8 @@ export default function NewLoan() {
       return `${y}-${m}-${d}`;
     };
 
-    // DEBUG: Log values to understand the calculation
-    console.log('DEBUG generateInstallments:', {
-      'formData.startDate': formData.startDate,
-      'parsed startDate': formatDateLocal(startDate),
-      'daysOrInstallments': formData.daysOrInstallments,
-      'paymentType': formData.paymentType
-    });
-
     if (formData.paymentType === "single") {
       const dueDate = addDays(startDate, formData.daysOrInstallments);
-      console.log('DEBUG dueDate:', formatDateLocal(dueDate));
       installments.push({
         number: 1,
         due_date: formatDateLocal(dueDate),
@@ -266,7 +257,9 @@ export default function NewLoan() {
     if (installments.length === 0) return null;
 
     const lastInstallment = installments[installments.length - 1];
-    const endDate = new Date(lastInstallment.due_date);
+    // Parse date correctly to avoid timezone issues
+    const [year, month, day] = lastInstallment.due_date.split('-').map(Number);
+    const endDate = new Date(year, month - 1, day);
 
     return {
       numInstallments: installments.length,
