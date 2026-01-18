@@ -123,9 +123,11 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("User authenticated:", user.email);
 
-    // Get today's date in YYYY-MM-DD format
-    const today = new Date();
-    const todayStr = today.toISOString().split("T")[0];
+    // Get today's date in Lima, Peru timezone (UTC-5)
+    const now = new Date();
+    const limaOffset = -5 * 60; // UTC-5 in minutes
+    const limaTime = new Date(now.getTime() + (limaOffset - now.getTimezoneOffset()) * 60000);
+    const todayStr = limaTime.toISOString().split("T")[0];
 
     // Fetch all active and partial loans for this user (loans with pending payments)
     const { data: loans, error: loansError } = await supabase
