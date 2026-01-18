@@ -171,179 +171,96 @@ const handler = async (req: Request): Promise<Response> => {
     const totalReturned = loans?.reduce((sum: number, loan: Loan) => sum + Number(loan.amount_returned), 0) || 0;
     const totalPending = totalToReturn - totalReturned;
 
-    // Group installments by loan
-    const installmentsByLoan: Record<string, Installment[]> = {};
-    pendingInstallments.forEach((inst: Installment) => {
-      if (!installmentsByLoan[inst.loan_id]) {
-        installmentsByLoan[inst.loan_id] = [];
-      }
-      installmentsByLoan[inst.loan_id].push(inst);
-    });
+    // Count overdue installments
+    const overdueCount = pendingInstallments.filter((inst: Installment) => inst.due_date < todayStr).length;
 
-    // Build email HTML
+    // Build compact email HTML
     const emailHtml = `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reporte de Préstamos - Credify</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f8fafc;">
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
     <tr>
-      <td style="padding: 40px 20px;">
-        <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+      <td style="padding: 24px 16px;">
+        <table role="presentation" style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
           
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 32px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
-                💰 CREDIFY
-              </h1>
-              <p style="margin: 8px 0 0; color: rgba(255, 255, 255, 0.9); font-size: 14px;">
-                Tu cuaderno digital de préstamos
-              </p>
+            <td style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; text-align: center;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 700;">💰 CREDIFY</h1>
+              <p style="margin: 4px 0 0; color: rgba(255,255,255,0.85); font-size: 12px;">Resumen al ${formatDate(todayStr)}</p>
             </td>
           </tr>
 
-          <!-- Greeting -->
+          <!-- Summary -->
           <tr>
-            <td style="padding: 32px 32px 16px;">
-              <h2 style="margin: 0 0 8px; color: #1f2937; font-size: 20px; font-weight: 600;">
-                Hola 👋
-              </h2>
-              <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.6;">
-                Aquí está tu resumen de préstamos al <strong>${formatDate(todayStr)}</strong>
-              </p>
-            </td>
-          </tr>
-
-          <!-- Summary Cards -->
-          <tr>
-            <td style="padding: 16px 32px;">
-              <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <td style="padding: 20px;">
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
                 <tr>
-                  <td style="width: 50%; padding-right: 8px;">
-                    <div style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-radius: 12px; padding: 20px; text-align: center;">
-                      <p style="margin: 0 0 4px; color: #059669; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Capital Prestado</p>
-                      <p style="margin: 0; color: #047857; font-size: 20px; font-weight: 700;">${formatCurrency(totalLent)}</p>
-                    </div>
+                  <td style="background: #ecfdf5; border-radius: 8px; padding: 12px; text-align: center; width: 33%;">
+                    <p style="margin: 0; color: #059669; font-size: 10px; font-weight: 600; text-transform: uppercase;">Prestado</p>
+                    <p style="margin: 2px 0 0; color: #047857; font-size: 14px; font-weight: 700;">${formatCurrency(totalLent)}</p>
                   </td>
-                  <td style="width: 50%; padding-left: 8px;">
-                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; padding: 20px; text-align: center;">
-                      <p style="margin: 0 0 4px; color: #d97706; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Por Cobrar</p>
-                      <p style="margin: 0; color: #b45309; font-size: 20px; font-weight: 700;">${formatCurrency(totalPending)}</p>
-                    </div>
+                  <td style="width: 8px;"></td>
+                  <td style="background: #dbeafe; border-radius: 8px; padding: 12px; text-align: center; width: 33%;">
+                    <p style="margin: 0; color: #2563eb; font-size: 10px; font-weight: 600; text-transform: uppercase;">Cobrado</p>
+                    <p style="margin: 2px 0 0; color: #1d4ed8; font-size: 14px; font-weight: 700;">${formatCurrency(totalReturned)}</p>
+                  </td>
+                  <td style="width: 8px;"></td>
+                  <td style="background: #fef3c7; border-radius: 8px; padding: 12px; text-align: center; width: 33%;">
+                    <p style="margin: 0; color: #d97706; font-size: 10px; font-weight: 600; text-transform: uppercase;">Pendiente</p>
+                    <p style="margin: 2px 0 0; color: #b45309; font-size: 14px; font-weight: 700;">${formatCurrency(totalPending)}</p>
                   </td>
                 </tr>
               </table>
-            </td>
-          </tr>
 
-          <!-- Loans Detail -->
-          <tr>
-            <td style="padding: 16px 32px 32px;">
-              <h3 style="margin: 0 0 16px; color: #1f2937; font-size: 16px; font-weight: 600; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
-                📋 Préstamos Activos (${loans?.length || 0})
-              </h3>
-              
-              ${loans && loans.length > 0 ? loans.map((loan: Loan) => {
-                const loanInstallments = installmentsByLoan[loan.id] || [];
-                const loanPending = Number(loan.amount_to_return) - Number(loan.amount_returned);
-                const progress = Number(loan.amount_to_return) > 0 
-                  ? (Number(loan.amount_returned) / Number(loan.amount_to_return)) * 100 
-                  : 0;
-                
-                return `
-                <div style="background-color: #f9fafb; border-radius: 12px; padding: 16px; margin-bottom: 12px; border-left: 4px solid ${getStatusColor(loan.status)};">
-                  <table role="presentation" style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                      <td style="vertical-align: top;">
-                        <p style="margin: 0 0 4px; color: #1f2937; font-size: 16px; font-weight: 600;">${loan.name}</p>
-                        <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px;">Inicio: ${formatDate(loan.start_date)}</p>
-                      </td>
-                      <td style="text-align: right; vertical-align: top;">
-                        <span style="display: inline-block; background-color: ${getStatusColor(loan.status)}20; color: ${getStatusColor(loan.status)}; font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px;">
-                          ${getStatusLabel(loan.status)}
-                        </span>
-                      </td>
-                    </tr>
-                    <tr>
-                      <td colspan="2" style="padding-top: 8px;">
-                        <table role="presentation" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                          <tr>
-                            <td style="color: #6b7280; padding: 2px 0;">Prestado:</td>
-                            <td style="color: #1f2937; font-weight: 500; text-align: right;">${formatCurrency(loan.amount_lent)}</td>
-                          </tr>
-                          <tr>
-                            <td style="color: #6b7280; padding: 2px 0;">Cobrado:</td>
-                            <td style="color: #10b981; font-weight: 500; text-align: right;">${formatCurrency(loan.amount_returned)}</td>
-                          </tr>
-                          <tr>
-                            <td style="color: #6b7280; padding: 2px 0;">Pendiente:</td>
-                            <td style="color: #f59e0b; font-weight: 600; text-align: right;">${formatCurrency(loanPending)}</td>
-                          </tr>
-                        </table>
-                        
-                        <!-- Progress bar -->
-                        <div style="margin-top: 12px;">
-                          <div style="background-color: #e5e7eb; border-radius: 4px; height: 6px; overflow: hidden;">
-                            <div style="background-color: #10b981; height: 100%; width: ${Math.min(progress, 100)}%; border-radius: 4px;"></div>
-                          </div>
-                          <p style="margin: 4px 0 0; color: #6b7280; font-size: 11px; text-align: right;">${progress.toFixed(0)}% cobrado</p>
-                        </div>
-                        
-                        ${loanInstallments.length > 0 ? `
-                        <!-- Pending installments -->
-                        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e5e7eb;">
-                          <p style="margin: 0 0 8px; color: #6b7280; font-size: 12px; font-weight: 600;">Cuotas pendientes:</p>
-                          ${loanInstallments.slice(0, 3).map((inst: Installment) => {
-                            const instPending = Number(inst.amount) - Number(inst.amount_paid);
-                            const isOverdue = inst.due_date < todayStr && inst.status !== 'paid';
-                            return `
-                            <div style="display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px;">
-                              <span style="color: ${isOverdue ? '#ef4444' : '#6b7280'};">
-                                #${inst.number} - ${formatDate(inst.due_date)} ${isOverdue ? '⚠️' : ''}
-                              </span>
-                              <span style="color: ${isOverdue ? '#ef4444' : '#1f2937'}; font-weight: 500;">
-                                ${formatCurrency(instPending)}
-                              </span>
-                            </div>
-                            `;
-                          }).join('')}
-                          ${loanInstallments.length > 3 ? `
-                          <p style="margin: 4px 0 0; color: #6b7280; font-size: 11px; font-style: italic;">
-                            +${loanInstallments.length - 3} cuotas más...
-                          </p>
-                          ` : ''}
-                        </div>
-                        ` : ''}
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-                `;
-              }).join('') : `
-              <div style="background-color: #f9fafb; border-radius: 12px; padding: 24px; text-align: center;">
-                <p style="margin: 0; color: #6b7280; font-size: 14px;">No tienes préstamos activos en este momento.</p>
+              ${overdueCount > 0 ? `
+              <div style="background: #fef2f2; border-radius: 8px; padding: 10px; margin-bottom: 16px; text-align: center;">
+                <p style="margin: 0; color: #dc2626; font-size: 12px; font-weight: 600;">⚠️ ${overdueCount} cuota${overdueCount > 1 ? 's' : ''} vencida${overdueCount > 1 ? 's' : ''}</p>
               </div>
-              `}
+              ` : ''}
+
+              <!-- Loans Table -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <tr style="background: #f1f5f9;">
+                  <td style="padding: 8px; font-weight: 600; color: #475569; border-radius: 6px 0 0 6px;">Nombre</td>
+                  <td style="padding: 8px; font-weight: 600; color: #475569; text-align: right;">Pendiente</td>
+                  <td style="padding: 8px; font-weight: 600; color: #475569; text-align: center; border-radius: 0 6px 6px 0;">%</td>
+                </tr>
+                ${loans && loans.length > 0 ? loans.map((loan: Loan) => {
+                  const loanPending = Number(loan.amount_to_return) - Number(loan.amount_returned);
+                  const progress = Number(loan.amount_to_return) > 0 
+                    ? Math.round((Number(loan.amount_returned) / Number(loan.amount_to_return)) * 100)
+                    : 0;
+                  return `
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 8px; color: #1f2937;">${loan.name}</td>
+                  <td style="padding: 8px; color: #f59e0b; font-weight: 600; text-align: right;">${formatCurrency(loanPending)}</td>
+                  <td style="padding: 8px; color: #10b981; text-align: center;">${progress}%</td>
+                </tr>
+                  `;
+                }).join('') : `
+                <tr>
+                  <td colspan="3" style="padding: 16px; text-align: center; color: #6b7280;">Sin préstamos activos</td>
+                </tr>
+                `}
+              </table>
+
+              <p style="margin: 16px 0 0; color: #9ca3af; font-size: 11px; text-align: center;">
+                ${loans?.length || 0} préstamo${(loans?.length || 0) !== 1 ? 's' : ''} activo${(loans?.length || 0) !== 1 ? 's' : ''}
+              </p>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: #f9fafb; padding: 24px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="margin: 0 0 8px; color: #1f2937; font-size: 14px; font-weight: 600;">
-                💰 CREDIFY
-              </p>
-              <p style="margin: 0 0 16px; color: #6b7280; font-size: 12px;">
-                Tu cuaderno digital de préstamos
-              </p>
-              <p style="margin: 0; color: #9ca3af; font-size: 11px;">
-                Este correo fue enviado a ${user.email}<br>
-                Generado el ${formatDate(todayStr)} a las ${new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}
+            <td style="background: #f9fafb; padding: 16px; text-align: center; border-top: 1px solid #e5e7eb;">
+              <p style="margin: 0; color: #6b7280; font-size: 11px;">
+                CREDIFY v1.0 · Tu cuaderno digital de préstamos
               </p>
             </td>
           </tr>
