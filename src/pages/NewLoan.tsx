@@ -325,7 +325,7 @@ export default function NewLoan() {
                     }`}
                   >
                     <UserPlus className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm">Contacto nuevo</span>
+                    <span className="font-medium text-sm text-center">Contacto<br/>nuevo</span>
                   </button>
                   <button
                     onClick={() => setContactType("existing")}
@@ -336,7 +336,7 @@ export default function NewLoan() {
                     }`}
                   >
                     <Users className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm">Contacto existente</span>
+                    <span className="font-medium text-sm text-center">Contacto<br/>existente</span>
                   </button>
                 </div>
 
