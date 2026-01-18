@@ -103,12 +103,18 @@ const AppRoutes = () => {
   );
 };
 
+// Detect if running on GitHub Pages
+const getBasename = () => {
+  const isGitHubPages = window.location.hostname.includes('github.io');
+  return isGitHubPages ? '/fintech-pocket' : '';
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter basename="/fintech-pocket">
+      <BrowserRouter basename={getBasename()}>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
