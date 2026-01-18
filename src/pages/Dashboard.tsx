@@ -204,7 +204,8 @@ export default function Dashboard() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="fintech-card p-3 sm:p-4"
+                  className="fintech-card p-3 sm:p-4 cursor-pointer hover:bg-card/80 active:scale-[0.98] transition-all"
+                  onClick={() => navigate(`/loan/${inst.loan_id}`)}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0 flex-1">
