@@ -77,7 +77,10 @@ export const LoanCard = ({
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
               <div className="flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
-                <span>{format(new Date(startDate), "dd MMM yyyy", { locale: es })}</span>
+                <span>{(() => {
+                  const [year, month, day] = startDate.split('-').map(Number);
+                  return format(new Date(year, month - 1, day), "dd MMM yyyy", { locale: es });
+                })()}</span>
               </div>
               <span className="tabular-nums">{progress.toFixed(0)}%</span>
             </div>
