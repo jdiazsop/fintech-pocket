@@ -198,7 +198,7 @@ export default function Dashboard() {
           />
           <div className="col-span-2">
             <KPICard
-              title="Ganancia Generada"
+              title="Ganancia Esperada"
               value={formatCurrency(totalProfit)}
               subtitle="Intereses devengados"
               icon={TrendingUp}
