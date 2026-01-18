@@ -401,7 +401,7 @@ export default function NewLoan() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre del Deudor *</Label>
+                  <Label htmlFor="name">Nombre</Label>
                   <Input
                     id="name"
                     placeholder="Ej: Juan Pérez"
