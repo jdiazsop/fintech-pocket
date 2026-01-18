@@ -127,19 +127,19 @@ const handler = async (req: Request): Promise<Response> => {
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
 
-    // Fetch all active loans for this user
+    // Fetch all active and partial loans for this user (loans with pending payments)
     const { data: loans, error: loansError } = await supabase
       .from("loans")
       .select("*")
       .eq("user_id", user.id)
-      .eq("status", "active");
+      .in("status", ["active", "partial"]);
 
     if (loansError) {
       console.error("Error fetching loans:", loansError);
       throw loansError;
     }
 
-    console.log(`Found ${loans?.length || 0} active loans`);
+    console.log(`Found ${loans?.length || 0} loans with pending payments`);
 
     // Fetch all installments for these loans that are pending or partial
     const loanIds = loans?.map((loan: Loan) => loan.id) || [];
