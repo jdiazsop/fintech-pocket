@@ -136,11 +136,9 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="px-4 py-6 space-y-6">
-
-
+      <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
           <KPICard
             title="Por Cobrar"
             value={formatCurrency(totalPending)}
@@ -168,10 +166,10 @@ export default function Dashboard() {
         </div>
 
         {/* Upcoming Payments */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
+            <h2 className="text-base sm:text-lg font-semibold flex items-center gap-1.5 sm:gap-2">
+              <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Vencimientos Próximos
             </h2>
           </div>
@@ -180,28 +178,28 @@ export default function Dashboard() {
           <div className="flex gap-2">
             <button
               onClick={() => setFilter("today")}
-              className={`chip-button ${filter === "today" ? "active" : ""}`}
+              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "today" ? "active" : ""}`}
             >
               Hoy
             </button>
             <button
               onClick={() => setFilter("tomorrow")}
-              className={`chip-button ${filter === "tomorrow" ? "active" : ""}`}
+              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "tomorrow" ? "active" : ""}`}
             >
               Mañana
             </button>
           </div>
 
           {/* Installments List */}
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {loading ? (
-              <div className="fintech-card p-8 text-center">
-                <div className="animate-pulse text-muted-foreground">Cargando...</div>
+              <div className="fintech-card p-6 sm:p-8 text-center">
+                <div className="animate-pulse text-muted-foreground text-sm sm:text-base">Cargando...</div>
               </div>
             ) : filteredInstallments.length === 0 ? (
-              <div className="fintech-card p-8 text-center">
-                <Clock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground">
+              <div className="fintech-card p-6 sm:p-8 text-center">
+                <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm sm:text-base">
                   No hay vencimientos para {filter === "today" ? "hoy" : "mañana"}
                 </p>
               </div>
@@ -212,18 +210,19 @@ export default function Dashboard() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="fintech-card p-4"
+                  className="fintech-card p-3 sm:p-4"
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{inst.loan?.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm sm:text-base truncate">{inst.loan?.name}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Cuota pendiente: {formatCurrency(inst.amount - inst.amount_paid)}
                       </p>
                     </div>
                     <StatusBadge
                       variant={inst.status === "partial" ? "warning" : "default"}
                       dot
+                      className="flex-shrink-0 text-[10px] sm:text-xs"
                     >
                       {inst.status === "partial" ? "Parcial" : "Pendiente"}
                     </StatusBadge>
@@ -241,9 +240,9 @@ export default function Dashboard() {
           );
           
           return overdueOrPartialLoans.length > 0 ? (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-red-400">Préstamos Vencidos</h2>
-              <div className="space-y-3">
+            <div className="space-y-3 sm:space-y-4">
+              <h2 className="text-base sm:text-lg font-semibold text-red-400">Préstamos Vencidos</h2>
+              <div className="space-y-2 sm:space-y-3">
                 {overdueOrPartialLoans.map((loan, index) => (
                   <LoanCard
                     key={loan.id}
@@ -269,16 +268,16 @@ export default function Dashboard() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fintech-card p-8 text-center"
+            className="fintech-card p-6 sm:p-8 text-center"
           >
-            <CircleDollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <h3 className="font-semibold mb-1">Sin préstamos aún</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <CircleDollarSign className="w-10 h-10 sm:w-12 sm:h-12 text-muted-foreground mx-auto mb-2 sm:mb-3" />
+            <h3 className="font-semibold mb-1 text-sm sm:text-base">Sin préstamos aún</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
               Comienza a registrar tus préstamos para ver tu dashboard
             </p>
             <button
               onClick={() => navigate("/new-loan")}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               Registrar Préstamo
             </button>
