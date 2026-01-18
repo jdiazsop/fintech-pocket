@@ -54,10 +54,15 @@ export default function NewLoan() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isNameLocked, setIsNameLocked] = useState(false);
 
+  // Get today's date in Lima timezone
+  const getTodayInLima = () => {
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Lima' });
+  };
+
   const [formData, setFormData] = useState<LoanFormData>({
     name: "",
     concept: "",
-    startDate: format(new Date(), "yyyy-MM-dd"),
+    startDate: getTodayInLima(),
     amountLent: "",
     amountToReturn: "",
     paymentType: "single",
