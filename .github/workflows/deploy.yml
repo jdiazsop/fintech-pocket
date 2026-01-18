@@ -31,7 +31,9 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       
       - name: Copy index.html to 404.html for SPA routing
-        run: cp ./dist/index.html ./dist/404.html
+        run: |
+          cp ./dist/index.html ./dist/404.html
+          touch ./dist/.nojekyll
       
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
