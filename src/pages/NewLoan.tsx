@@ -146,14 +146,23 @@ export default function NewLoan() {
     // Parse date correctly to avoid timezone issues
     const [year, month, day] = formData.startDate.split('-').map(Number);
     const startDate = new Date(year, month - 1, day);
+    startDate.setHours(12, 0, 0, 0); // Set to noon to avoid DST issues
     const installments = [];
     const totalAmount = parseFloat(formData.amountToReturn);
+
+    // Helper to format date without timezone issues
+    const formatDateLocal = (date: Date) => {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    };
 
     if (formData.paymentType === "single") {
       const dueDate = addDays(startDate, formData.daysOrInstallments);
       installments.push({
         number: 1,
-        due_date: format(dueDate, "yyyy-MM-dd"),
+        due_date: formatDateLocal(dueDate),
         amount: totalAmount,
       });
     } else {
@@ -180,7 +189,7 @@ export default function NewLoan() {
 
         installments.push({
           number: i,
-          due_date: format(dueDate, "yyyy-MM-dd"),
+          due_date: formatDateLocal(dueDate),
           amount: Math.round(amount * 100) / 100,
         });
       }
