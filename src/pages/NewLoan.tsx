@@ -138,7 +138,9 @@ export default function NewLoan() {
   };
 
   const generateInstallments = () => {
-    const startDate = new Date(formData.startDate);
+    // Parse date correctly to avoid timezone issues
+    const [year, month, day] = formData.startDate.split('-').map(Number);
+    const startDate = new Date(year, month - 1, day);
     const installments = [];
     const totalAmount = parseFloat(formData.amountToReturn);
 
