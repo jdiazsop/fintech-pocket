@@ -69,9 +69,9 @@ export default function NewLoan() {
   
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
-  const [existingDebtors, setExistingDebtors] = useState<string[]>([]);
+  const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNameLocked, setIsNameLocked] = useState(false);
+  const [isContactLocked, setIsContactLocked] = useState(false);
 
   // Get today's date in Lima timezone
   const getTodayInLima = () => {
@@ -79,7 +79,13 @@ export default function NewLoan() {
   };
 
   const [formData, setFormData] = useState<LoanFormData>({
-    name: "",
+    firstName: "",
+    lastName: "",
+    phoneCountryCode: DEFAULT_COUNTRY_CODE,
+    phoneNumber: "",
+    dni: "",
+    address: "",
+    reference: "",
     concept: "",
     startDate: getTodayInLima(),
     amountLent: "",
@@ -89,17 +95,32 @@ export default function NewLoan() {
     daysOrInstallments: 30,
   });
 
-  // Fetch existing debtors
+  // Fetch existing debtors (latest record per name)
   useEffect(() => {
     const fetchDebtors = async () => {
       if (!user) return;
       const { data } = await supabase
         .from("loans")
-        .select("name")
-        .eq("user_id", user.id);
+        .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
       if (data) {
-        const uniqueNames = [...new Set(data.map((l) => l.name))];
-        setExistingDebtors(uniqueNames);
+        const map = new Map<string, ExistingDebtor>();
+        for (const l of data as any[]) {
+          if (!map.has(l.name)) {
+            map.set(l.name, {
+              name: l.name,
+              firstName: l.first_name || "",
+              lastName: l.last_name || "",
+              phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
+              phoneNumber: l.phone_number || "",
+              dni: l.dni || "",
+              address: l.address || "",
+              reference: l.reference || "",
+            });
+          }
+        }
+        setExistingDebtors(Array.from(map.values()));
       }
     };
     fetchDebtors();
@@ -108,14 +129,22 @@ export default function NewLoan() {
   // Filtered debtors for search
   const filteredDebtors = useMemo(() => {
     if (!searchQuery.trim()) return existingDebtors;
-    return existingDebtors.filter((name) =>
-      name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const q = searchQuery.toLowerCase();
+    return existingDebtors.filter((d) => d.name.toLowerCase().includes(q));
   }, [searchQuery, existingDebtors]);
 
-  const handleSelectDebtor = (name: string) => {
-    updateForm("name", name);
-    setIsNameLocked(true);
+  const handleSelectDebtor = (d: ExistingDebtor) => {
+    setFormData((prev) => ({
+      ...prev,
+      firstName: d.firstName || d.name,
+      lastName: d.lastName,
+      phoneCountryCode: d.phoneCountryCode || DEFAULT_COUNTRY_CODE,
+      phoneNumber: d.phoneNumber,
+      dni: d.dni,
+      address: d.address,
+      reference: d.reference,
+    }));
+    setIsContactLocked(true);
     setStep(1);
   };
 
@@ -124,8 +153,20 @@ export default function NewLoan() {
   };
 
   const validateStep1 = () => {
-    if (!formData.name.trim()) {
-      toast({ title: "Error", description: "Ingresa el nombre del deudor", variant: "destructive" });
+    if (!formData.firstName.trim()) {
+      toast({ title: "Error", description: "Ingresa los nombres", variant: "destructive" });
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      toast({ title: "Error", description: "Ingresa los apellidos", variant: "destructive" });
+      return false;
+    }
+    if (!formData.phoneNumber.trim() || !/^\d{6,15}$/.test(formData.phoneNumber.trim())) {
+      toast({ title: "Error", description: "Ingresa un número de celular válido (solo dígitos)", variant: "destructive" });
+      return false;
+    }
+    if (!formData.dni.trim()) {
+      toast({ title: "Error", description: "Ingresa el DNI/CE", variant: "destructive" });
       return false;
     }
     const startDate = new Date(formData.startDate);
