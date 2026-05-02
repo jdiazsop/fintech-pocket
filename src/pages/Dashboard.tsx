@@ -172,7 +172,11 @@ export default function Dashboard() {
                   <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                   <span>Cuotas vencidas</span>
                 </div>
-                <p className="text-lg sm:text-2xl font-bold tabular-nums text-red-400">{overdueCount}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums text-red-400 leading-none">{overdueCount}</p>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">cuota{overdueCount === 1 ? "" : "s"}</span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold tabular-nums text-red-400/90 mt-1">{formatCurrency(overdueAmount)}</p>
               </div>
 
               <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border border-orange-500/30">
@@ -180,7 +184,11 @@ export default function Dashboard() {
                   <Clock className="w-3.5 h-3.5 text-orange-400" />
                   <span>Vencen hoy</span>
                 </div>
-                <p className="text-lg sm:text-2xl font-bold tabular-nums text-orange-400">{dueTodayCount}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums text-orange-400 leading-none">{dueTodayCount}</p>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">cuota{dueTodayCount === 1 ? "" : "s"}</span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold tabular-nums text-orange-400/90 mt-1">{formatCurrency(dueTodayAmount)}</p>
               </div>
 
               <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30">
@@ -188,7 +196,11 @@ export default function Dashboard() {
                   <Calendar className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Próximos 7 días</span>
                 </div>
-                <p className="text-lg sm:text-2xl font-bold tabular-nums text-emerald-400">{next7Count}</p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-lg sm:text-2xl font-bold tabular-nums text-emerald-400 leading-none">{next7Count}</p>
+                  <span className="text-[10px] sm:text-xs text-muted-foreground">cuota{next7Count === 1 ? "" : "s"}</span>
+                </div>
+                <p className="text-xs sm:text-sm font-semibold tabular-nums text-emerald-400/90 mt-1">{formatCurrency(next7Amount)}</p>
               </div>
             </div>
           );
