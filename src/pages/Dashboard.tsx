@@ -142,13 +142,20 @@ export default function Dashboard() {
             timeZone: "America/Lima",
             year: "numeric", month: "2-digit", day: "2-digit",
           }).format(new Date());
-          const overdueCount = upcomingInstallments.filter(i => i.due_date.split("T")[0] < todayStr && i.amount_paid < i.amount).length;
-          const dueTodayCount = upcomingInstallments.filter(i => i.due_date.split("T")[0] === todayStr && i.amount_paid < i.amount).length;
-          const next7Count = upcomingInstallments.filter(i => {
+          const overdueItems = upcomingInstallments.filter(i => i.due_date.split("T")[0] < todayStr && i.amount_paid < i.amount);
+          const dueTodayItems = upcomingInstallments.filter(i => i.due_date.split("T")[0] === todayStr && i.amount_paid < i.amount);
+          const next7Items = upcomingInstallments.filter(i => {
             const d = i.due_date.split("T")[0];
             const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
             return diff >= 1 && diff <= 7 && i.amount_paid < i.amount;
-          }).length;
+          });
+          const sumPending = (arr: InstallmentWithLoan[]) => arr.reduce((s, i) => s + (Number(i.amount) - Number(i.amount_paid)), 0);
+          const overdueCount = overdueItems.length;
+          const dueTodayCount = dueTodayItems.length;
+          const next7Count = next7Items.length;
+          const overdueAmount = sumPending(overdueItems);
+          const dueTodayAmount = sumPending(dueTodayItems);
+          const next7Amount = sumPending(next7Items);
 
           return (
             <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
