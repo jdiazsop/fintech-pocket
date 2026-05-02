@@ -540,16 +540,26 @@ export default function NewLoan() {
                       onValueChange={(v) => updateForm("phoneCountryCode", v)}
                       disabled={isContactLocked}
                     >
-                      <SelectTrigger className="bg-muted/50 w-[130px] shrink-0">
-                        <SelectValue />
+                      <SelectTrigger className="bg-muted/50 w-[110px] shrink-0">
+                        <SelectValue>
+                          {(() => {
+                            const c = COUNTRY_CODES.find((x) => x.code === formData.phoneCountryCode);
+                            return c ? (
+                              <span className="flex items-center gap-1.5">
+                                <span className="text-base leading-none">{c.flag}</span>
+                                <span className="text-sm">{c.code}</span>
+                              </span>
+                            ) : null;
+                          })()}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="max-h-72">
                         {COUNTRY_CODES.map((c) => (
                           <SelectItem key={c.iso} value={c.code}>
                             <span className="flex items-center gap-2">
-                              <span>{c.flag}</span>
+                              <span className="text-base leading-none">{c.flag}</span>
+                              <span className="text-sm">{c.name}</span>
                               <span className="text-xs text-muted-foreground">{c.code}</span>
-                              <span className="text-xs">{c.iso}</span>
                             </span>
                           </SelectItem>
                         ))}
