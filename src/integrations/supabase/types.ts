@@ -60,45 +60,66 @@ export type Database = {
       }
       loans: {
         Row: {
+          address: string | null
           amount_lent: number
           amount_returned: number
           amount_to_return: number
           concept: string | null
           created_at: string
+          dni: string | null
+          first_name: string | null
           frequency: string | null
           id: string
+          last_name: string | null
           name: string
           payment_type: string
+          phone_country_code: string | null
+          phone_number: string | null
+          reference: string | null
           start_date: string
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          address?: string | null
           amount_lent: number
           amount_returned?: number
           amount_to_return: number
           concept?: string | null
           created_at?: string
+          dni?: string | null
+          first_name?: string | null
           frequency?: string | null
           id?: string
+          last_name?: string | null
           name: string
           payment_type: string
+          phone_country_code?: string | null
+          phone_number?: string | null
+          reference?: string | null
           start_date: string
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          address?: string | null
           amount_lent?: number
           amount_returned?: number
           amount_to_return?: number
           concept?: string | null
           created_at?: string
+          dni?: string | null
+          first_name?: string | null
           frequency?: string | null
           id?: string
+          last_name?: string | null
           name?: string
           payment_type?: string
+          phone_country_code?: string | null
+          phone_number?: string | null
+          reference?: string | null
           start_date?: string
           status?: string
           updated_at?: string

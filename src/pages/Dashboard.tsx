@@ -38,6 +38,8 @@ interface InstallmentWithLoan {
   status: string;
   loan: {
     name: string;
+    phone_country_code?: string | null;
+    phone_number?: string | null;
   };
 }
 
@@ -73,7 +75,7 @@ export default function Dashboard() {
         .from("installments")
         .select(`
           *,
-          loan:loans(name)
+          loan:loans(name, phone_country_code, phone_number)
         `)
         .in("status", ["pending", "partial"])
         .order("due_date", { ascending: true });
@@ -110,6 +112,7 @@ export default function Dashboard() {
     const map = new Map<string, {
       loanId: string;
       name: string;
+      phone: string;
       overdueInstallments: InstallmentWithLoan[];
       upcomingInstallments: InstallmentWithLoan[];
       totalDue: number;
@@ -121,9 +124,14 @@ export default function Dashboard() {
       const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
       const pending = Number(inst.amount) - Number(inst.amount_paid);
 
+      const cc = (inst.loan?.phone_country_code || "").replace(/\D/g, "");
+      const pn = (inst.loan?.phone_number || "").replace(/\D/g, "");
+      const fullPhone = cc && pn ? `${cc}${pn}` : "";
+
       const existing = map.get(inst.loan_id) || {
         loanId: inst.loan_id,
         name: inst.loan?.name || "Sin nombre",
+        phone: fullPhone,
         overdueInstallments: [],
         upcomingInstallments: [],
         totalDue: 0,
@@ -167,22 +175,21 @@ export default function Dashboard() {
       .join(", ");
   };
 
-  const handleCall = (name: string) => {
-    const phone = window.prompt(`Ingresa el número de teléfono de ${name}:`);
-    if (phone && phone.trim()) {
-      window.location.href = `tel:${phone.trim().replace(/\s/g, "")}`;
+  const handleCall = (group: { name: string; phone: string }) => {
+    const phone = group.phone || (window.prompt(`Ingresa el número de teléfono de ${group.name}:`) || "").replace(/\D/g, "");
+    if (phone) {
+      window.location.href = `tel:+${phone}`;
     }
   };
 
-  const handleWhatsApp = (group: { name: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
-    const phone = window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`);
-    if (phone && phone.trim()) {
-      const cleanPhone = phone.trim().replace(/\D/g, "");
+  const handleWhatsApp = (group: { name: string; phone: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
+    const phone = group.phone || (window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`) || "").replace(/\D/g, "");
+    if (phone) {
       const overdueCount = group.overdueInstallments.length;
       const message = overdueCount > 0
         ? `Hola ${group.name}, te recordamos que tienes ${overdueCount} cuota(s) vencida(s) por un total de ${formatCurrency(group.totalDue)}. ¿Podrías regularizar el pago? Gracias.`
         : `Hola ${group.name}, te recordamos que tienes una cuota próxima a vencer por ${formatCurrency(group.totalDue)}. Gracias.`;
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
     }
   };
 
@@ -393,7 +400,7 @@ export default function Dashboard() {
                       <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
                         {isMobile && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleCall(group.name); }}
+                            onClick={(e) => { e.stopPropagation(); handleCall(group); }}
                             className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium"
                             aria-label={`Llamar a ${group.name}`}
                           >

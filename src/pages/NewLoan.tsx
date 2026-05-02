@@ -1,22 +1,30 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, addWeeks, format } from "date-fns";
 import { es } from "date-fns/locale";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly";
 
 interface LoanFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
+  phoneCountryCode: string;
+  phoneNumber: string;
+  dni: string;
+  address: string;
+  reference: string;
   concept: string;
   startDate: string;
   amountLent: string;
@@ -24,6 +32,17 @@ interface LoanFormData {
   paymentType: PaymentType;
   frequency: Frequency;
   daysOrInstallments: number;
+}
+
+interface ExistingDebtor {
+  name: string;
+  firstName: string;
+  lastName: string;
+  phoneCountryCode: string;
+  phoneNumber: string;
+  dni: string;
+  address: string;
+  reference: string;
 }
 
 const SINGLE_PAYMENT_OPTIONS = [7, 15, 30, 45, 60];
@@ -50,9 +69,9 @@ export default function NewLoan() {
   
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
-  const [existingDebtors, setExistingDebtors] = useState<string[]>([]);
+  const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isNameLocked, setIsNameLocked] = useState(false);
+  const [isContactLocked, setIsContactLocked] = useState(false);
 
   // Get today's date in Lima timezone
   const getTodayInLima = () => {
@@ -60,7 +79,13 @@ export default function NewLoan() {
   };
 
   const [formData, setFormData] = useState<LoanFormData>({
-    name: "",
+    firstName: "",
+    lastName: "",
+    phoneCountryCode: DEFAULT_COUNTRY_CODE,
+    phoneNumber: "",
+    dni: "",
+    address: "",
+    reference: "",
     concept: "",
     startDate: getTodayInLima(),
     amountLent: "",
@@ -70,17 +95,32 @@ export default function NewLoan() {
     daysOrInstallments: 30,
   });
 
-  // Fetch existing debtors
+  // Fetch existing debtors (latest record per name)
   useEffect(() => {
     const fetchDebtors = async () => {
       if (!user) return;
       const { data } = await supabase
         .from("loans")
-        .select("name")
-        .eq("user_id", user.id);
+        .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
       if (data) {
-        const uniqueNames = [...new Set(data.map((l) => l.name))];
-        setExistingDebtors(uniqueNames);
+        const map = new Map<string, ExistingDebtor>();
+        for (const l of data as any[]) {
+          if (!map.has(l.name)) {
+            map.set(l.name, {
+              name: l.name,
+              firstName: l.first_name || "",
+              lastName: l.last_name || "",
+              phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
+              phoneNumber: l.phone_number || "",
+              dni: l.dni || "",
+              address: l.address || "",
+              reference: l.reference || "",
+            });
+          }
+        }
+        setExistingDebtors(Array.from(map.values()));
       }
     };
     fetchDebtors();
@@ -89,14 +129,22 @@ export default function NewLoan() {
   // Filtered debtors for search
   const filteredDebtors = useMemo(() => {
     if (!searchQuery.trim()) return existingDebtors;
-    return existingDebtors.filter((name) =>
-      name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const q = searchQuery.toLowerCase();
+    return existingDebtors.filter((d) => d.name.toLowerCase().includes(q));
   }, [searchQuery, existingDebtors]);
 
-  const handleSelectDebtor = (name: string) => {
-    updateForm("name", name);
-    setIsNameLocked(true);
+  const handleSelectDebtor = (d: ExistingDebtor) => {
+    setFormData((prev) => ({
+      ...prev,
+      firstName: d.firstName || d.name,
+      lastName: d.lastName,
+      phoneCountryCode: d.phoneCountryCode || DEFAULT_COUNTRY_CODE,
+      phoneNumber: d.phoneNumber,
+      dni: d.dni,
+      address: d.address,
+      reference: d.reference,
+    }));
+    setIsContactLocked(true);
     setStep(1);
   };
 
@@ -105,8 +153,20 @@ export default function NewLoan() {
   };
 
   const validateStep1 = () => {
-    if (!formData.name.trim()) {
-      toast({ title: "Error", description: "Ingresa el nombre del deudor", variant: "destructive" });
+    if (!formData.firstName.trim()) {
+      toast({ title: "Error", description: "Ingresa los nombres", variant: "destructive" });
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      toast({ title: "Error", description: "Ingresa los apellidos", variant: "destructive" });
+      return false;
+    }
+    if (!formData.phoneNumber.trim() || !/^\d{6,15}$/.test(formData.phoneNumber.trim())) {
+      toast({ title: "Error", description: "Ingresa un número de celular válido (solo dígitos)", variant: "destructive" });
+      return false;
+    }
+    if (!formData.dni.trim()) {
+      toast({ title: "Error", description: "Ingresa el DNI/CE", variant: "destructive" });
       return false;
     }
     const startDate = new Date(formData.startDate);
@@ -204,19 +264,27 @@ export default function NewLoan() {
     setLoading(true);
 
     try {
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
       // Create loan
       const { data: loan, error: loanError } = await supabase
         .from("loans")
         .insert({
           user_id: user.id,
-          name: formData.name.trim(),
+          name: fullName,
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          phone_country_code: formData.phoneCountryCode,
+          phone_number: formData.phoneNumber.trim(),
+          dni: formData.dni.trim(),
+          address: formData.address.trim() || null,
+          reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
           amount_lent: parseFloat(formData.amountLent),
           amount_to_return: parseFloat(formData.amountToReturn),
           start_date: formData.startDate,
           payment_type: formData.paymentType,
           frequency: formData.paymentType === "installments" ? formData.frequency : null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -236,7 +304,7 @@ export default function NewLoan() {
 
       toast({
         title: "¡Préstamo registrado!",
-        description: `Préstamo a ${formData.name} creado exitosamente`,
+        description: `Préstamo a ${fullName} creado exitosamente`,
       });
 
       navigate("/portfolio");
@@ -277,8 +345,17 @@ export default function NewLoan() {
       setStep(0);
       setContactType(null);
       setSearchQuery("");
-      setIsNameLocked(false);
-      updateForm("name", "");
+      setIsContactLocked(false);
+      setFormData((prev) => ({
+        ...prev,
+        firstName: "",
+        lastName: "",
+        phoneCountryCode: DEFAULT_COUNTRY_CODE,
+        phoneNumber: "",
+        dni: "",
+        address: "",
+        reference: "",
+      }));
     } else {
       setStep(1);
     }
@@ -332,8 +409,17 @@ export default function NewLoan() {
                   <button
                     onClick={() => {
                       setContactType("new");
-                      setIsNameLocked(false);
-                      updateForm("name", "");
+                      setIsContactLocked(false);
+                      setFormData((prev) => ({
+                        ...prev,
+                        firstName: "",
+                        lastName: "",
+                        phoneCountryCode: DEFAULT_COUNTRY_CODE,
+                        phoneNumber: "",
+                        dni: "",
+                        address: "",
+                        reference: "",
+                      }));
                       setStep(1);
                     }}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
@@ -377,14 +463,14 @@ export default function NewLoan() {
                     </div>
                     <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
                       {filteredDebtors.length > 0 ? (
-                        filteredDebtors.map((name) => (
+                        filteredDebtors.map((d) => (
                           <button
-                            key={name}
-                            onClick={() => handleSelectDebtor(name)}
+                            key={d.name}
+                            onClick={() => handleSelectDebtor(d)}
                             className="w-full text-left p-3 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2"
                           >
                             <User className="w-4 h-4 text-muted-foreground" />
-                            <span>{name}</span>
+                            <span>{d.name}</span>
                           </button>
                         ))
                       ) : (
@@ -418,15 +504,114 @@ export default function NewLoan() {
                   <h2 className="font-semibold">Datos del Préstamo</h2>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Nombres *</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Ej: Juan"
+                      value={formData.firstName}
+                      onChange={(e) => updateForm("firstName", e.target.value)}
+                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Apellidos *</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Ej: Pérez"
+                      value={formData.lastName}
+                      onChange={(e) => updateForm("lastName", e.target.value)}
+                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre</Label>
+                  <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Número de celular *
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.phoneCountryCode}
+                      onValueChange={(v) => updateForm("phoneCountryCode", v)}
+                      disabled={isContactLocked}
+                    >
+                      <SelectTrigger className="bg-muted/50 w-[130px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {COUNTRY_CODES.map((c) => (
+                          <SelectItem key={c.iso} value={c.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{c.flag}</span>
+                              <span className="text-xs text-muted-foreground">{c.code}</span>
+                              <span className="text-xs">{c.iso}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="987654321"
+                      value={formData.phoneNumber}
+                      onChange={(e) => updateForm("phoneNumber", e.target.value.replace(/\D/g, ""))}
+                      className={`bg-muted/50 flex-1 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dni" className="flex items-center gap-2">
+                    <IdCard className="w-4 h-4" />
+                    DNI / CE *
+                  </Label>
                   <Input
-                    id="name"
-                    placeholder="Ej: Juan Pérez"
-                    value={formData.name}
-                    onChange={(e) => updateForm("name", e.target.value)}
-                    className={`bg-muted/50 ${isNameLocked ? "opacity-70 cursor-not-allowed" : ""}`}
-                    disabled={isNameLocked}
+                    id="dni"
+                    placeholder="Ej: 12345678"
+                    value={formData.dni}
+                    onChange={(e) => updateForm("dni", e.target.value)}
+                    className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isContactLocked}
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Dirección (Opcional)
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="Ej: Av. Principal 123"
+                    value={formData.address}
+                    onChange={(e) => updateForm("address", e.target.value)}
+                    className="bg-muted/50"
+                    maxLength={200}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reference" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Referencia (Opcional)
+                  </Label>
+                  <Input
+                    id="reference"
+                    placeholder="Ej: Frente al parque"
+                    value={formData.reference}
+                    onChange={(e) => updateForm("reference", e.target.value)}
+                    className="bg-muted/50"
+                    maxLength={200}
                   />
                 </div>
 
