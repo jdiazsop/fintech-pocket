@@ -345,8 +345,17 @@ export default function NewLoan() {
       setStep(0);
       setContactType(null);
       setSearchQuery("");
-      setIsNameLocked(false);
-      updateForm("name", "");
+      setIsContactLocked(false);
+      setFormData((prev) => ({
+        ...prev,
+        firstName: "",
+        lastName: "",
+        phoneCountryCode: DEFAULT_COUNTRY_CODE,
+        phoneNumber: "",
+        dni: "",
+        address: "",
+        reference: "",
+      }));
     } else {
       setStep(1);
     }
