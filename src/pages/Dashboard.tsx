@@ -175,22 +175,21 @@ export default function Dashboard() {
       .join(", ");
   };
 
-  const handleCall = (name: string) => {
-    const phone = window.prompt(`Ingresa el número de teléfono de ${name}:`);
-    if (phone && phone.trim()) {
-      window.location.href = `tel:${phone.trim().replace(/\s/g, "")}`;
+  const handleCall = (group: { name: string; phone: string }) => {
+    const phone = group.phone || (window.prompt(`Ingresa el número de teléfono de ${group.name}:`) || "").replace(/\D/g, "");
+    if (phone) {
+      window.location.href = `tel:+${phone}`;
     }
   };
 
-  const handleWhatsApp = (group: { name: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
-    const phone = window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`);
-    if (phone && phone.trim()) {
-      const cleanPhone = phone.trim().replace(/\D/g, "");
+  const handleWhatsApp = (group: { name: string; phone: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
+    const phone = group.phone || (window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`) || "").replace(/\D/g, "");
+    if (phone) {
       const overdueCount = group.overdueInstallments.length;
       const message = overdueCount > 0
         ? `Hola ${group.name}, te recordamos que tienes ${overdueCount} cuota(s) vencida(s) por un total de ${formatCurrency(group.totalDue)}. ¿Podrías regularizar el pago? Gracias.`
         : `Hola ${group.name}, te recordamos que tienes una cuota próxima a vencer por ${formatCurrency(group.totalDue)}. Gracias.`;
-      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
     }
   };
 
