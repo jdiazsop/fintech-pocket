@@ -301,98 +301,135 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* Upcoming Payments */}
-        <div className="space-y-3 sm:space-y-4">
-
-          {/* Filter Tabs */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("today")}
-              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "today" ? "active" : ""}`}
-            >
-              Hoy
-            </button>
-            <button
-              onClick={() => setFilter("tomorrow")}
-              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "tomorrow" ? "active" : ""}`}
-            >
-              Mañana
-            </button>
+        {/* Cobranzas Prioritarias */}
+        <section className="space-y-3 sm:space-y-4" aria-label="Cobranzas prioritarias">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" />
+              <h2 className="text-sm sm:text-base font-semibold uppercase tracking-wide text-foreground/90 truncate">
+                Cobranzas prioritarias
+              </h2>
+            </div>
+            <Select value={prioritySort} onValueChange={(v) => setPrioritySort(v as PrioritySort)}>
+              <SelectTrigger className="h-8 w-auto min-w-[140px] text-xs bg-card border-border/60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="most_overdue">Más recientes</SelectItem>
+                <SelectItem value="least_overdue">Menos recientes</SelectItem>
+                <SelectItem value="highest_amount">Mayor monto</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Installments List */}
           <div className="space-y-2 sm:space-y-3">
             {loading ? (
               <div className="fintech-card p-6 sm:p-8 text-center">
-                <div className="animate-pulse text-muted-foreground text-sm sm:text-base">Cargando...</div>
+                <div className="animate-pulse text-muted-foreground text-sm">Cargando...</div>
               </div>
-            ) : filteredInstallments.length === 0 ? (
+            ) : priorityGroups.length === 0 ? (
               <div className="fintech-card p-6 sm:p-8 text-center">
                 <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm sm:text-base">
-                  No hay vencimientos para {filter === "today" ? "hoy" : "mañana"}
+                <p className="text-muted-foreground text-sm">
+                  No hay cuotas vencidas ni próximas a vencer
                 </p>
               </div>
             ) : (
-              filteredInstallments.map((inst, index) => (
-                <motion.div
-                  key={inst.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="fintech-card p-3 sm:p-4 cursor-pointer hover:bg-card/80 active:scale-[0.98] transition-all"
-                  onClick={() => navigate(`/loan/${inst.loan_id}`)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm sm:text-base truncate">{inst.loan?.name}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        Cuota pendiente: {formatCurrency(inst.amount - inst.amount_paid)}
-                      </p>
-                    </div>
-                    <StatusBadge
-                      variant={inst.status === "partial" ? "warning" : "default"}
-                      dot
-                      className="flex-shrink-0 text-[10px] sm:text-xs"
+              <>
+                {visibleGroups.map((group, index) => {
+                  const isOverdue = group.overdueInstallments.length > 0;
+                  const totalCuotas = group.overdueInstallments.length + group.upcomingInstallments.length;
+                  const dates = isOverdue
+                    ? formatDueDates(group.overdueInstallments)
+                    : formatDueDates(group.upcomingInstallments);
+
+                  return (
+                    <motion.article
+                      key={group.loanId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                      className={`fintech-card p-3 sm:p-4 border ${
+                        isOverdue ? "border-red-500/30" : "border-orange-500/30"
+                      }`}
                     >
-                      {inst.status === "partial" ? "Parcial" : "Pendiente"}
-                    </StatusBadge>
-                  </div>
-                </motion.div>
-              ))
+                      <button
+                        onClick={() => navigate(`/loan/${group.loanId}`)}
+                        className="w-full text-left active:scale-[0.99] transition-transform"
+                        aria-label={`Ver detalle de ${group.name}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{group.name}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                              {totalCuotas} cuota{totalCuotas === 1 ? "" : "s"}{" "}
+                              {isOverdue ? "vencida" : "próxima"}{totalCuotas === 1 ? "" : "s"} · {formatCurrency(group.totalDue)}
+                            </p>
+                            {dates && (
+                              <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">
+                                {isOverdue ? "Venció" : "Vence"}: {dates}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <p className={`text-base sm:text-lg font-bold tabular-nums ${
+                              isOverdue ? "text-red-400" : "text-orange-400"
+                            }`}>
+                              {formatCurrency(group.totalDue)}
+                            </p>
+                            <StatusBadge
+                              variant={isOverdue ? "danger" : "warning"}
+                              dot
+                              className="text-[10px]"
+                            >
+                              {isOverdue
+                                ? `Vencido${group.maxDaysOverdue > 0 ? ` ${group.maxDaysOverdue}d` : ""}`
+                                : "Próximo"}
+                            </StatusBadge>
+                          </div>
+                        </div>
+                      </button>
+
+                      <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
+                        {isMobile && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCall(group.name); }}
+                            className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium"
+                            aria-label={`Llamar a ${group.name}`}
+                          >
+                            <Phone className="w-4 h-4" />
+                            Llamar
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleWhatsApp(group); }}
+                          className="flex items-center justify-center gap-2 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-sm font-medium text-emerald-400"
+                          aria-label={`Enviar WhatsApp a ${group.name}`}
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          WhatsApp
+                        </button>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+
+                {priorityGroups.length > 5 && (
+                  <button
+                    onClick={() => setShowAllPriority(v => !v)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-border/60 bg-card/40 hover:bg-card/70 active:scale-[0.99] transition-all text-sm font-medium text-muted-foreground"
+                  >
+                    {showAllPriority
+                      ? "Ver menos"
+                      : `Ver más (${priorityGroups.length - 5})`}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showAllPriority ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+              </>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Overdue Loans based on displayStatus */}
-        {(() => {
-          const overdueOrPartialLoans = loans.filter(loan => 
-            loan.displayStatus === "overdue" || loan.displayStatus === "partial"
-          );
-          
-          return overdueOrPartialLoans.length > 0 ? (
-            <div className="space-y-3 sm:space-y-4">
-              <h2 className="text-base sm:text-lg font-semibold text-red-400">Préstamos Vencidos</h2>
-              <div className="space-y-2 sm:space-y-3">
-                {overdueOrPartialLoans.map((loan, index) => (
-                  <LoanCard
-                    key={loan.id}
-                    id={loan.id}
-                    name={loan.name}
-                    concept={loan.concept}
-                    amountLent={loan.amount_lent}
-                    amountToReturn={loan.amount_to_return}
-                    amountReturned={loan.amount_returned}
-                    status={loan.displayStatus}
-                    startDate={loan.start_date}
-                    onClick={() => navigate(`/loan/${loan.id}`)}
-                    delay={index * 0.1}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null;
-        })()}
 
         {/* Empty State */}
         {!loading && loans.length === 0 && (
