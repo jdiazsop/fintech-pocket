@@ -112,6 +112,7 @@ export default function Dashboard() {
     const map = new Map<string, {
       loanId: string;
       name: string;
+      phone: string;
       overdueInstallments: InstallmentWithLoan[];
       upcomingInstallments: InstallmentWithLoan[];
       totalDue: number;
@@ -123,9 +124,14 @@ export default function Dashboard() {
       const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
       const pending = Number(inst.amount) - Number(inst.amount_paid);
 
+      const cc = (inst.loan?.phone_country_code || "").replace(/\D/g, "");
+      const pn = (inst.loan?.phone_number || "").replace(/\D/g, "");
+      const fullPhone = cc && pn ? `${cc}${pn}` : "";
+
       const existing = map.get(inst.loan_id) || {
         loanId: inst.loan_id,
         name: inst.loan?.name || "Sin nombre",
+        phone: fullPhone,
         overdueInstallments: [],
         upcomingInstallments: [],
         totalDue: 0,
