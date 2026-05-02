@@ -400,7 +400,7 @@ export default function Dashboard() {
                       <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
                         {isMobile && (
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleCall(group.name); }}
+                            onClick={(e) => { e.stopPropagation(); handleCall(group); }}
                             className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium"
                             aria-label={`Llamar a ${group.name}`}
                           >
