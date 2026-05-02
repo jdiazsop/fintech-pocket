@@ -1,15 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign } from "lucide-react";
+import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { KPICard } from "@/components/ui/kpi-card";
-import { LoanCard } from "@/components/loans/LoanCard";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { isToday, isTomorrow, parseISO, differenceInCalendarDays } from "date-fns";
-import { calculateLoanDisplayStatus, formatCurrency, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
+import { parseISO, differenceInCalendarDays, format } from "date-fns";
+import { es } from "date-fns/locale";
+import { formatCurrency } from "@/lib/loanUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Loan {
   id: string;
