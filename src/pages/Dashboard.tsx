@@ -1,15 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign } from "lucide-react";
+import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { KPICard } from "@/components/ui/kpi-card";
-import { LoanCard } from "@/components/loans/LoanCard";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { isToday, isTomorrow, parseISO, differenceInCalendarDays } from "date-fns";
-import { calculateLoanDisplayStatus, formatCurrency, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
+import { parseISO, differenceInCalendarDays, format } from "date-fns";
+import { es } from "date-fns/locale";
+import { formatCurrency } from "@/lib/loanUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Loan {
   id: string;
@@ -20,10 +27,6 @@ interface Loan {
   amount_returned: number;
   status: string;
   start_date: string;
-}
-
-interface LoanWithDisplayStatus extends Loan {
-  displayStatus: LoanDisplayStatus;
 }
 
 interface InstallmentWithLoan {
@@ -38,15 +41,17 @@ interface InstallmentWithLoan {
   };
 }
 
-type FilterType = "today" | "tomorrow";
+type PrioritySort = "most_overdue" | "least_overdue" | "highest_amount";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<LoanWithDisplayStatus[]>([]);
+  const isMobile = useIsMobile();
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<InstallmentWithLoan[]>([]);
-  const [filter, setFilter] = useState<FilterType>("today");
   const [loading, setLoading] = useState(true);
+  const [prioritySort, setPrioritySort] = useState<PrioritySort>("most_overdue");
+  const [showAllPriority, setShowAllPriority] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -56,38 +61,14 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch loans
       const { data: loansData, error: loansError } = await supabase
         .from("loans")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (loansError) throw loansError;
+      setLoans(loansData || []);
 
-      // Fetch all installments for these loans
-      const loanIds = (loansData || []).map(l => l.id);
-      const { data: allInstallments, error: allInstError } = await supabase
-        .from("installments")
-        .select("*")
-        .in("loan_id", loanIds);
-
-      if (allInstError) throw allInstError;
-
-      // Calculate display status for each loan
-      const loansWithStatus: LoanWithDisplayStatus[] = (loansData || []).map(loan => {
-        const loanInstallments = (allInstallments || []).filter(i => i.loan_id === loan.id);
-        const displayStatus = calculateLoanDisplayStatus(
-          loan.status,
-          loanInstallments,
-          loan.amount_returned,
-          loan.amount_to_return
-        );
-        return { ...loan, displayStatus };
-      });
-
-      setLoans(loansWithStatus);
-
-      // Fetch upcoming installments
       const { data: installmentsData, error: installmentsError } = await supabase
         .from("installments")
         .select(`
@@ -98,7 +79,7 @@ export default function Dashboard() {
         .order("due_date", { ascending: true });
 
       if (installmentsError) throw installmentsError;
-      setUpcomingInstallments(installmentsData || []);
+      setUpcomingInstallments((installmentsData as InstallmentWithLoan[]) || []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -106,32 +87,104 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate overdue loans based on displayStatus
-  const overdueLoans = loans.filter(loan => loan.displayStatus === "overdue");
-  const overdueTotal = overdueLoans.reduce((sum, loan) =>
+  const totalPending = loans.reduce((sum, loan) =>
     sum + (loan.amount_to_return - loan.amount_returned), 0
   );
 
-  // Calculate KPIs
-  const totalPending = loans.reduce((sum, loan) => 
-    sum + (loan.amount_to_return - loan.amount_returned), 0
-  );
-  // Capital Prestado = suma de (amount_lent - amount_returned) para préstamos activos
-  // Refleja el capital real que aún está circulando
-  const totalLent = loans.reduce((sum, loan) => 
-    sum + Math.max(0, loan.amount_lent - loan.amount_returned), 0
-  );
-  const totalProfit = loans.reduce((sum, loan) => 
-    sum + (loan.amount_to_return - loan.amount_lent), 0
+  const todayStr = useMemo(() =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Lima",
+      year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date()),
+    []
   );
 
-  // Filter installments
-  const filteredInstallments = upcomingInstallments.filter(inst => {
-    const dueDate = parseISO(inst.due_date);
-    if (filter === "today") return isToday(dueDate);
-    if (filter === "tomorrow") return isTomorrow(dueDate);
-    return false;
-  });
+  // Group installments by loan for "Cobranzas prioritarias"
+  const priorityGroups = useMemo(() => {
+    const relevant = upcomingInstallments.filter(i => {
+      const d = i.due_date.split("T")[0];
+      const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
+      return (diff < 0 || (diff >= 0 && diff <= 7)) && Number(i.amount_paid) < Number(i.amount);
+    });
+
+    const map = new Map<string, {
+      loanId: string;
+      name: string;
+      overdueInstallments: InstallmentWithLoan[];
+      upcomingInstallments: InstallmentWithLoan[];
+      totalDue: number;
+      maxDaysOverdue: number;
+    }>();
+
+    relevant.forEach(inst => {
+      const d = inst.due_date.split("T")[0];
+      const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
+      const pending = Number(inst.amount) - Number(inst.amount_paid);
+
+      const existing = map.get(inst.loan_id) || {
+        loanId: inst.loan_id,
+        name: inst.loan?.name || "Sin nombre",
+        overdueInstallments: [],
+        upcomingInstallments: [],
+        totalDue: 0,
+        maxDaysOverdue: -Infinity,
+      };
+
+      if (diff < 0) existing.overdueInstallments.push(inst);
+      else existing.upcomingInstallments.push(inst);
+
+      existing.totalDue += pending;
+      existing.maxDaysOverdue = Math.max(existing.maxDaysOverdue, -diff);
+      map.set(inst.loan_id, existing);
+    });
+
+    const groups = Array.from(map.values());
+
+    groups.sort((a, b) => {
+      const aOver = a.overdueInstallments.length > 0;
+      const bOver = b.overdueInstallments.length > 0;
+      if (aOver !== bOver) return aOver ? -1 : 1;
+      if (prioritySort === "most_overdue") return b.maxDaysOverdue - a.maxDaysOverdue;
+      if (prioritySort === "least_overdue") return a.maxDaysOverdue - b.maxDaysOverdue;
+      if (prioritySort === "highest_amount") return b.totalDue - a.totalDue;
+      return 0;
+    });
+
+    return groups;
+  }, [upcomingInstallments, todayStr, prioritySort]);
+
+  const visibleGroups = showAllPriority ? priorityGroups : priorityGroups.slice(0, 5);
+
+  const formatDueDates = (insts: InstallmentWithLoan[]) => {
+    return insts
+      .slice()
+      .sort((a, b) => a.due_date.localeCompare(b.due_date))
+      .slice(0, 3)
+      .map(i => {
+        const [y, m, d] = i.due_date.split("T")[0].split("-").map(Number);
+        return format(new Date(y, m - 1, d), "dd MMM", { locale: es });
+      })
+      .join(", ");
+  };
+
+  const handleCall = (name: string) => {
+    const phone = window.prompt(`Ingresa el número de teléfono de ${name}:`);
+    if (phone && phone.trim()) {
+      window.location.href = `tel:${phone.trim().replace(/\s/g, "")}`;
+    }
+  };
+
+  const handleWhatsApp = (group: { name: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
+    const phone = window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`);
+    if (phone && phone.trim()) {
+      const cleanPhone = phone.trim().replace(/\D/g, "");
+      const overdueCount = group.overdueInstallments.length;
+      const message = overdueCount > 0
+        ? `Hola ${group.name}, te recordamos que tienes ${overdueCount} cuota(s) vencida(s) por un total de ${formatCurrency(group.totalDue)}. ¿Podrías regularizar el pago? Gracias.`
+        : `Hola ${group.name}, te recordamos que tienes una cuota próxima a vencer por ${formatCurrency(group.totalDue)}. Gracias.`;
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    }
+  };
 
   return (
     <AppLayout>
@@ -248,98 +301,135 @@ export default function Dashboard() {
           );
         })()}
 
-        {/* Upcoming Payments */}
-        <div className="space-y-3 sm:space-y-4">
-
-          {/* Filter Tabs */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setFilter("today")}
-              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "today" ? "active" : ""}`}
-            >
-              Hoy
-            </button>
-            <button
-              onClick={() => setFilter("tomorrow")}
-              className={`chip-button text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 ${filter === "tomorrow" ? "active" : ""}`}
-            >
-              Mañana
-            </button>
+        {/* Cobranzas Prioritarias */}
+        <section className="space-y-3 sm:space-y-4" aria-label="Cobranzas prioritarias">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" />
+              <h2 className="text-sm sm:text-base font-semibold uppercase tracking-wide text-foreground/90 truncate">
+                Cobranzas prioritarias
+              </h2>
+            </div>
+            <Select value={prioritySort} onValueChange={(v) => setPrioritySort(v as PrioritySort)}>
+              <SelectTrigger className="h-8 w-auto min-w-[140px] text-xs bg-card border-border/60">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="most_overdue">Más recientes</SelectItem>
+                <SelectItem value="least_overdue">Menos recientes</SelectItem>
+                <SelectItem value="highest_amount">Mayor monto</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Installments List */}
           <div className="space-y-2 sm:space-y-3">
             {loading ? (
               <div className="fintech-card p-6 sm:p-8 text-center">
-                <div className="animate-pulse text-muted-foreground text-sm sm:text-base">Cargando...</div>
+                <div className="animate-pulse text-muted-foreground text-sm">Cargando...</div>
               </div>
-            ) : filteredInstallments.length === 0 ? (
+            ) : priorityGroups.length === 0 ? (
               <div className="fintech-card p-6 sm:p-8 text-center">
                 <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm sm:text-base">
-                  No hay vencimientos para {filter === "today" ? "hoy" : "mañana"}
+                <p className="text-muted-foreground text-sm">
+                  No hay cuotas vencidas ni próximas a vencer
                 </p>
               </div>
             ) : (
-              filteredInstallments.map((inst, index) => (
-                <motion.div
-                  key={inst.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="fintech-card p-3 sm:p-4 cursor-pointer hover:bg-card/80 active:scale-[0.98] transition-all"
-                  onClick={() => navigate(`/loan/${inst.loan_id}`)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm sm:text-base truncate">{inst.loan?.name}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground">
-                        Cuota pendiente: {formatCurrency(inst.amount - inst.amount_paid)}
-                      </p>
-                    </div>
-                    <StatusBadge
-                      variant={inst.status === "partial" ? "warning" : "default"}
-                      dot
-                      className="flex-shrink-0 text-[10px] sm:text-xs"
+              <>
+                {visibleGroups.map((group, index) => {
+                  const isOverdue = group.overdueInstallments.length > 0;
+                  const totalCuotas = group.overdueInstallments.length + group.upcomingInstallments.length;
+                  const dates = isOverdue
+                    ? formatDueDates(group.overdueInstallments)
+                    : formatDueDates(group.upcomingInstallments);
+
+                  return (
+                    <motion.article
+                      key={group.loanId}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(index * 0.05, 0.3) }}
+                      className={`fintech-card p-3 sm:p-4 border ${
+                        isOverdue ? "border-red-500/30" : "border-orange-500/30"
+                      }`}
                     >
-                      {inst.status === "partial" ? "Parcial" : "Pendiente"}
-                    </StatusBadge>
-                  </div>
-                </motion.div>
-              ))
+                      <button
+                        onClick={() => navigate(`/loan/${group.loanId}`)}
+                        className="w-full text-left active:scale-[0.99] transition-transform"
+                        aria-label={`Ver detalle de ${group.name}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="font-semibold text-sm sm:text-base truncate">{group.name}</h3>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                              {totalCuotas} cuota{totalCuotas === 1 ? "" : "s"}{" "}
+                              {isOverdue ? "vencida" : "próxima"}{totalCuotas === 1 ? "" : "s"} · {formatCurrency(group.totalDue)}
+                            </p>
+                            {dates && (
+                              <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">
+                                {isOverdue ? "Venció" : "Vence"}: {dates}
+                              </p>
+                            )}
+                          </div>
+                          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                            <p className={`text-base sm:text-lg font-bold tabular-nums ${
+                              isOverdue ? "text-red-400" : "text-orange-400"
+                            }`}>
+                              {formatCurrency(group.totalDue)}
+                            </p>
+                            <StatusBadge
+                              variant={isOverdue ? "danger" : "warning"}
+                              dot
+                              className="text-[10px]"
+                            >
+                              {isOverdue
+                                ? `Vencido${group.maxDaysOverdue > 0 ? ` ${group.maxDaysOverdue}d` : ""}`
+                                : "Próximo"}
+                            </StatusBadge>
+                          </div>
+                        </div>
+                      </button>
+
+                      <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
+                        {isMobile && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleCall(group.name); }}
+                            className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium"
+                            aria-label={`Llamar a ${group.name}`}
+                          >
+                            <Phone className="w-4 h-4" />
+                            Llamar
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleWhatsApp(group); }}
+                          className="flex items-center justify-center gap-2 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-sm font-medium text-emerald-400"
+                          aria-label={`Enviar WhatsApp a ${group.name}`}
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          WhatsApp
+                        </button>
+                      </div>
+                    </motion.article>
+                  );
+                })}
+
+                {priorityGroups.length > 5 && (
+                  <button
+                    onClick={() => setShowAllPriority(v => !v)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-lg border border-border/60 bg-card/40 hover:bg-card/70 active:scale-[0.99] transition-all text-sm font-medium text-muted-foreground"
+                  >
+                    {showAllPriority
+                      ? "Ver menos"
+                      : `Ver más (${priorityGroups.length - 5})`}
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showAllPriority ? "rotate-180" : ""}`} />
+                  </button>
+                )}
+              </>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* Overdue Loans based on displayStatus */}
-        {(() => {
-          const overdueOrPartialLoans = loans.filter(loan => 
-            loan.displayStatus === "overdue" || loan.displayStatus === "partial"
-          );
-          
-          return overdueOrPartialLoans.length > 0 ? (
-            <div className="space-y-3 sm:space-y-4">
-              <h2 className="text-base sm:text-lg font-semibold text-red-400">Préstamos Vencidos</h2>
-              <div className="space-y-2 sm:space-y-3">
-                {overdueOrPartialLoans.map((loan, index) => (
-                  <LoanCard
-                    key={loan.id}
-                    id={loan.id}
-                    name={loan.name}
-                    concept={loan.concept}
-                    amountLent={loan.amount_lent}
-                    amountToReturn={loan.amount_to_return}
-                    amountReturned={loan.amount_returned}
-                    status={loan.displayStatus}
-                    startDate={loan.start_date}
-                    onClick={() => navigate(`/loan/${loan.id}`)}
-                    delay={index * 0.1}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null;
-        })()}
 
         {/* Empty State */}
         {!loading && loans.length === 0 && (
