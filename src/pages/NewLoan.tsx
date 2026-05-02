@@ -463,14 +463,14 @@ export default function NewLoan() {
                     </div>
                     <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
                       {filteredDebtors.length > 0 ? (
-                        filteredDebtors.map((name) => (
+                        filteredDebtors.map((d) => (
                           <button
-                            key={name}
-                            onClick={() => handleSelectDebtor(name)}
+                            key={d.name}
+                            onClick={() => handleSelectDebtor(d)}
                             className="w-full text-left p-3 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2"
                           >
                             <User className="w-4 h-4 text-muted-foreground" />
-                            <span>{name}</span>
+                            <span>{d.name}</span>
                           </button>
                         ))
                       ) : (
