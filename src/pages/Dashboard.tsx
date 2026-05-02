@@ -75,7 +75,7 @@ export default function Dashboard() {
         .from("installments")
         .select(`
           *,
-          loan:loans(name)
+          loan:loans(name, phone_country_code, phone_number)
         `)
         .in("status", ["pending", "partial"])
         .order("due_date", { ascending: true });
