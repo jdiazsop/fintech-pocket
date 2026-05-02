@@ -264,19 +264,27 @@ export default function NewLoan() {
     setLoading(true);
 
     try {
+      const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
       // Create loan
       const { data: loan, error: loanError } = await supabase
         .from("loans")
         .insert({
           user_id: user.id,
-          name: formData.name.trim(),
+          name: fullName,
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim(),
+          phone_country_code: formData.phoneCountryCode,
+          phone_number: formData.phoneNumber.trim(),
+          dni: formData.dni.trim(),
+          address: formData.address.trim() || null,
+          reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
           amount_lent: parseFloat(formData.amountLent),
           amount_to_return: parseFloat(formData.amountToReturn),
           start_date: formData.startDate,
           payment_type: formData.paymentType,
           frequency: formData.paymentType === "installments" ? formData.frequency : null,
-        })
+        } as any)
         .select()
         .single();
 
@@ -296,7 +304,7 @@ export default function NewLoan() {
 
       toast({
         title: "¡Préstamo registrado!",
-        description: `Préstamo a ${formData.name} creado exitosamente`,
+        description: `Préstamo a ${fullName} creado exitosamente`,
       });
 
       navigate("/portfolio");
