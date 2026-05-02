@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar } from "lucide-react";
+import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KPICard } from "@/components/ui/kpi-card";
 import { LoanCard } from "@/components/loans/LoanCard";
@@ -136,6 +136,48 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+        {/* Quick Actions CTA */}
+        <motion.section
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          aria-label="Acciones rápidas"
+          className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-card to-card/60 border border-border/60"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="w-4 h-4 text-primary" />
+            <h2 className="text-sm sm:text-base font-semibold">¿Qué quieres hacer?</h2>
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            <button
+              onClick={() => navigate("/new-loan")}
+              aria-label="Registrar nueva operación de préstamo"
+              className="group flex flex-col items-start gap-2 p-3 sm:p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/15 active:scale-[0.98] transition-all text-left"
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
+                <PlusCircle className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-semibold leading-tight">Registrar operación</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Nuevo préstamo</p>
+              </div>
+            </button>
+
+            <button
+              onClick={() => navigate("/portfolio")}
+              aria-label="Registrar un pago en un préstamo existente"
+              className="group flex flex-col items-start gap-2 p-3 sm:p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/15 active:scale-[0.98] transition-all text-left"
+            >
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
+                <BadgeDollarSign className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-semibold leading-tight">Registrar pago</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Cobro de cuota</p>
+              </div>
+            </button>
+          </div>
+        </motion.section>
+
         {/* KPI Cards */}
         {(() => {
           const todayStr = new Intl.DateTimeFormat("en-CA", {
