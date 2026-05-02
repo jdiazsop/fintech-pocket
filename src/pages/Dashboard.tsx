@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles } from "lucide-react";
+import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KPICard } from "@/components/ui/kpi-card";
 import { LoanCard } from "@/components/loans/LoanCard";
