@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles } from "lucide-react";
+import { TrendingUp, AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { KPICard } from "@/components/ui/kpi-card";
 import { LoanCard } from "@/components/loans/LoanCard";
@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { isToday, isTomorrow, parseISO } from "date-fns";
+import { isToday, isTomorrow, parseISO, differenceInCalendarDays } from "date-fns";
 import { calculateLoanDisplayStatus, formatCurrency, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
 
 interface Loan {
@@ -95,8 +95,7 @@ export default function Dashboard() {
           loan:loans(name)
         `)
         .in("status", ["pending", "partial"])
-        .order("due_date", { ascending: true })
-        .limit(20);
+        .order("due_date", { ascending: true });
 
       if (installmentsError) throw installmentsError;
       setUpcomingInstallments(installmentsData || []);
@@ -138,32 +137,55 @@ export default function Dashboard() {
     <AppLayout>
       <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
-          <KPICard
-            title="Por Cobrar"
-            value={formatCurrency(totalPending)}
-            icon={Wallet}
-            variant="default"
-            delay={0.1}
-          />
-          <KPICard
-            title="Capital Prestado"
-            value={formatCurrency(totalLent)}
-            icon={CircleDollarSign}
-            variant="default"
-            delay={0.2}
-          />
-          <div className="col-span-2">
-            <KPICard
-              title="Ganancia Esperada"
-              value={formatCurrency(totalProfit)}
-              subtitle="Intereses devengados"
-              icon={TrendingUp}
-              variant="success"
-              delay={0.3}
-            />
-          </div>
-        </div>
+        {(() => {
+          const todayStr = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/Lima",
+            year: "numeric", month: "2-digit", day: "2-digit",
+          }).format(new Date());
+          const overdueCount = upcomingInstallments.filter(i => i.due_date.split("T")[0] < todayStr && i.amount_paid < i.amount).length;
+          const dueTodayCount = upcomingInstallments.filter(i => i.due_date.split("T")[0] === todayStr && i.amount_paid < i.amount).length;
+          const next7Count = upcomingInstallments.filter(i => {
+            const d = i.due_date.split("T")[0];
+            const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
+            return diff >= 1 && diff <= 7 && i.amount_paid < i.amount;
+          }).length;
+
+          return (
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 md:gap-4">
+              <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/30">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium mb-1">
+                  <Wallet className="w-3.5 h-3.5 text-primary" />
+                  <span>Por cobrar</span>
+                </div>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums text-primary">{formatCurrency(totalPending)}</p>
+              </div>
+
+              <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-red-500/15 to-red-500/5 border border-red-500/30">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium mb-1">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                  <span>Cuotas vencidas</span>
+                </div>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums text-red-400">{overdueCount}</p>
+              </div>
+
+              <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border border-orange-500/30">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium mb-1">
+                  <Clock className="w-3.5 h-3.5 text-orange-400" />
+                  <span>Vencen hoy</span>
+                </div>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums text-orange-400">{dueTodayCount}</p>
+              </div>
+
+              <div className="fintech-card p-3 sm:p-4 bg-gradient-to-br from-emerald-500/15 to-emerald-500/5 border border-emerald-500/30">
+                <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground font-medium mb-1">
+                  <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Próximos 7 días</span>
+                </div>
+                <p className="text-lg sm:text-2xl font-bold tabular-nums text-emerald-400">{next7Count}</p>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Upcoming Payments */}
         <div className="space-y-3 sm:space-y-4">
