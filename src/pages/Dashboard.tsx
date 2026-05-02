@@ -8,7 +8,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { isToday, isTomorrow, parseISO } from "date-fns";
+import { isToday, isTomorrow, parseISO, differenceInCalendarDays } from "date-fns";
 import { calculateLoanDisplayStatus, formatCurrency, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
 
 interface Loan {
