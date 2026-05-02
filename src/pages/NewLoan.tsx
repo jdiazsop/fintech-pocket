@@ -1,22 +1,30 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, addWeeks, format } from "date-fns";
 import { es } from "date-fns/locale";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly";
 
 interface LoanFormData {
-  name: string;
+  firstName: string;
+  lastName: string;
+  phoneCountryCode: string;
+  phoneNumber: string;
+  dni: string;
+  address: string;
+  reference: string;
   concept: string;
   startDate: string;
   amountLent: string;
@@ -24,6 +32,17 @@ interface LoanFormData {
   paymentType: PaymentType;
   frequency: Frequency;
   daysOrInstallments: number;
+}
+
+interface ExistingDebtor {
+  name: string;
+  firstName: string;
+  lastName: string;
+  phoneCountryCode: string;
+  phoneNumber: string;
+  dni: string;
+  address: string;
+  reference: string;
 }
 
 const SINGLE_PAYMENT_OPTIONS = [7, 15, 30, 45, 60];
