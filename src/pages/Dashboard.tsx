@@ -29,10 +29,6 @@ interface Loan {
   start_date: string;
 }
 
-interface LoanWithDisplayStatus extends Loan {
-  displayStatus: LoanDisplayStatus;
-}
-
 interface InstallmentWithLoan {
   id: string;
   loan_id: string;
@@ -45,15 +41,17 @@ interface InstallmentWithLoan {
   };
 }
 
-type FilterType = "today" | "tomorrow";
+type PrioritySort = "most_overdue" | "least_overdue" | "highest_amount";
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<LoanWithDisplayStatus[]>([]);
+  const isMobile = useIsMobile();
+  const [loans, setLoans] = useState<Loan[]>([]);
   const [upcomingInstallments, setUpcomingInstallments] = useState<InstallmentWithLoan[]>([]);
-  const [filter, setFilter] = useState<FilterType>("today");
   const [loading, setLoading] = useState(true);
+  const [prioritySort, setPrioritySort] = useState<PrioritySort>("most_overdue");
+  const [showAllPriority, setShowAllPriority] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -63,38 +61,14 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      // Fetch loans
       const { data: loansData, error: loansError } = await supabase
         .from("loans")
         .select("*")
         .order("created_at", { ascending: false });
 
       if (loansError) throw loansError;
+      setLoans(loansData || []);
 
-      // Fetch all installments for these loans
-      const loanIds = (loansData || []).map(l => l.id);
-      const { data: allInstallments, error: allInstError } = await supabase
-        .from("installments")
-        .select("*")
-        .in("loan_id", loanIds);
-
-      if (allInstError) throw allInstError;
-
-      // Calculate display status for each loan
-      const loansWithStatus: LoanWithDisplayStatus[] = (loansData || []).map(loan => {
-        const loanInstallments = (allInstallments || []).filter(i => i.loan_id === loan.id);
-        const displayStatus = calculateLoanDisplayStatus(
-          loan.status,
-          loanInstallments,
-          loan.amount_returned,
-          loan.amount_to_return
-        );
-        return { ...loan, displayStatus };
-      });
-
-      setLoans(loansWithStatus);
-
-      // Fetch upcoming installments
       const { data: installmentsData, error: installmentsError } = await supabase
         .from("installments")
         .select(`
@@ -105,7 +79,7 @@ export default function Dashboard() {
         .order("due_date", { ascending: true });
 
       if (installmentsError) throw installmentsError;
-      setUpcomingInstallments(installmentsData || []);
+      setUpcomingInstallments((installmentsData as InstallmentWithLoan[]) || []);
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -113,32 +87,104 @@ export default function Dashboard() {
     }
   };
 
-  // Calculate overdue loans based on displayStatus
-  const overdueLoans = loans.filter(loan => loan.displayStatus === "overdue");
-  const overdueTotal = overdueLoans.reduce((sum, loan) =>
+  const totalPending = loans.reduce((sum, loan) =>
     sum + (loan.amount_to_return - loan.amount_returned), 0
   );
 
-  // Calculate KPIs
-  const totalPending = loans.reduce((sum, loan) => 
-    sum + (loan.amount_to_return - loan.amount_returned), 0
-  );
-  // Capital Prestado = suma de (amount_lent - amount_returned) para préstamos activos
-  // Refleja el capital real que aún está circulando
-  const totalLent = loans.reduce((sum, loan) => 
-    sum + Math.max(0, loan.amount_lent - loan.amount_returned), 0
-  );
-  const totalProfit = loans.reduce((sum, loan) => 
-    sum + (loan.amount_to_return - loan.amount_lent), 0
+  const todayStr = useMemo(() =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Lima",
+      year: "numeric", month: "2-digit", day: "2-digit",
+    }).format(new Date()),
+    []
   );
 
-  // Filter installments
-  const filteredInstallments = upcomingInstallments.filter(inst => {
-    const dueDate = parseISO(inst.due_date);
-    if (filter === "today") return isToday(dueDate);
-    if (filter === "tomorrow") return isTomorrow(dueDate);
-    return false;
-  });
+  // Group installments by loan for "Cobranzas prioritarias"
+  const priorityGroups = useMemo(() => {
+    const relevant = upcomingInstallments.filter(i => {
+      const d = i.due_date.split("T")[0];
+      const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
+      return (diff < 0 || (diff >= 0 && diff <= 7)) && Number(i.amount_paid) < Number(i.amount);
+    });
+
+    const map = new Map<string, {
+      loanId: string;
+      name: string;
+      overdueInstallments: InstallmentWithLoan[];
+      upcomingInstallments: InstallmentWithLoan[];
+      totalDue: number;
+      maxDaysOverdue: number;
+    }>();
+
+    relevant.forEach(inst => {
+      const d = inst.due_date.split("T")[0];
+      const diff = differenceInCalendarDays(parseISO(d), parseISO(todayStr));
+      const pending = Number(inst.amount) - Number(inst.amount_paid);
+
+      const existing = map.get(inst.loan_id) || {
+        loanId: inst.loan_id,
+        name: inst.loan?.name || "Sin nombre",
+        overdueInstallments: [],
+        upcomingInstallments: [],
+        totalDue: 0,
+        maxDaysOverdue: -Infinity,
+      };
+
+      if (diff < 0) existing.overdueInstallments.push(inst);
+      else existing.upcomingInstallments.push(inst);
+
+      existing.totalDue += pending;
+      existing.maxDaysOverdue = Math.max(existing.maxDaysOverdue, -diff);
+      map.set(inst.loan_id, existing);
+    });
+
+    const groups = Array.from(map.values());
+
+    groups.sort((a, b) => {
+      const aOver = a.overdueInstallments.length > 0;
+      const bOver = b.overdueInstallments.length > 0;
+      if (aOver !== bOver) return aOver ? -1 : 1;
+      if (prioritySort === "most_overdue") return b.maxDaysOverdue - a.maxDaysOverdue;
+      if (prioritySort === "least_overdue") return a.maxDaysOverdue - b.maxDaysOverdue;
+      if (prioritySort === "highest_amount") return b.totalDue - a.totalDue;
+      return 0;
+    });
+
+    return groups;
+  }, [upcomingInstallments, todayStr, prioritySort]);
+
+  const visibleGroups = showAllPriority ? priorityGroups : priorityGroups.slice(0, 5);
+
+  const formatDueDates = (insts: InstallmentWithLoan[]) => {
+    return insts
+      .slice()
+      .sort((a, b) => a.due_date.localeCompare(b.due_date))
+      .slice(0, 3)
+      .map(i => {
+        const [y, m, d] = i.due_date.split("T")[0].split("-").map(Number);
+        return format(new Date(y, m - 1, d), "dd MMM", { locale: es });
+      })
+      .join(", ");
+  };
+
+  const handleCall = (name: string) => {
+    const phone = window.prompt(`Ingresa el número de teléfono de ${name}:`);
+    if (phone && phone.trim()) {
+      window.location.href = `tel:${phone.trim().replace(/\s/g, "")}`;
+    }
+  };
+
+  const handleWhatsApp = (group: { name: string; totalDue: number; overdueInstallments: InstallmentWithLoan[] }) => {
+    const phone = window.prompt(`Ingresa el número de WhatsApp de ${group.name} (con código de país, ej: 51999999999):`);
+    if (phone && phone.trim()) {
+      const cleanPhone = phone.trim().replace(/\D/g, "");
+      const overdueCount = group.overdueInstallments.length;
+      const message = overdueCount > 0
+        ? `Hola ${group.name}, te recordamos que tienes ${overdueCount} cuota(s) vencida(s) por un total de ${formatCurrency(group.totalDue)}. ¿Podrías regularizar el pago? Gracias.`
+        : `Hola ${group.name}, te recordamos que tienes una cuota próxima a vencer por ${formatCurrency(group.totalDue)}. Gracias.`;
+      window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, "_blank");
+    }
+  };
 
   return (
     <AppLayout>
