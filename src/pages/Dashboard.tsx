@@ -38,6 +38,8 @@ interface InstallmentWithLoan {
   status: string;
   loan: {
     name: string;
+    phone_country_code?: string | null;
+    phone_number?: string | null;
   };
 }
 
