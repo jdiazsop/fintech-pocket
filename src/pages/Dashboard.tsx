@@ -95,8 +95,7 @@ export default function Dashboard() {
           loan:loans(name)
         `)
         .in("status", ["pending", "partial"])
-        .order("due_date", { ascending: true })
-        .limit(20);
+        .order("due_date", { ascending: true });
 
       if (installmentsError) throw installmentsError;
       setUpcomingInstallments(installmentsData || []);
