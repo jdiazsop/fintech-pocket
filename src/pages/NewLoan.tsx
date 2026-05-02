@@ -504,15 +504,114 @@ export default function NewLoan() {
                   <h2 className="font-semibold">Datos del Préstamo</h2>
                 </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">Nombres *</Label>
+                    <Input
+                      id="firstName"
+                      placeholder="Ej: Juan"
+                      value={formData.firstName}
+                      onChange={(e) => updateForm("firstName", e.target.value)}
+                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Apellidos *</Label>
+                    <Input
+                      id="lastName"
+                      placeholder="Ej: Pérez"
+                      value={formData.lastName}
+                      onChange={(e) => updateForm("lastName", e.target.value)}
+                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nombre</Label>
+                  <Label htmlFor="phoneNumber" className="flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Número de celular *
+                  </Label>
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.phoneCountryCode}
+                      onValueChange={(v) => updateForm("phoneCountryCode", v)}
+                      disabled={isContactLocked}
+                    >
+                      <SelectTrigger className="bg-muted/50 w-[130px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {COUNTRY_CODES.map((c) => (
+                          <SelectItem key={c.iso} value={c.code}>
+                            <span className="flex items-center gap-2">
+                              <span>{c.flag}</span>
+                              <span className="text-xs text-muted-foreground">{c.code}</span>
+                              <span className="text-xs">{c.iso}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="phoneNumber"
+                      type="tel"
+                      inputMode="numeric"
+                      placeholder="987654321"
+                      value={formData.phoneNumber}
+                      onChange={(e) => updateForm("phoneNumber", e.target.value.replace(/\D/g, ""))}
+                      className={`bg-muted/50 flex-1 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      disabled={isContactLocked}
+                      maxLength={15}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="dni" className="flex items-center gap-2">
+                    <IdCard className="w-4 h-4" />
+                    DNI / CE *
+                  </Label>
                   <Input
-                    id="name"
-                    placeholder="Ej: Juan Pérez"
-                    value={formData.name}
-                    onChange={(e) => updateForm("name", e.target.value)}
-                    className={`bg-muted/50 ${isNameLocked ? "opacity-70 cursor-not-allowed" : ""}`}
-                    disabled={isNameLocked}
+                    id="dni"
+                    placeholder="Ej: 12345678"
+                    value={formData.dni}
+                    onChange={(e) => updateForm("dni", e.target.value)}
+                    className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isContactLocked}
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    Dirección (Opcional)
+                  </Label>
+                  <Input
+                    id="address"
+                    placeholder="Ej: Av. Principal 123"
+                    value={formData.address}
+                    onChange={(e) => updateForm("address", e.target.value)}
+                    className="bg-muted/50"
+                    maxLength={200}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="reference" className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Referencia (Opcional)
+                  </Label>
+                  <Input
+                    id="reference"
+                    placeholder="Ej: Frente al parque"
+                    value={formData.reference}
+                    onChange={(e) => updateForm("reference", e.target.value)}
+                    className="bg-muted/50"
+                    maxLength={200}
                   />
                 </div>
 
