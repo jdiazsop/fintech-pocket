@@ -409,8 +409,17 @@ export default function NewLoan() {
                   <button
                     onClick={() => {
                       setContactType("new");
-                      setIsNameLocked(false);
-                      updateForm("name", "");
+                      setIsContactLocked(false);
+                      setFormData((prev) => ({
+                        ...prev,
+                        firstName: "",
+                        lastName: "",
+                        phoneCountryCode: DEFAULT_COUNTRY_CODE,
+                        phoneNumber: "",
+                        dni: "",
+                        address: "",
+                        reference: "",
+                      }));
                       setStep(1);
                     }}
                     className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
