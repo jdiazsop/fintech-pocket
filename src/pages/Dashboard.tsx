@@ -196,6 +196,23 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="px-3 sm:px-4 md:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 max-w-4xl mx-auto">
+        {/* Top header with profile access */}
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
+              <Sparkles className="w-4 h-4 text-primary" />
+            </div>
+            <span className="text-sm font-semibold tracking-wide">Credify</span>
+          </div>
+          <button
+            onClick={() => navigate("/profile")}
+            aria-label="Ir a mi perfil"
+            className="w-10 h-10 rounded-full bg-card border border-border/60 hover:border-primary/40 hover:bg-primary/10 active:scale-95 transition-all flex items-center justify-center"
+          >
+            <UserCircle2 className="w-5 h-5 text-foreground/80" />
+          </button>
+        </header>
+
         {/* Quick Actions CTA */}
         <motion.section
           initial={{ opacity: 0, y: -8 }}
