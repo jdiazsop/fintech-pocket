@@ -316,17 +316,50 @@ export default function NewLoan() {
 
       if (installmentsError) throw installmentsError;
 
-      toast({
-        title: "¡Préstamo registrado!",
-        description: `Préstamo a ${fullName} creado exitosamente`,
+      // Upload evidences (best-effort: fail silently per file)
+      if (evidences.length > 0) {
+        for (const ev of evidences) {
+          try {
+            const safeName = ev.file.name.replace(/[^\w.\-]/g, "_");
+            const path = `${user.id}/${loan.id}/${Date.now()}-${safeName}`;
+            const { error: upErr } = await supabase.storage
+              .from("operation-evidences")
+              .upload(path, ev.file, { contentType: ev.file.type, upsert: false });
+            if (upErr) throw upErr;
+            await supabase.from("loan_evidences" as any).insert({
+              loan_id: loan.id,
+              user_id: user.id,
+              file_path: path,
+              file_name: ev.file.name,
+              mime_type: ev.file.type,
+              size_bytes: ev.file.size,
+              category: ev.category || null,
+            });
+          } catch (e) {
+            console.error("Evidence upload failed:", ev.file.name, e);
+          }
+        }
+      }
+
+      setCreatedLoan({
+        id: loan.id,
+        token: (loan as any).confirmation_token,
+        phoneCountryCode: formData.phoneCountryCode,
+        phoneNumber: formData.phoneNumber.trim(),
+        fullName,
       });
 
-      navigate("/portfolio");
+      toast({
+        title: operationType === "sale" ? "¡Venta registrada!" : "¡Préstamo registrado!",
+        description: `Operación de ${fullName} creada exitosamente`,
+      });
+
+      setStep(3);
     } catch (error) {
       console.error("Error creating loan:", error);
       toast({
         title: "Error",
-        description: "No se pudo crear el préstamo. Intenta de nuevo.",
+        description: "No se pudo crear la operación. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
