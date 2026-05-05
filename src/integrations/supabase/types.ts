@@ -58,6 +58,50 @@ export type Database = {
           },
         ]
       }
+      loan_evidences: {
+        Row: {
+          category: string | null
+          created_at: string
+          file_name: string
+          file_path: string
+          id: string
+          loan_id: string
+          mime_type: string
+          size_bytes: number
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          file_name: string
+          file_path: string
+          id?: string
+          loan_id: string
+          mime_type: string
+          size_bytes: number
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          loan_id?: string
+          mime_type?: string
+          size_bytes?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_evidences_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loans: {
         Row: {
           address: string | null
@@ -65,6 +109,10 @@ export type Database = {
           amount_returned: number
           amount_to_return: number
           concept: string | null
+          confirmation_responded_at: string | null
+          confirmation_sent_at: string | null
+          confirmation_status: string
+          confirmation_token: string | null
           created_at: string
           dni: string | null
           first_name: string | null
@@ -87,6 +135,10 @@ export type Database = {
           amount_returned?: number
           amount_to_return: number
           concept?: string | null
+          confirmation_responded_at?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_status?: string
+          confirmation_token?: string | null
           created_at?: string
           dni?: string | null
           first_name?: string | null
@@ -109,6 +161,10 @@ export type Database = {
           amount_returned?: number
           amount_to_return?: number
           concept?: string | null
+          confirmation_responded_at?: string | null
+          confirmation_sent_at?: string | null
+          confirmation_status?: string
+          confirmation_token?: string | null
           created_at?: string
           dni?: string | null
           first_name?: string | null
@@ -204,7 +260,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_loan_by_token: {
+        Args: { _token: string }
+        Returns: {
+          amount_lent: number
+          amount_to_return: number
+          concept: string
+          confirmation_status: string
+          frequency: string
+          id: string
+          name: string
+          num_installments: number
+          payment_type: string
+          start_date: string
+        }[]
+      }
+      respond_loan_confirmation: {
+        Args: { _status: string; _token: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
