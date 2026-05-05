@@ -988,12 +988,14 @@ export default function NewLoan() {
                       <span className="text-muted-foreground">Fecha final:</span>
                       <span className="font-medium">{summary.endDate}</span>
                     </div>
-                    <div className="flex justify-between pt-2 border-t border-border">
-                      <span className="text-muted-foreground">Ganancia:</span>
-                      <span className="font-semibold text-emerald-400">
-                        {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
-                      </span>
-                    </div>
+                    {operationType === "loan" && (
+                      <div className="flex justify-between pt-2 border-t border-border">
+                        <span className="text-muted-foreground">Ganancia:</span>
+                        <span className="font-semibold text-emerald-400">
+                          {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
