@@ -377,7 +377,9 @@ export default function NewLoan() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold">Nuevo Préstamo</h1>
+            <h1 className="text-xl font-bold">
+              {operationType === "sale" ? "Nueva venta al crédito" : "Nuevo préstamo"}
+            </h1>
             <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
           </div>
         </div>
