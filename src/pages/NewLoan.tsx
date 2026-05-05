@@ -288,7 +288,7 @@ export default function NewLoan() {
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
-          amount_lent: parseFloat(formData.amountLent),
+          amount_lent: operationType === "sale" ? parseFloat(formData.amountToReturn) : parseFloat(formData.amountLent),
           amount_to_return: parseFloat(formData.amountToReturn),
           start_date: formData.startDate,
           payment_type: formData.paymentType,
