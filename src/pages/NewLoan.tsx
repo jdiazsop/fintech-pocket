@@ -385,7 +385,7 @@ export default function NewLoan() {
           </button>
           <div>
             <h1 className="text-xl font-bold">
-              {operationType === "sale" ? "Nueva venta al crédito" : "Nuevo préstamo"}
+              Nueva operación
             </h1>
             <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
           </div>
