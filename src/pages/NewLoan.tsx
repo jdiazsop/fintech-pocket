@@ -184,18 +184,25 @@ export default function NewLoan() {
   const validateStep2 = () => {
     const lent = parseFloat(formData.amountLent);
     const toReturn = parseFloat(formData.amountToReturn);
-    
-    if (isNaN(lent) || lent <= 0) {
-      toast({ title: "Error", description: "Ingresa un monto válido a prestar", variant: "destructive" });
-      return false;
-    }
-    if (isNaN(toReturn) || toReturn <= 0) {
-      toast({ title: "Error", description: "Ingresa un monto válido a devolver", variant: "destructive" });
-      return false;
-    }
-    if (toReturn < lent) {
-      toast({ title: "Error", description: "El monto a devolver debe ser mayor o igual al prestado", variant: "destructive" });
-      return false;
+
+    if (operationType === "sale") {
+      if (isNaN(toReturn) || toReturn <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto de venta válido", variant: "destructive" });
+        return false;
+      }
+    } else {
+      if (isNaN(lent) || lent <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto válido a prestar", variant: "destructive" });
+        return false;
+      }
+      if (isNaN(toReturn) || toReturn <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto válido a devolver", variant: "destructive" });
+        return false;
+      }
+      if (toReturn < lent) {
+        toast({ title: "Error", description: "El monto a devolver debe ser mayor o igual al prestado", variant: "destructive" });
+        return false;
+      }
     }
     if (formData.daysOrInstallments <= 0) {
       toast({ title: "Error", description: "Selecciona un plazo válido", variant: "destructive" });
