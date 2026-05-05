@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart, Paperclip, MessageCircle, ShieldCheck, SkipForward } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { addDays, addWeeks, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
+import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
+import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly";
@@ -68,7 +70,10 @@ export default function NewLoan() {
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("loan");
-  
+  const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
+  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
+  const [confirmSent, setConfirmSent] = useState(false);
+
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
   const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
@@ -311,17 +316,50 @@ export default function NewLoan() {
 
       if (installmentsError) throw installmentsError;
 
-      toast({
-        title: "¡Préstamo registrado!",
-        description: `Préstamo a ${fullName} creado exitosamente`,
+      // Upload evidences (best-effort: fail silently per file)
+      if (evidences.length > 0) {
+        for (const ev of evidences) {
+          try {
+            const safeName = ev.file.name.replace(/[^\w.\-]/g, "_");
+            const path = `${user.id}/${loan.id}/${Date.now()}-${safeName}`;
+            const { error: upErr } = await supabase.storage
+              .from("operation-evidences")
+              .upload(path, ev.file, { contentType: ev.file.type, upsert: false });
+            if (upErr) throw upErr;
+            await supabase.from("loan_evidences" as any).insert({
+              loan_id: loan.id,
+              user_id: user.id,
+              file_path: path,
+              file_name: ev.file.name,
+              mime_type: ev.file.type,
+              size_bytes: ev.file.size,
+              category: ev.category || null,
+            });
+          } catch (e) {
+            console.error("Evidence upload failed:", ev.file.name, e);
+          }
+        }
+      }
+
+      setCreatedLoan({
+        id: loan.id,
+        token: (loan as any).confirmation_token,
+        phoneCountryCode: formData.phoneCountryCode,
+        phoneNumber: formData.phoneNumber.trim(),
+        fullName,
       });
 
-      navigate("/portfolio");
+      toast({
+        title: operationType === "sale" ? "¡Venta registrada!" : "¡Préstamo registrado!",
+        description: `Operación de ${fullName} creada exitosamente`,
+      });
+
+      setStep(3);
     } catch (error) {
       console.error("Error creating loan:", error);
       toast({
         title: "Error",
-        description: "No se pudo crear el préstamo. Intenta de nuevo.",
+        description: "No se pudo crear la operación. Intenta de nuevo.",
         variant: "destructive",
       });
     } finally {
@@ -365,12 +403,48 @@ export default function NewLoan() {
         address: "",
         reference: "",
       }));
+    } else if (step === 3) {
+      // Already created — going back skips to portfolio
+      navigate("/portfolio");
     } else {
-      setStep(1);
+      setStep(step - 1);
     }
   };
 
-  const currentStepDisplay = step === 0 ? 1 : step === 1 ? 2 : 3;
+  const handleSendWhatsApp = async () => {
+    if (!createdLoan) return;
+    const summary = getPaymentSummary();
+    const installments = generateInstallments();
+    const lastDue = installments[installments.length - 1].due_date;
+    const amount = parseFloat(formData.amountToReturn);
+    const installmentAmount = installments[0].amount;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
+    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${createdLoan.token}`;
+
+    const message = buildAgreementMessage({
+      name: createdLoan.fullName,
+      operationType,
+      amount,
+      numInstallments: installments.length,
+      installmentAmount,
+      startDate: formData.startDate,
+      endDate: lastDue,
+      paymentType: formData.paymentType,
+      confirmUrl,
+    });
+
+    // Mark as pending confirmation
+    await supabase
+      .from("loans")
+      .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+      .eq("id", createdLoan.id);
+
+    setConfirmSent(true);
+    window.open(buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message), "_blank");
+  };
+
+  const currentStepDisplay = step + 1;
 
   return (
     <AppLayout>
@@ -387,7 +461,7 @@ export default function NewLoan() {
             <h1 className="text-xl font-bold">
               Nueva operación
             </h1>
-            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
+            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 4</p>
           </div>
         </div>
 
@@ -396,6 +470,7 @@ export default function NewLoan() {
           <div className={`h-1 flex-1 rounded-full ${step >= 0 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
@@ -1000,6 +1075,23 @@ export default function NewLoan() {
                 </motion.div>
               )}
 
+              {/* Evidences (optional) */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <Paperclip className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Evidencias y respaldo</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Opcional · recomendado</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Agrega fotos o documentos para respaldar esta operación (recomendado).
+                </p>
+                <EvidenceUploader evidences={evidences} onChange={setEvidences} />
+              </div>
+
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
@@ -1013,6 +1105,58 @@ export default function NewLoan() {
                     {operationType === "sale" ? "Registrar Venta" : "Registrar Préstamo"}
                   </>
                 )}
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Step 3: Send agreement to client */}
+          {step === 3 && createdLoan && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <div className="fintech-card p-5 space-y-3 bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Solicitar confirmación al cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Recomendado para tener respaldo del acuerdo
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Envía un resumen de la operación por WhatsApp. El cliente podrá confirmar o rechazar el acuerdo desde un enlace seguro.
+                </p>
+              </div>
+
+              {confirmSent && (
+                <div className="fintech-card p-3 text-sm text-emerald-400 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Estado actualizado a "Pendiente de confirmación".
+                </div>
+              )}
+
+              <Button
+                onClick={handleSendWhatsApp}
+                className="w-full bg-emerald-500 hover:bg-emerald-500/90"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
+              </Button>
+
+              <Button
+                onClick={() => navigate("/portfolio")}
+                variant="outline"
+                className="w-full"
+              >
+                <SkipForward className="w-4 h-4 mr-2" />
+                {confirmSent ? "Listo, ir a Pagos" : "Omitir por ahora"}
               </Button>
             </motion.div>
           )}

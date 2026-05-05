@@ -25,6 +25,7 @@ interface Loan {
   start_date: string;
   payment_type: string;
   frequency: string | null;
+  confirmation_status?: string | null;
 }
 
 interface Installment {
@@ -417,6 +418,28 @@ export default function LoanDetail() {
             {getStatusLabel(loan.status)}
           </StatusBadge>
         </div>
+
+        {/* Confirmation status */}
+        {loan.confirmation_status && loan.confirmation_status !== "not_sent" && (
+          <div className="flex justify-end">
+            <StatusBadge
+              variant={
+                loan.confirmation_status === "confirmed"
+                  ? "success"
+                  : loan.confirmation_status === "rejected"
+                  ? "danger"
+                  : "warning"
+              }
+              dot
+            >
+              {loan.confirmation_status === "confirmed"
+                ? "Confirmado por el cliente"
+                : loan.confirmation_status === "rejected"
+                ? "Rechazado por el cliente"
+                : "Pendiente de confirmación"}
+            </StatusBadge>
+          </div>
+        )}
 
         {/* Main Card */}
         <motion.div
