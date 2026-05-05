@@ -70,7 +70,10 @@ export default function NewLoan() {
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("loan");
-  
+  const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
+  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
+  const [confirmSent, setConfirmSent] = useState(false);
+
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
   const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
