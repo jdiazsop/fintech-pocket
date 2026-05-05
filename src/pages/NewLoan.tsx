@@ -403,12 +403,48 @@ export default function NewLoan() {
         address: "",
         reference: "",
       }));
+    } else if (step === 3) {
+      // Already created — going back skips to portfolio
+      navigate("/portfolio");
     } else {
-      setStep(1);
+      setStep(step - 1);
     }
   };
 
-  const currentStepDisplay = step === 0 ? 1 : step === 1 ? 2 : 3;
+  const handleSendWhatsApp = async () => {
+    if (!createdLoan) return;
+    const summary = getPaymentSummary();
+    const installments = generateInstallments();
+    const lastDue = installments[installments.length - 1].due_date;
+    const amount = parseFloat(formData.amountToReturn);
+    const installmentAmount = installments[0].amount;
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
+    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${createdLoan.token}`;
+
+    const message = buildAgreementMessage({
+      name: createdLoan.fullName,
+      operationType,
+      amount,
+      numInstallments: installments.length,
+      installmentAmount,
+      startDate: formData.startDate,
+      endDate: lastDue,
+      paymentType: formData.paymentType,
+      confirmUrl,
+    });
+
+    // Mark as pending confirmation
+    await supabase
+      .from("loans")
+      .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+      .eq("id", createdLoan.id);
+
+    setConfirmSent(true);
+    window.open(buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message), "_blank");
+  };
+
+  const currentStepDisplay = step + 1;
 
   return (
     <AppLayout>
@@ -425,7 +461,7 @@ export default function NewLoan() {
             <h1 className="text-xl font-bold">
               Nueva operación
             </h1>
-            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
+            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 4</p>
           </div>
         </div>
 
@@ -434,6 +470,7 @@ export default function NewLoan() {
           <div className={`h-1 flex-1 rounded-full ${step >= 0 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
