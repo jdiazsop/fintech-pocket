@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame } from "lucide-react";
+import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame, UserCircle2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
