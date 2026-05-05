@@ -740,25 +740,9 @@ export default function NewLoan() {
                   <h2 className="font-semibold">Calculadora</h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {operationType === "sale" ? (
                   <div className="space-y-2">
-                    <Label htmlFor="amountLent">Monto Prestado *</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
-                      <Input
-                        id="amountLent"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={formData.amountLent}
-                        onChange={(e) => updateForm("amountLent", e.target.value)}
-                        className="bg-muted/50 pl-9"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amountToReturn">Monto a Devolver *</Label>
+                    <Label htmlFor="amountToReturn">Monto de venta *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
                       <Input
@@ -772,8 +756,46 @@ export default function NewLoan() {
                         className="bg-muted/50 pl-9"
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Monto total que el cliente pagará en cuotas.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amountLent">Monto Prestado *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                        <Input
+                          id="amountLent"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={formData.amountLent}
+                          onChange={(e) => updateForm("amountLent", e.target.value)}
+                          className="bg-muted/50 pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="amountToReturn">Monto a Devolver *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                        <Input
+                          id="amountToReturn"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={formData.amountToReturn}
+                          onChange={(e) => updateForm("amountToReturn", e.target.value)}
+                          className="bg-muted/50 pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Type Toggle */}
                 <div className="space-y-3">
