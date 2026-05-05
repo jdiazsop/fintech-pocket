@@ -1075,6 +1075,23 @@ export default function NewLoan() {
                 </motion.div>
               )}
 
+              {/* Evidences (optional) */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <Paperclip className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Evidencias y respaldo</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Opcional · recomendado</p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Agrega fotos o documentos para respaldar esta operación (recomendado).
+                </p>
+                <EvidenceUploader evidences={evidences} onChange={setEvidences} />
+              </div>
+
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
@@ -1088,6 +1105,58 @@ export default function NewLoan() {
                     {operationType === "sale" ? "Registrar Venta" : "Registrar Préstamo"}
                   </>
                 )}
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Step 3: Send agreement to client */}
+          {step === 3 && createdLoan && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <div className="fintech-card p-5 space-y-3 bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Solicitar confirmación al cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      Recomendado para tener respaldo del acuerdo
+                    </p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Envía un resumen de la operación por WhatsApp. El cliente podrá confirmar o rechazar el acuerdo desde un enlace seguro.
+                </p>
+              </div>
+
+              {confirmSent && (
+                <div className="fintech-card p-3 text-sm text-emerald-400 flex items-center gap-2">
+                  <Check className="w-4 h-4" />
+                  Estado actualizado a "Pendiente de confirmación".
+                </div>
+              )}
+
+              <Button
+                onClick={handleSendWhatsApp}
+                className="w-full bg-emerald-500 hover:bg-emerald-500/90"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
+              </Button>
+
+              <Button
+                onClick={() => navigate("/portfolio")}
+                variant="outline"
+                className="w-full"
+              >
+                <SkipForward className="w-4 h-4 mr-2" />
+                {confirmSent ? "Listo, ir a Pagos" : "Omitir por ahora"}
               </Button>
             </motion.div>
           )}
