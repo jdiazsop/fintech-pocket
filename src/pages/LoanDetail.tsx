@@ -419,6 +419,28 @@ export default function LoanDetail() {
           </StatusBadge>
         </div>
 
+        {/* Confirmation status */}
+        {loan.confirmation_status && loan.confirmation_status !== "not_sent" && (
+          <div className="flex justify-end">
+            <StatusBadge
+              variant={
+                loan.confirmation_status === "confirmed"
+                  ? "success"
+                  : loan.confirmation_status === "rejected"
+                  ? "danger"
+                  : "warning"
+              }
+              dot
+            >
+              {loan.confirmation_status === "confirmed"
+                ? "Confirmado por el cliente"
+                : loan.confirmation_status === "rejected"
+                ? "Rechazado por el cliente"
+                : "Pendiente de confirmación"}
+            </StatusBadge>
+          </div>
+        )}
+
         {/* Main Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
