@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly";
+type OperationType = "loan" | "sale";
 
 interface LoanFormData {
   firstName: string;
@@ -66,6 +67,7 @@ export default function NewLoan() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [operationType, setOperationType] = useState<OperationType>("loan");
   
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
@@ -182,18 +184,25 @@ export default function NewLoan() {
   const validateStep2 = () => {
     const lent = parseFloat(formData.amountLent);
     const toReturn = parseFloat(formData.amountToReturn);
-    
-    if (isNaN(lent) || lent <= 0) {
-      toast({ title: "Error", description: "Ingresa un monto válido a prestar", variant: "destructive" });
-      return false;
-    }
-    if (isNaN(toReturn) || toReturn <= 0) {
-      toast({ title: "Error", description: "Ingresa un monto válido a devolver", variant: "destructive" });
-      return false;
-    }
-    if (toReturn < lent) {
-      toast({ title: "Error", description: "El monto a devolver debe ser mayor o igual al prestado", variant: "destructive" });
-      return false;
+
+    if (operationType === "sale") {
+      if (isNaN(toReturn) || toReturn <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto de venta válido", variant: "destructive" });
+        return false;
+      }
+    } else {
+      if (isNaN(lent) || lent <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto válido a prestar", variant: "destructive" });
+        return false;
+      }
+      if (isNaN(toReturn) || toReturn <= 0) {
+        toast({ title: "Error", description: "Ingresa un monto válido a devolver", variant: "destructive" });
+        return false;
+      }
+      if (toReturn < lent) {
+        toast({ title: "Error", description: "El monto a devolver debe ser mayor o igual al prestado", variant: "destructive" });
+        return false;
+      }
     }
     if (formData.daysOrInstallments <= 0) {
       toast({ title: "Error", description: "Selecciona un plazo válido", variant: "destructive" });
@@ -279,7 +288,7 @@ export default function NewLoan() {
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
-          amount_lent: parseFloat(formData.amountLent),
+          amount_lent: operationType === "sale" ? parseFloat(formData.amountToReturn) : parseFloat(formData.amountLent),
           amount_to_return: parseFloat(formData.amountToReturn),
           start_date: formData.startDate,
           payment_type: formData.paymentType,
@@ -375,7 +384,9 @@ export default function NewLoan() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-bold">Nuevo Préstamo</h1>
+            <h1 className="text-xl font-bold">
+              {operationType === "sale" ? "Nueva venta al crédito" : "Nuevo préstamo"}
+            </h1>
             <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 3</p>
           </div>
         </div>
@@ -495,13 +506,58 @@ export default function NewLoan() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
+              {/* Operation type selector */}
+              <div className="fintech-card p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">Tipo de operación</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de operación">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={operationType === "loan"}
+                    onClick={() => setOperationType("loan")}
+                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
+                      operationType === "loan"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <HandCoins className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight">Préstamo</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">Dinero prestado</p>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={operationType === "sale"}
+                    onClick={() => setOperationType("sale")}
+                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
+                      operationType === "sale"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <ShoppingCart className="w-5 h-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold leading-tight">Venta</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight">Venta al crédito</p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               {/* Step 1: Basic Info */}
               <div className="fintech-card p-5 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-xl bg-primary/20">
                     <User className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="font-semibold">Datos del Préstamo</h2>
+                  <h2 className="font-semibold">
+                    {operationType === "sale" ? "Datos de la venta" : "Datos del préstamo"}
+                  </h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -684,25 +740,9 @@ export default function NewLoan() {
                   <h2 className="font-semibold">Calculadora</h2>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {operationType === "sale" ? (
                   <div className="space-y-2">
-                    <Label htmlFor="amountLent">Monto Prestado *</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
-                      <Input
-                        id="amountLent"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="0.00"
-                        value={formData.amountLent}
-                        onChange={(e) => updateForm("amountLent", e.target.value)}
-                        className="bg-muted/50 pl-9"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="amountToReturn">Monto a Devolver *</Label>
+                    <Label htmlFor="amountToReturn">Monto de venta *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
                       <Input
@@ -716,8 +756,46 @@ export default function NewLoan() {
                         className="bg-muted/50 pl-9"
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      Monto total que el cliente pagará en cuotas.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="amountLent">Monto Prestado *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                        <Input
+                          id="amountLent"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={formData.amountLent}
+                          onChange={(e) => updateForm("amountLent", e.target.value)}
+                          className="bg-muted/50 pl-9"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="amountToReturn">Monto a Devolver *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                        <Input
+                          id="amountToReturn"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={formData.amountToReturn}
+                          onChange={(e) => updateForm("amountToReturn", e.target.value)}
+                          className="bg-muted/50 pl-9"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Type Toggle */}
                 <div className="space-y-3">
@@ -910,12 +988,14 @@ export default function NewLoan() {
                       <span className="text-muted-foreground">Fecha final:</span>
                       <span className="font-medium">{summary.endDate}</span>
                     </div>
-                    <div className="flex justify-between pt-2 border-t border-border">
-                      <span className="text-muted-foreground">Ganancia:</span>
-                      <span className="font-semibold text-emerald-400">
-                        {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
-                      </span>
-                    </div>
+                    {operationType === "loan" && (
+                      <div className="flex justify-between pt-2 border-t border-border">
+                        <span className="text-muted-foreground">Ganancia:</span>
+                        <span className="font-semibold text-emerald-400">
+                          {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -930,7 +1010,7 @@ export default function NewLoan() {
                 ) : (
                   <>
                     <Check className="w-4 h-4 mr-2" />
-                    Registrar Préstamo
+                    {operationType === "sale" ? "Registrar Venta" : "Registrar Préstamo"}
                   </>
                 )}
               </Button>
