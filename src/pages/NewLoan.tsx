@@ -67,6 +67,7 @@ export default function NewLoan() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
+  const [operationType, setOperationType] = useState<OperationType>("loan");
   
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
