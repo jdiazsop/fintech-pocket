@@ -25,6 +25,7 @@ interface Loan {
   start_date: string;
   payment_type: string;
   frequency: string | null;
+  confirmation_status?: string | null;
 }
 
 interface Installment {
