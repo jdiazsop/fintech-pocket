@@ -11,6 +11,7 @@ import Portfolio from "./pages/Portfolio";
 import LoanDetail from "./pages/LoanDetail";
 import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
+import ConfirmAgreement from "./pages/ConfirmAgreement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -110,6 +111,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/confirm/:token" element={<ConfirmAgreement />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
