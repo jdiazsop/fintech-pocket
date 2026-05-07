@@ -72,6 +72,7 @@ export default function NewLoan() {
   const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
   const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
 
   // Step 0 state
   const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
