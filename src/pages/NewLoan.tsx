@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { addDays, addWeeks, format } from "date-fns";
+import { addDays, addWeeks, addMonths, format } from "date-fns";
 import { es } from "date-fns/locale";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 
 type PaymentType = "single" | "installments";
-type Frequency = "daily" | "weekly" | "biweekly";
+type Frequency = "daily" | "weekly" | "biweekly" | "monthly";
 type OperationType = "loan" | "sale";
 
 interface LoanFormData {
@@ -48,9 +48,8 @@ interface ExistingDebtor {
   reference: string;
 }
 
-const SINGLE_PAYMENT_OPTIONS = [7, 15, 30, 45, 60];
-const WEEKLY_OPTIONS = [2, 3, 4, 6, 8, 10, 12];
-const BIWEEKLY_OPTIONS = [2, 3, 4, 6];
+const SINGLE_PAYMENT_OPTIONS = [7, 15, 30];
+const INSTALLMENT_OPTIONS = [2, 3, 4, 6];
 
 const formatCurrency = (value: string) => {
   const num = parseFloat(value);
@@ -251,6 +250,8 @@ export default function NewLoan() {
           dueDate = addDays(startDate, i);
         } else if (formData.frequency === "weekly") {
           dueDate = addWeeks(startDate, i);
+        } else if (formData.frequency === "monthly") {
+          dueDate = addMonths(startDate, i);
         } else {
           dueDate = addDays(startDate, i * 15);
         }
@@ -953,9 +954,9 @@ export default function NewLoan() {
                 {formData.paymentType === "installments" && (
                   <>
                     <div className="space-y-3">
-                      <Label>Frecuencia</Label>
-                      <div className="flex gap-2">
-                        {(["daily", "weekly", "biweekly"] as Frequency[]).map((freq) => (
+                      <Label>Frecuencia de pago</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {(["daily", "weekly", "biweekly", "monthly"] as Frequency[]).map((freq) => (
                           <button
                             key={freq}
                             onClick={() => {
@@ -968,6 +969,7 @@ export default function NewLoan() {
                             {freq === "daily" && "Diario"}
                             {freq === "weekly" && "Semanal"}
                             {freq === "biweekly" && "Quincenal"}
+                            {freq === "monthly" && "Mensual"}
                           </button>
                         ))}
                       </div>
@@ -994,7 +996,7 @@ export default function NewLoan() {
                         />
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {(formData.frequency === "weekly" ? WEEKLY_OPTIONS : BIWEEKLY_OPTIONS).map((num) => (
+                          {INSTALLMENT_OPTIONS.map((num) => (
                             <button
                               key={num}
                               onClick={() => {
