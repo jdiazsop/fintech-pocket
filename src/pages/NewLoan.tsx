@@ -1373,55 +1373,85 @@ export default function NewLoan() {
             );
           })()}
 
-          {/* Step 3: Send agreement to client */}
+          {/* Step 3: Success + send agreement (integrated screen) */}
           {step === 3 && createdLoan && (
             <motion.div
               key="step3"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="space-y-5"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              className="space-y-6"
             >
-              <div className="fintech-card p-5 space-y-3 bg-gradient-to-br from-primary/15 to-primary/5 border-primary/30">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-primary/20">
-                    <ShieldCheck className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-semibold leading-tight">Solicitar confirmación al cliente</h2>
-                    <p className="text-[11px] text-muted-foreground leading-tight">
-                      Recomendado para tener respaldo del acuerdo
-                    </p>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Envía un resumen de la operación por WhatsApp. El cliente podrá confirmar o rechazar el acuerdo desde un enlace seguro.
+              {/* Success state */}
+              <div className="flex flex-col items-center text-center pt-4">
+                <motion.div
+                  initial={{ scale: 0.6, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 220, damping: 16 }}
+                  className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center mb-4"
+                >
+                  <Check className="w-8 h-8 text-emerald-400" strokeWidth={2.5} />
+                </motion.div>
+                <h2 className="text-lg font-semibold">
+                  {operationType === "sale"
+                    ? "Venta al crédito registrada correctamente"
+                    : "Préstamo registrado correctamente"}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1 max-w-xs">
+                  La operación quedó guardada en tu cartera.
                 </p>
               </div>
 
-              {confirmSent && (
-                <div className="fintech-card p-3 text-sm text-emerald-400 flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  Estado actualizado a "Pendiente de confirmación".
+              {/* Recommended next action */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-px flex-1 bg-border/60" />
+                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Siguiente paso
+                  </span>
+                  <div className="h-px flex-1 bg-border/60" />
                 </div>
-              )}
 
-              <Button
-                onClick={handleSendWhatsApp}
-                className="w-full bg-emerald-500 hover:bg-emerald-500/90"
-              >
-                <MessageCircle className="w-4 h-4 mr-2" />
-                {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
-              </Button>
+                <div className="flex items-start gap-3 px-1">
+                  <div className="p-2 rounded-xl bg-primary/15 mt-0.5">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold leading-tight text-sm">
+                      Enviar acuerdo al cliente
+                    </h3>
+                    <p className="text-[13px] text-muted-foreground leading-snug mt-1">
+                      Sirve como respaldo del acuerdo, mejora la trazabilidad y permite que el cliente confirme la operación desde un enlace seguro.
+                    </p>
+                  </div>
+                </div>
 
-              <Button
-                onClick={() => navigate("/portfolio")}
-                variant="outline"
-                className="w-full"
-              >
-                <SkipForward className="w-4 h-4 mr-2" />
-                {confirmSent ? "Listo, ir a Pagos" : "Omitir por ahora"}
-              </Button>
+                {confirmSent && (
+                  <div className="flex items-center gap-2 text-xs text-emerald-400 px-1">
+                    <Check className="w-3.5 h-3.5" />
+                    Estado actualizado a "Pendiente de confirmación".
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-2 pt-1">
+                <Button
+                  onClick={handleSendWhatsApp}
+                  className="w-full bg-emerald-500 hover:bg-emerald-500/90"
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" />
+                  {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
+                </Button>
+
+                <Button
+                  onClick={() => navigate("/portfolio")}
+                  variant="ghost"
+                  className="w-full text-muted-foreground hover:text-foreground"
+                >
+                  {confirmSent ? "Listo, ir a Pagos" : "Omitir por ahora"}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
