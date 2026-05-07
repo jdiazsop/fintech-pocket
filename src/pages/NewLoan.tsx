@@ -1043,90 +1043,92 @@ export default function NewLoan() {
               </div>
 
               {/* Summary */}
-              {summary && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="fintech-card p-4 bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30"
-                >
-                  <h3 className="font-semibold mb-3">Resumen</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Cuotas:</span>
-                      <span className="font-medium">{summary.numInstallments}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Monto por cuota:</span>
-                      <span className="font-medium">{summary.installmentAmount}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Fecha final:</span>
-                      <span className="font-medium">{summary.endDate}</span>
-                    </div>
-                    {operationType === "loan" && (
-                      <div className="flex justify-between pt-2 border-t border-border">
-                        <span className="text-muted-foreground">Ganancia:</span>
-                        <span className="font-semibold text-emerald-400">
-                          {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Próximas cuotas */}
               {summary && (() => {
                 const allInst = generateInstallments();
-                const preview = allInst.slice(0, 3);
-                const remaining = allInst.length - preview.length;
+                const next = allInst[0];
+                const upcoming = allInst.slice(1, 3);
+                const remaining = Math.max(allInst.length - 1 - upcoming.length, 0);
                 return (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 }}
-                    className="fintech-card p-4"
+                    className="fintech-card p-4 bg-gradient-to-br from-primary/20 to-primary/5 border-primary/30"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-sm">Próximas cuotas</h3>
-                      <span className="text-[11px] text-muted-foreground">
-                        {allInst.length} {allInst.length === 1 ? "cuota" : "cuotas"}
-                      </span>
+                    <h3 className="font-semibold mb-3">Resumen</h3>
+
+                    {/* Datos económicos */}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Cuotas:</span>
+                        <span className="font-medium">{summary.numInstallments}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Monto por cuota:</span>
+                        <span className="font-medium">{summary.installmentAmount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Fecha final:</span>
+                        <span className="font-medium">{summary.endDate}</span>
+                      </div>
+                      {operationType === "loan" && (
+                        <div className="flex justify-between pt-2 border-t border-border">
+                          <span className="text-muted-foreground">Ganancia:</span>
+                          <span className="font-semibold text-emerald-400">
+                            {formatCurrency(String(parseFloat(formData.amountToReturn) - parseFloat(formData.amountLent)))}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      {preview.map((inst, idx) => {
-                        const [y, m, d] = inst.due_date.split('-').map(Number);
-                        const date = new Date(y, m - 1, d);
-                        return (
-                          <div
-                            key={inst.number}
-                            className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-muted/40"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/15 text-primary text-xs font-semibold shrink-0">
-                                {inst.number}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium leading-tight capitalize">
-                                  {format(date, "EEE dd MMM", { locale: es })}
-                                </p>
-                                <p className="text-[11px] text-muted-foreground leading-tight">
-                                  {format(date, "yyyy", { locale: es })}
-                                </p>
-                              </div>
+
+                    {/* Próximo pago + cuotas siguientes */}
+                    {next && (() => {
+                      const [ny, nm, nd] = next.due_date.split('-').map(Number);
+                      const nextDate = new Date(ny, nm - 1, nd);
+                      return (
+                        <div className="mt-4 pt-3 border-t border-primary/20">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
+                                Próximo pago
+                              </p>
+                              <p className="text-sm font-medium capitalize leading-tight mt-0.5">
+                                {format(nextDate, "EEE dd MMM yyyy", { locale: es })}
+                              </p>
                             </div>
-                            <span className="text-sm font-semibold tabular-nums">
-                              {formatCurrency(String(inst.amount))}
+                            <span className="text-base font-semibold tabular-nums text-primary">
+                              {formatCurrency(String(next.amount))}
                             </span>
                           </div>
-                        );
-                      })}
-                    </div>
-                    {remaining > 0 && (
-                      <p className="text-xs text-muted-foreground text-center mt-3">
-                        +{remaining} {remaining === 1 ? "cuota más" : "cuotas más"}
-                      </p>
-                    )}
+
+                          {(upcoming.length > 0 || remaining > 0) && (
+                            <div className="mt-3 space-y-1.5">
+                              {upcoming.map((inst) => {
+                                const [y, m, d] = inst.due_date.split('-').map(Number);
+                                const date = new Date(y, m - 1, d);
+                                return (
+                                  <div
+                                    key={inst.number}
+                                    className="flex items-center justify-between text-xs text-muted-foreground"
+                                  >
+                                    <span className="capitalize">
+                                      {format(date, "dd MMM yyyy", { locale: es })}
+                                    </span>
+                                    <span className="tabular-nums">
+                                      {formatCurrency(String(inst.amount))}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                              {remaining > 0 && (
+                                <p className="text-[11px] text-muted-foreground/80 pt-0.5">
+                                  +{remaining} {remaining === 1 ? "cuota más" : "cuotas más"}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 );
               })()}
