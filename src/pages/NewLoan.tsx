@@ -842,39 +842,53 @@ export default function NewLoan() {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="amountLent">Monto Prestado *</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
-                        <Input
-                          id="amountLent"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          value={formData.amountLent}
-                          onChange={(e) => updateForm("amountLent", e.target.value)}
-                          className="bg-muted/50 pl-9"
-                        />
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="amountLent">Monto a prestar *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                          <Input
+                            id="amountLent"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={formData.amountLent}
+                            onChange={(e) => updateForm("amountLent", e.target.value)}
+                            className="bg-muted/50 pl-9"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="amountToReturn">Monto a devolver *</Label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                          <Input
+                            id="amountToReturn"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            placeholder="0.00"
+                            value={formData.amountToReturn}
+                            onChange={(e) => updateForm("amountToReturn", e.target.value)}
+                            className="bg-muted/50 pl-9"
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="amountToReturn">Monto a Devolver *</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
-                        <Input
-                          id="amountToReturn"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          placeholder="0.00"
-                          value={formData.amountToReturn}
-                          onChange={(e) => updateForm("amountToReturn", e.target.value)}
-                          className="bg-muted/50 pl-9"
-                        />
-                      </div>
-                    </div>
+                    {(() => {
+                      const l = parseFloat(formData.amountLent);
+                      const r = parseFloat(formData.amountToReturn);
+                      if (!isNaN(l) && !isNaN(r) && r > 0 && r < l) {
+                        return (
+                          <p className="text-xs text-destructive leading-snug pt-0.5">
+                            El monto a devolver debe ser mayor o igual al monto prestado.
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 )}
 
