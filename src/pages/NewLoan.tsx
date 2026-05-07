@@ -205,7 +205,7 @@ export default function NewLoan() {
         return false;
       }
       if (toReturn < lent) {
-        toast({ title: "Error", description: "El monto a devolver debe ser mayor o igual al prestado", variant: "destructive" });
+        toast({ title: "Revisa los montos", description: "El monto a devolver debe ser mayor o igual al monto prestado.", variant: "destructive" });
         return false;
       }
     }
