@@ -388,6 +388,10 @@ export default function NewLoan() {
   const summary = step === 2 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
 
   const handleBackNavigation = () => {
+    if (reviewing) {
+      setReviewing(false);
+      return;
+    }
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
