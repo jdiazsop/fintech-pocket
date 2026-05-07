@@ -1067,7 +1067,7 @@ export default function NewLoan() {
                         <span className="font-medium">{summary.installmentAmount}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Fecha final:</span>
+                        <span className="text-muted-foreground">Última cuota:</span>
                         <span className="font-medium">{summary.endDate}</span>
                       </div>
                       {operationType === "loan" && (
@@ -1086,18 +1086,23 @@ export default function NewLoan() {
                       const nextDate = new Date(ny, nm - 1, nd);
                       return (
                         <div className="mt-4 pt-3 border-t border-primary/20">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">
-                                Próximo pago
-                              </p>
-                              <p className="text-sm font-medium capitalize leading-tight mt-0.5">
-                                {format(nextDate, "EEE dd MMM yyyy", { locale: es })}
-                              </p>
+                          <div className="rounded-lg bg-primary/10 border border-primary/20 p-3">
+                            <p className="text-[10px] uppercase tracking-wide text-primary/80 font-semibold">
+                              Próxima cuota
+                            </p>
+                            <div className="flex items-end justify-between gap-3 mt-1">
+                              <div className="min-w-0">
+                                <p className="text-xs text-muted-foreground">
+                                  Cuota {next.number}
+                                </p>
+                                <p className="text-base font-semibold capitalize leading-tight mt-0.5">
+                                  {format(nextDate, "EEE dd MMM yyyy", { locale: es })}
+                                </p>
+                              </div>
+                              <span className="text-lg font-bold tabular-nums text-primary">
+                                {formatCurrency(String(next.amount))}
+                              </span>
                             </div>
-                            <span className="text-base font-semibold tabular-nums text-primary">
-                              {formatCurrency(String(next.amount))}
-                            </span>
                           </div>
 
                           {(upcoming.length > 0 || remaining > 0) && (
@@ -1111,7 +1116,7 @@ export default function NewLoan() {
                                     className="flex items-center justify-between text-xs text-muted-foreground"
                                   >
                                     <span className="capitalize">
-                                      {format(date, "dd MMM yyyy", { locale: es })}
+                                      Cuota {inst.number} · {format(date, "dd MMM yyyy", { locale: es })}
                                     </span>
                                     <span className="tabular-nums">
                                       {formatCurrency(String(inst.amount))}
