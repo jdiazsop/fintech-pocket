@@ -1075,6 +1075,62 @@ export default function NewLoan() {
                 </motion.div>
               )}
 
+              {/* Próximas cuotas */}
+              {summary && (() => {
+                const allInst = generateInstallments();
+                const preview = allInst.slice(0, 3);
+                const remaining = allInst.length - preview.length;
+                return (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.05 }}
+                    className="fintech-card p-4"
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-sm">Próximas cuotas</h3>
+                      <span className="text-[11px] text-muted-foreground">
+                        {allInst.length} {allInst.length === 1 ? "cuota" : "cuotas"}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {preview.map((inst, idx) => {
+                        const [y, m, d] = inst.due_date.split('-').map(Number);
+                        const date = new Date(y, m - 1, d);
+                        return (
+                          <div
+                            key={inst.number}
+                            className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-muted/40"
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <div className="flex items-center justify-center w-7 h-7 rounded-full bg-primary/15 text-primary text-xs font-semibold shrink-0">
+                                {inst.number}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium leading-tight capitalize">
+                                  {format(date, "EEE dd MMM", { locale: es })}
+                                </p>
+                                <p className="text-[11px] text-muted-foreground leading-tight">
+                                  {format(date, "yyyy", { locale: es })}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold tabular-nums">
+                              {formatCurrency(String(inst.amount))}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {remaining > 0 && (
+                      <p className="text-xs text-muted-foreground text-center mt-3">
+                        +{remaining} {remaining === 1 ? "cuota más" : "cuotas más"}
+                      </p>
+                    )}
+                  </motion.div>
+                );
+              })()}
+
               {/* Evidences (optional) */}
               <div className="fintech-card p-5 space-y-4">
                 <div className="flex items-center gap-3">
