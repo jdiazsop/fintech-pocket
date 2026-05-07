@@ -1159,21 +1159,215 @@ export default function NewLoan() {
               </div>
 
               <Button
-                onClick={handleSubmit}
+                onClick={() => {
+                  if (validateStep2()) {
+                    setReviewing(true);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }
+                }}
                 disabled={loading}
                 className="w-full bg-primary hover:bg-primary/90"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <Check className="w-4 h-4 mr-2" />
-                    {operationType === "sale" ? "Registrar Venta" : "Registrar Préstamo"}
-                  </>
-                )}
+                Continuar
+                <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </motion.div>
           )}
+
+          {/* Step 2.5: Review before registering */}
+          {step === 2 && reviewing && (() => {
+            const allInst = generateInstallments();
+            const next = allInst[0];
+            const last = allInst[allInst.length - 1];
+            const upcoming = allInst.slice(1, 3);
+            const remaining = Math.max(allInst.length - 1 - upcoming.length, 0);
+            const fullName = `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim();
+            const total = parseFloat(formData.amountToReturn || "0");
+            const lent = parseFloat(formData.amountLent || "0");
+            const profit = total - lent;
+            const parseLocal = (s: string) => {
+              const [y, m, d] = s.split("-").map(Number);
+              return new Date(y, m - 1, d);
+            };
+            const paymentLabel =
+              formData.paymentType === "single"
+                ? `Pago único en ${formData.daysOrInstallments} días`
+                : `${formData.daysOrInstallments} cuotas · ${
+                    { daily: "Diario", weekly: "Semanal", biweekly: "Quincenal", monthly: "Mensual" }[
+                      formData.frequency
+                    ]
+                  }`;
+
+            const Row = ({
+              label,
+              value,
+              onEdit,
+              accent,
+            }: {
+              label: string;
+              value: React.ReactNode;
+              onEdit?: () => void;
+              accent?: boolean;
+            }) => (
+              <div className="flex items-start justify-between gap-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <div className={`text-sm mt-0.5 ${accent ? "font-semibold text-primary" : "font-medium"}`}>
+                    {value}
+                  </div>
+                </div>
+                {onEdit && (
+                  <button
+                    onClick={onEdit}
+                    className="text-[11px] font-semibold text-primary hover:underline shrink-0 mt-1"
+                  >
+                    Editar
+                  </button>
+                )}
+              </div>
+            );
+
+            return (
+              <motion.div
+                key="review"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -12 }}
+                className="space-y-5"
+              >
+                <div className="fintech-card p-5 space-y-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-xl bg-primary/20">
+                      <ShieldCheck className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold leading-tight">Revisión de la operación</h2>
+                      <p className="text-[11px] text-muted-foreground leading-tight">
+                        Verifica los datos antes de registrar
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="divide-y divide-border/60">
+                    <Row
+                      label="Cliente"
+                      value={fullName || "—"}
+                      onEdit={() => {
+                        setReviewing(false);
+                        setStep(1);
+                      }}
+                    />
+                    <Row
+                      label="Tipo de operación"
+                      value={operationType === "sale" ? "Venta al crédito" : "Préstamo"}
+                    />
+                    {operationType === "loan" ? (
+                      <Row
+                        label="Monto"
+                        value={
+                          <span>
+                            {formatCurrency(formData.amountLent)}{" "}
+                            <span className="text-muted-foreground font-normal">→</span>{" "}
+                            {formatCurrency(formData.amountToReturn)}
+                          </span>
+                        }
+                        onEdit={() => setReviewing(false)}
+                      />
+                    ) : (
+                      <Row
+                        label="Monto"
+                        value={formatCurrency(formData.amountToReturn)}
+                        onEdit={() => setReviewing(false)}
+                      />
+                    )}
+                    <Row label="Forma de pago" value={paymentLabel} onEdit={() => setReviewing(false)} />
+                    {next && (
+                      <Row
+                        label="Próxima cuota"
+                        accent
+                        value={
+                          <span className="capitalize">
+                            {format(parseLocal(next.due_date), "EEE dd MMM yyyy", { locale: es })} ·{" "}
+                            {formatCurrency(String(next.amount))}
+                          </span>
+                        }
+                      />
+                    )}
+                    {last && (
+                      <Row
+                        label="Última cuota"
+                        value={
+                          <span className="capitalize">
+                            {format(parseLocal(last.due_date), "dd MMM yyyy", { locale: es })}
+                          </span>
+                        }
+                      />
+                    )}
+                    {operationType === "loan" && !isNaN(profit) && (
+                      <Row
+                        label="Ganancia"
+                        value={
+                          <span className="text-emerald-400 font-semibold">{formatCurrency(String(profit))}</span>
+                        }
+                      />
+                    )}
+                  </div>
+
+                  {/* Cronograma resumido */}
+                  {(upcoming.length > 0 || remaining > 0) && (
+                    <div className="mt-3 pt-3 border-t border-border/60">
+                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+                        Cronograma
+                      </p>
+                      <div className="space-y-1.5">
+                        {upcoming.map((inst) => (
+                          <div
+                            key={inst.number}
+                            className="flex items-center justify-between text-xs text-muted-foreground"
+                          >
+                            <span className="capitalize">
+                              Cuota {inst.number} · {format(parseLocal(inst.due_date), "dd MMM yyyy", { locale: es })}
+                            </span>
+                            <span className="tabular-nums">{formatCurrency(String(inst.amount))}</span>
+                          </div>
+                        ))}
+                        {remaining > 0 && (
+                          <p className="text-[11px] text-muted-foreground/80">
+                            +{remaining} {remaining === 1 ? "cuota más" : "cuotas más"}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="w-full bg-primary hover:bg-primary/90"
+                >
+                  {loading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      Confirmar y registrar
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={() => setReviewing(false)}
+                  variant="outline"
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Volver a editar
+                </Button>
+              </motion.div>
+            );
+          })()}
 
           {/* Step 3: Send agreement to client */}
           {step === 3 && createdLoan && (
