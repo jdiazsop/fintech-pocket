@@ -800,7 +800,7 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {step === 2 && (
+          {step === 2 && !reviewing && (
             <motion.div
               key="step2"
               initial={{ opacity: 0, x: 20 }}
