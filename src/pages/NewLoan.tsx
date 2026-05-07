@@ -954,9 +954,9 @@ export default function NewLoan() {
                 {formData.paymentType === "installments" && (
                   <>
                     <div className="space-y-3">
-                      <Label>Frecuencia</Label>
-                      <div className="flex gap-2">
-                        {(["daily", "weekly", "biweekly"] as Frequency[]).map((freq) => (
+                      <Label>Frecuencia de pago</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {(["daily", "weekly", "biweekly", "monthly"] as Frequency[]).map((freq) => (
                           <button
                             key={freq}
                             onClick={() => {
@@ -969,6 +969,7 @@ export default function NewLoan() {
                             {freq === "daily" && "Diario"}
                             {freq === "weekly" && "Semanal"}
                             {freq === "biweekly" && "Quincenal"}
+                            {freq === "monthly" && "Mensual"}
                           </button>
                         ))}
                       </div>
@@ -995,7 +996,7 @@ export default function NewLoan() {
                         />
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {(formData.frequency === "weekly" ? WEEKLY_OPTIONS : BIWEEKLY_OPTIONS).map((num) => (
+                          {INSTALLMENT_OPTIONS.map((num) => (
                             <button
                               key={num}
                               onClick={() => {
