@@ -546,6 +546,27 @@ export default function LoanDetail() {
           </div>
         )}
 
+        {/* Modify Operation */}
+        <Button
+          variant="outline"
+          onClick={() => setEditOpOpen(true)}
+          className="w-full"
+        >
+          <FileEdit className="w-4 h-4 mr-2" />
+          Modificar operación
+        </Button>
+
+        <EditOperationDialog
+          open={editOpOpen}
+          onOpenChange={setEditOpOpen}
+          loanId={loan.id}
+          clientName={loan.name}
+          phoneCountryCode={loan.phone_country_code}
+          phoneNumber={loan.phone_number}
+          initial={{ concept: loan.concept }}
+          onSaved={fetchLoanData}
+        />
+
         {/* Delete Button */}
         <AlertDialog>
           <AlertDialogTrigger asChild>
