@@ -63,6 +63,8 @@ const formatCurrency = (value: string) => {
 
 export default function NewLoan() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNewClientFlow = searchParams.get("newClient") === "1";
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(0);
