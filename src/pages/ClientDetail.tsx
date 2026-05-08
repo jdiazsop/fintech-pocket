@@ -15,9 +15,11 @@ import {
   Plus,
   Calendar,
   User as UserIcon,
+  Pencil,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -46,6 +48,10 @@ interface Loan {
   phone_country_code: string | null;
   phone_number: string | null;
   dni: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  address: string | null;
+  reference: string | null;
 }
 
 interface Installment {
@@ -70,6 +76,7 @@ export default function ClientDetail() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (user) fetchData();
@@ -232,7 +239,32 @@ export default function ClientDetail() {
               {client.dni ? `DNI ${client.dni}` : fullPhone ? `+${fullPhone}` : "Sin contacto"}
             </p>
           </div>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="p-2 rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors flex items-center gap-1.5 text-xs font-medium"
+            aria-label="Editar cliente"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Editar
+          </button>
         </motion.div>
+
+        <EditClientDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          loanIds={loans.map((l) => l.id)}
+          initial={{
+            name: client.name,
+            first_name: client.first_name,
+            last_name: client.last_name,
+            dni: client.dni,
+            phone_country_code: client.phone_country_code,
+            phone_number: client.phone_number,
+            address: client.address,
+            reference: client.reference,
+          }}
+          onSaved={fetchData}
+        />
 
         {/* Resumen general */}
         <motion.section

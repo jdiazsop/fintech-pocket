@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff, FileEdit } from "lucide-react";
+import { EditOperationDialog } from "@/components/clients/EditOperationDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ interface Loan {
   payment_type: string;
   frequency: string | null;
   confirmation_status?: string | null;
+  phone_country_code?: string | null;
+  phone_number?: string | null;
 }
 
 interface Installment {
@@ -205,6 +208,7 @@ export default function LoanDetail() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
+  const [editOpOpen, setEditOpOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchLoanData();
@@ -541,6 +545,27 @@ export default function LoanDetail() {
             </div>
           </div>
         )}
+
+        {/* Modify Operation */}
+        <Button
+          variant="outline"
+          onClick={() => setEditOpOpen(true)}
+          className="w-full"
+        >
+          <FileEdit className="w-4 h-4 mr-2" />
+          Modificar operación
+        </Button>
+
+        <EditOperationDialog
+          open={editOpOpen}
+          onOpenChange={setEditOpOpen}
+          loanId={loan.id}
+          clientName={loan.name}
+          phoneCountryCode={loan.phone_country_code}
+          phoneNumber={loan.phone_number}
+          initial={{ concept: loan.concept }}
+          onSaved={fetchLoanData}
+        />
 
         {/* Delete Button */}
         <AlertDialog>
