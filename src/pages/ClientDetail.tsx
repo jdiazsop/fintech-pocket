@@ -239,7 +239,32 @@ export default function ClientDetail() {
               {client.dni ? `DNI ${client.dni}` : fullPhone ? `+${fullPhone}` : "Sin contacto"}
             </p>
           </div>
+          <button
+            onClick={() => setEditOpen(true)}
+            className="p-2 rounded-lg border border-border bg-card hover:bg-accent/40 transition-colors flex items-center gap-1.5 text-xs font-medium"
+            aria-label="Editar cliente"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Editar
+          </button>
         </motion.div>
+
+        <EditClientDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          loanIds={loans.map((l) => l.id)}
+          initial={{
+            name: client.name,
+            first_name: client.first_name,
+            last_name: client.last_name,
+            dni: client.dni,
+            phone_country_code: client.phone_country_code,
+            phone_number: client.phone_number,
+            address: client.address,
+            reference: client.reference,
+          }}
+          onSaved={fetchData}
+        />
 
         {/* Resumen general */}
         <motion.section
