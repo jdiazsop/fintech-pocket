@@ -15,9 +15,11 @@ import {
   Plus,
   Calendar,
   User as UserIcon,
+  Pencil,
 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
