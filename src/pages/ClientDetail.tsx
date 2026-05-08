@@ -76,6 +76,7 @@ export default function ClientDetail() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => {
     if (user) fetchData();
