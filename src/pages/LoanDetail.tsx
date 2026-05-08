@@ -208,6 +208,7 @@ export default function LoanDetail() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [savingPayment, setSavingPayment] = useState(false);
+  const [editOpOpen, setEditOpOpen] = useState(false);
 
   useEffect(() => {
     if (id) fetchLoanData();
