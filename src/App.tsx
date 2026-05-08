@@ -97,6 +97,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/client/:key"
+        element={
+          <ProtectedRoute>
+            <ClientDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/profile"
         element={
           <ProtectedRoute>
