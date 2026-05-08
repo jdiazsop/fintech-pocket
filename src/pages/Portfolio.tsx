@@ -209,9 +209,11 @@ export default function Portfolio() {
   };
 
   const openClient = (c: ClientCard) => {
-    // Si tiene una sola operación va al detalle de esa operación.
-    // Si tiene varias, abre la primera (siguiente paso: vista detallada de cliente).
-    navigate(`/loan/${c.loans[0].id}`);
+    if (c.loans.length === 1) {
+      navigate(`/loan/${c.loans[0].id}`);
+    } else {
+      navigate(`/client/${encodeURIComponent(c.key)}`);
+    }
   };
 
   const statusVisual = (s: ClientStatus) => {

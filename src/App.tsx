@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import NewLoan from "./pages/NewLoan";
 import Portfolio from "./pages/Portfolio";
 import LoanDetail from "./pages/LoanDetail";
+import ClientDetail from "./pages/ClientDetail";
 import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
 import ConfirmAgreement from "./pages/ConfirmAgreement";
@@ -92,6 +93,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <LoanDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/client/:key"
+        element={
+          <ProtectedRoute>
+            <ClientDetail />
           </ProtectedRoute>
         }
       />
