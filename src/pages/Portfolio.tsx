@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Filter, SortDesc, Wallet, Plus } from "lucide-react";
+import { Search, Users, Plus, MessageCircle, Phone, ChevronRight, AlertTriangle, Clock, CheckCircle2, MailQuestion, Wallet, ShoppingBag } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { LoanCard } from "@/components/loans/LoanCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { calculateLoanDisplayStatus, LoanDisplayStatus, Installment } from "@/lib/loanUtils";
+import { formatCurrency, getTodayInLima } from "@/lib/loanUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface Loan {
   id: string;
@@ -20,112 +21,215 @@ interface Loan {
   status: string;
   start_date: string;
   created_at: string;
+  confirmation_status: string | null;
+  phone_country_code: string | null;
+  phone_number: string | null;
+  dni: string | null;
 }
 
-interface LoanWithInstallments extends Loan {
-  installments: Installment[];
-  displayStatus: LoanDisplayStatus;
+interface Installment {
+  id: string;
+  loan_id: string;
+  number: number;
+  due_date: string;
+  amount: number;
+  amount_paid: number;
+  status: string;
 }
 
-type StatusFilter = "all" | "on_time" | "overdue" | "paid";
-type SortOption = "recent" | "amount";
+type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time";
+
+interface ClientCard {
+  key: string;
+  displayName: string;
+  phone: string;
+  loans: Loan[];
+  totalPending: number;
+  overdueInstallments: number;
+  nextDueDate: string | null;
+  daysToNext: number | null;
+  pendingConfirm: boolean;
+  status: ClientStatus;
+}
+
+type FilterKey = "all" | "overdue" | "upcoming" | "pending_confirm" | "highest";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "Todos" },
+  { key: "overdue", label: "Con atraso" },
+  { key: "upcoming", label: "Próximos vencimientos" },
+  { key: "pending_confirm", label: "Pend. de confirmación" },
+  { key: "highest", label: "Mayor deuda" },
+];
 
 export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [loans, setLoans] = useState<LoanWithInstallments[]>([]);
+  const isMobile = useIsMobile();
+  const [loans, setLoans] = useState<Loan[]>([]);
+  const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [sortOption, setSortOption] = useState<SortOption>("recent");
-  const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   useEffect(() => {
-    if (user) {
-      fetchLoans();
-    }
+    if (user) fetchData();
   }, [user]);
 
-  const fetchLoans = async () => {
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      // Fetch loans with their installments
-      const { data: loansData, error: loansError } = await supabase
+      const { data: loansData } = await supabase
         .from("loans")
         .select("*")
         .order("created_at", { ascending: false });
+      setLoans((loansData as Loan[]) || []);
 
-      if (loansError) throw loansError;
-
-      // Fetch all installments for these loans
-      const loanIds = (loansData || []).map(l => l.id);
-      const { data: installmentsData, error: installmentsError } = await supabase
-        .from("installments")
-        .select("*")
-        .in("loan_id", loanIds);
-
-      if (installmentsError) throw installmentsError;
-
-      // Map loans with their installments and calculate display status
-      const loansWithStatus: LoanWithInstallments[] = (loansData || []).map(loan => {
-        const loanInstallments = (installmentsData || []).filter(i => i.loan_id === loan.id);
-        const displayStatus = calculateLoanDisplayStatus(
-          loan.status,
-          loanInstallments,
-          loan.amount_returned,
-          loan.amount_to_return
-        );
-        return {
-          ...loan,
-          installments: loanInstallments,
-          displayStatus
-        };
-      });
-
-      setLoans(loansWithStatus);
-    } catch (error) {
-      console.error("Error fetching loans:", error);
+      const ids = (loansData || []).map((l) => l.id);
+      if (ids.length) {
+        const { data: instData } = await supabase
+          .from("installments")
+          .select("*")
+          .in("loan_id", ids);
+        setInstallments((instData as Installment[]) || []);
+      }
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter and sort loans
-  const filteredLoans = loans
-    .filter((loan) => {
-      // Search filter
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        if (!loan.name.toLowerCase().includes(query) &&
-            !loan.concept?.toLowerCase().includes(query)) {
-          return false;
-        }
-      }
-      // Status filter - now based on displayStatus
-      if (statusFilter !== "all" && loan.displayStatus !== statusFilter) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      if (sortOption === "recent") {
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  const clients = useMemo<ClientCard[]>(() => {
+    const today = getTodayInLima();
+    const map = new Map<string, ClientCard>();
+
+    loans.forEach((l) => {
+      const key = (l.dni || l.phone_number || l.name || "").trim().toLowerCase() || l.id;
+      const pending = Number(l.amount_to_return) - Number(l.amount_returned);
+      const cc = (l.phone_country_code || "").replace(/\D/g, "");
+      const pn = (l.phone_number || "").replace(/\D/g, "");
+      const fullPhone = cc && pn ? `${cc}${pn}` : "";
+
+      const existing = map.get(key);
+      if (existing) {
+        existing.loans.push(l);
+        existing.totalPending += pending;
+        if (!existing.phone && fullPhone) existing.phone = fullPhone;
       } else {
-        const pendingA = a.amount_to_return - a.amount_returned;
-        const pendingB = b.amount_to_return - b.amount_returned;
-        return pendingB - pendingA;
+        map.set(key, {
+          key,
+          displayName: l.name,
+          phone: fullPhone,
+          loans: [l],
+          totalPending: pending,
+          overdueInstallments: 0,
+          nextDueDate: null,
+          daysToNext: null,
+          pendingConfirm: false,
+          status: "on_time",
+        });
       }
     });
 
-  const statusOptions: { value: StatusFilter; label: string }[] = [
-    { value: "all", label: "Todos" },
-    { value: "on_time", label: "Al día" },
-    { value: "overdue", label: "Vencidos" },
-    { value: "paid", label: "Pagados" },
-  ];
+    // Aggregate installments per client
+    map.forEach((client) => {
+      const loanIds = new Set(client.loans.map((l) => l.id));
+      const clientInsts = installments.filter((i) => loanIds.has(i.loan_id));
+      let nextDate: string | null = null;
+      let overdue = 0;
+      clientInsts.forEach((i) => {
+        const isPaid = Number(i.amount_paid) >= Number(i.amount);
+        if (isPaid) return;
+        const d = i.due_date.split("T")[0];
+        if (d < today) overdue++;
+        if (!nextDate || d < nextDate) nextDate = d;
+      });
+      client.overdueInstallments = overdue;
+      client.nextDueDate = nextDate;
+      client.daysToNext = nextDate ? differenceInCalendarDays(parseISO(nextDate), parseISO(today)) : null;
+
+      client.pendingConfirm = client.loans.some(
+        (l) => l.confirmation_status && !["confirmed", "rejected", "not_sent"].includes(l.confirmation_status),
+      );
+
+      const allPaid = client.totalPending <= 0;
+      if (allPaid) client.status = "on_time";
+      else if (overdue > 0) client.status = "overdue";
+      else if (client.daysToNext !== null && client.daysToNext <= 7) client.status = "upcoming";
+      else if (client.pendingConfirm) client.status = "pending_confirm";
+      else client.status = "on_time";
+    });
+
+    let arr = Array.from(map.values());
+
+    // Filter by search
+    const q = search.trim().toLowerCase();
+    if (q) arr = arr.filter((c) => c.displayName.toLowerCase().includes(q));
+
+    // Filter by chip
+    if (filter === "overdue") arr = arr.filter((c) => c.overdueInstallments > 0);
+    else if (filter === "upcoming") arr = arr.filter((c) => c.status === "upcoming");
+    else if (filter === "pending_confirm") arr = arr.filter((c) => c.pendingConfirm);
+
+    // Sort
+    if (filter === "highest") {
+      arr.sort((a, b) => b.totalPending - a.totalPending);
+    } else {
+      arr.sort((a, b) => {
+        const rank = (s: ClientStatus) =>
+          s === "overdue" ? 0 : s === "upcoming" ? 1 : s === "pending_confirm" ? 2 : 3;
+        const r = rank(a.status) - rank(b.status);
+        if (r !== 0) return r;
+        return b.totalPending - a.totalPending;
+      });
+    }
+
+    return arr;
+  }, [loans, installments, search, filter]);
+
+  const summary = useMemo(() => {
+    const total = clients.reduce((s, c) => s + c.totalPending, 0);
+    const overdueClients = clients.filter((c) => c.overdueInstallments > 0).length;
+    return { total, overdueClients, count: clients.length };
+  }, [clients]);
+
+  const handleWhatsApp = (c: ClientCard) => {
+    const phone = c.phone || (window.prompt(`Ingresa el WhatsApp de ${c.displayName} (con código de país):`) || "").replace(/\D/g, "");
+    if (!phone) return;
+    const message = c.overdueInstallments > 0
+      ? `Hola ${c.displayName}, te recordamos que tienes ${c.overdueInstallments} cuota(s) vencida(s) por ${formatCurrency(c.totalPending)}. ¿Podrías regularizar el pago? Gracias.`
+      : `Hola ${c.displayName}, te recordamos tu próximo pago por ${formatCurrency(c.totalPending)}. Gracias.`;
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+  };
+
+  const handleCall = (c: ClientCard) => {
+    if (!c.phone) return;
+    window.location.href = `tel:+${c.phone}`;
+  };
+
+  const openClient = (c: ClientCard) => {
+    // Si tiene una sola operación va al detalle de esa operación.
+    // Si tiene varias, abre la primera (siguiente paso: vista detallada de cliente).
+    navigate(`/loan/${c.loans[0].id}`);
+  };
+
+  const statusVisual = (s: ClientStatus) => {
+    switch (s) {
+      case "overdue":
+        return { color: "text-red-400", bg: "bg-red-500/15 border-red-500/30", icon: AlertTriangle, label: "Atrasado" };
+      case "upcoming":
+        return { color: "text-orange-400", bg: "bg-orange-500/15 border-orange-500/30", icon: Clock, label: "Próximo" };
+      case "pending_confirm":
+        return { color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", icon: MailQuestion, label: "Pend. confirmación" };
+      default:
+        return { color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCircle2, label: "Al día" };
+    }
+  };
 
   return (
     <AppLayout>
-      <div className="px-4 py-6 space-y-5">
+      <div className="px-4 py-6 space-y-5 max-w-4xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -134,20 +238,16 @@ export default function Portfolio() {
         >
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-primary/20">
-              <Wallet className="w-6 h-6 text-primary" />
+              <Users className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold">Cartera</h1>
+              <h1 className="text-xl font-bold">Clientes</h1>
               <p className="text-sm text-muted-foreground">
-                {loans.length} préstamo{loans.length !== 1 ? "s" : ""}
+                {summary.count} cliente{summary.count === 1 ? "" : "s"} · {formatCurrency(summary.total)} pendiente
               </p>
             </div>
           </div>
-          <Button
-            onClick={() => navigate("/new-loan")}
-            size="icon"
-            className="rounded-xl bg-primary hover:bg-primary/90"
-          >
+          <Button onClick={() => navigate("/new-loan")} size="icon" className="rounded-xl bg-primary hover:bg-primary/90">
             <Plus className="w-5 h-5" />
           </Button>
         </motion.div>
@@ -156,104 +256,129 @@ export default function Portfolio() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nombre..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar cliente..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-10 bg-card border-border"
           />
         </div>
 
-        {/* Filter Toggle */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Filter className="w-4 h-4" />
-            Filtros
-          </button>
-          <button
-            onClick={() => setSortOption(sortOption === "recent" ? "amount" : "recent")}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <SortDesc className="w-4 h-4" />
-            {sortOption === "recent" ? "Más recientes" : "Mayor deuda"}
-          </button>
+        {/* Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                filter === f.key
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
 
-        {/* Filters */}
-        {showFilters && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="flex flex-wrap gap-2"
-          >
-            {statusOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setStatusFilter(option.value)}
-                className={`chip-button ${statusFilter === option.value ? "active" : ""}`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Loans List */}
+        {/* List */}
         <div className="space-y-3">
           {loading ? (
             Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="fintech-card p-4 animate-pulse">
                 <div className="h-4 bg-muted rounded w-1/3 mb-2" />
-                <div className="h-3 bg-muted rounded w-1/2 mb-3" />
-                <div className="h-2 bg-muted rounded w-full" />
+                <div className="h-3 bg-muted rounded w-1/2" />
               </div>
             ))
-          ) : filteredLoans.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="fintech-card p-8 text-center"
-            >
-              <Wallet className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          ) : clients.length === 0 ? (
+            <div className="fintech-card p-8 text-center">
+              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
               <h3 className="font-semibold mb-1">
-                {searchQuery || statusFilter !== "all"
-                  ? "No se encontraron préstamos"
-                  : "Sin préstamos"}
+                {search || filter !== "all" ? "No se encontraron clientes" : "Sin clientes"}
               </h3>
               <p className="text-sm text-muted-foreground mb-4">
-                {searchQuery || statusFilter !== "all"
-                  ? "Intenta con otros filtros"
-                  : "Comienza registrando tu primer préstamo"}
+                {search || filter !== "all" ? "Intenta con otros filtros" : "Registra tu primera operación"}
               </p>
-              {!searchQuery && statusFilter === "all" && (
-                <Button
-                  onClick={() => navigate("/new-loan")}
-                  className="bg-primary hover:bg-primary/90"
-                >
+              {!search && filter === "all" && (
+                <Button onClick={() => navigate("/new-loan")} className="bg-primary hover:bg-primary/90">
                   <Plus className="w-4 h-4 mr-2" />
-                  Nuevo Préstamo
+                  Nueva operación
                 </Button>
               )}
-            </motion.div>
+            </div>
           ) : (
-            filteredLoans.map((loan, index) => (
-              <LoanCard
-                key={loan.id}
-                id={loan.id}
-                name={loan.name}
-                concept={loan.concept}
-                amountLent={loan.amount_lent}
-                amountToReturn={loan.amount_to_return}
-                amountReturned={loan.amount_returned}
-                status={loan.displayStatus}
-                startDate={loan.start_date}
-                onClick={() => navigate(`/loan/${loan.id}`)}
-                delay={index * 0.05}
-              />
-            ))
+            clients.map((c, idx) => {
+              const sv = statusVisual(c.status);
+              const StatusIcon = sv.icon;
+              return (
+                <motion.article
+                  key={c.key}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(idx * 0.04, 0.3) }}
+                  className="fintech-card p-4"
+                >
+                  <button
+                    onClick={() => openClient(c)}
+                    className="w-full text-left active:scale-[0.99] transition-transform"
+                    aria-label={`Ver ${c.displayName}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold truncate">{c.displayName}</h3>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${sv.bg} ${sv.color}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {sv.label}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                          <span className="inline-flex items-center gap-1">
+                            {c.loans.length === 1 && c.loans[0].amount_lent !== c.loans[0].amount_to_return ? (
+                              <Wallet className="w-3 h-3" />
+                            ) : (
+                              <ShoppingBag className="w-3 h-3" />
+                            )}
+                            {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
+                          </span>
+                          {c.overdueInstallments > 0 && (
+                            <span className="text-red-400">· {c.overdueInstallments} cuota{c.overdueInstallments === 1 ? "" : "s"} vencida{c.overdueInstallments === 1 ? "" : "s"}</span>
+                          )}
+                          {c.overdueInstallments === 0 && c.daysToNext !== null && c.totalPending > 0 && (
+                            <span>
+                              · {c.daysToNext === 0 ? "Vence hoy" : c.daysToNext > 0 ? `Vence en ${c.daysToNext}d` : "Vencido"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end flex-shrink-0">
+                        <p className="text-base font-bold text-primary tabular-nums">{formatCurrency(c.totalPending)}</p>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
+                    {isMobile && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCall(c); }}
+                        disabled={!c.phone}
+                        className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium disabled:opacity-40"
+                      >
+                        <Phone className="w-4 h-4" />
+                        Llamar
+                      </button>
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleWhatsApp(c); }}
+                      className="flex items-center justify-center gap-2 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-sm font-medium text-emerald-400"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp
+                    </button>
+                  </div>
+                </motion.article>
+              );
+            })
           )}
         </div>
       </div>

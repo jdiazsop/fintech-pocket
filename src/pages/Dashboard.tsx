@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { QuickPaymentSheet } from "@/components/payments/QuickPaymentSheet";
 
 interface Loan {
   id: string;
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [prioritySort, setPrioritySort] = useState<PrioritySort>("most_overdue");
   const [showAllPriority, setShowAllPriority] = useState(false);
+  const [quickPayOpen, setQuickPayOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -240,8 +242,8 @@ export default function Dashboard() {
             </button>
 
             <button
-              onClick={() => navigate("/portfolio")}
-              aria-label="Registrar un pago en un préstamo existente"
+              onClick={() => setQuickPayOpen(true)}
+              aria-label="Registrar un pago rápidamente"
               className="group flex flex-col items-start gap-2 p-3 sm:p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/15 active:scale-[0.98] transition-all text-left"
             >
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 transition-colors">
@@ -249,7 +251,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-sm sm:text-base font-semibold leading-tight">Registrar pago</p>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Cobro de cuota</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Cobro rápido</p>
               </div>
             </button>
           </div>
@@ -476,6 +478,11 @@ export default function Dashboard() {
           </motion.div>
         )}
       </div>
+      <QuickPaymentSheet
+        open={quickPayOpen}
+        onOpenChange={setQuickPayOpen}
+        onPaymentRegistered={fetchDashboardData}
+      />
     </AppLayout>
   );
 }

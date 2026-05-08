@@ -1,11 +1,11 @@
-import { Home, Briefcase, BadgeDollarSign, Crown } from "lucide-react";
+import { Home, Briefcase, Users, Crown } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
 const navItems = [
   { path: "/dashboard", icon: Home, label: "Inicio" },
   { path: "/new-loan", icon: Briefcase, label: "Operaciones" },
-  { path: "/portfolio", icon: BadgeDollarSign, label: "Pagos" },
+  { path: "/portfolio", icon: Users, label: "Clientes" },
   { path: "/subscription", icon: Crown, label: "Suscripción" },
 ];
 
