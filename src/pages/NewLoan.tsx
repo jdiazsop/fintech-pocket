@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart, Paperclip, MessageCircle, ShieldCheck, SkipForward } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -63,9 +63,11 @@ const formatCurrency = (value: string) => {
 
 export default function NewLoan() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isNewClientFlow = searchParams.get("newClient") === "1";
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(isNewClientFlow ? 1 : 0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("loan");
@@ -75,7 +77,7 @@ export default function NewLoan() {
   const [reviewing, setReviewing] = useState(false);
 
   // Step 0 state
-  const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
+  const [contactType, setContactType] = useState<"new" | "existing" | null>(isNewClientFlow ? "new" : null);
   const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isContactLocked, setIsContactLocked] = useState(false);
@@ -395,6 +397,10 @@ export default function NewLoan() {
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
+      if (isNewClientFlow) {
+        navigate(-1);
+        return;
+      }
       setStep(0);
       setContactType(null);
       setSearchQuery("");
