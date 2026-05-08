@@ -48,6 +48,10 @@ interface Loan {
   phone_country_code: string | null;
   phone_number: string | null;
   dni: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  address: string | null;
+  reference: string | null;
 }
 
 interface Installment {
