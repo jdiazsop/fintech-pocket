@@ -77,7 +77,7 @@ export default function NewLoan() {
   const [reviewing, setReviewing] = useState(false);
 
   // Step 0 state
-  const [contactType, setContactType] = useState<"new" | "existing" | null>(null);
+  const [contactType, setContactType] = useState<"new" | "existing" | null>(isNewClientFlow ? "new" : null);
   const [existingDebtors, setExistingDebtors] = useState<ExistingDebtor[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isContactLocked, setIsContactLocked] = useState(false);
