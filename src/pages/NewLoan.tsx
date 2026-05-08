@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart, Paperclip, MessageCircle, ShieldCheck, SkipForward } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
