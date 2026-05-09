@@ -500,7 +500,7 @@ export default function NewLoan() {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 0: Contact Type Selection */}
+          {/* Step 0: Operation Type */}
           {step === 0 && (
             <motion.div
               key="step0"
@@ -510,91 +510,159 @@ export default function NewLoan() {
               className="space-y-6"
             >
               <div className="fintech-card p-5 space-y-5">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <Calculator className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">¿Qué deseas registrar?</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Elige el tipo de acuerdo</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => {
+                      setOperationType("loan");
+                      setStep(1);
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left active:scale-[0.99] ${
+                      operationType === "loan"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="p-3 rounded-xl bg-primary/15">
+                      <HandCoins className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold leading-tight">Préstamo</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Dinero prestado a devolver</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setOperationType("sale");
+                      setStep(1);
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left active:scale-[0.99] ${
+                      operationType === "sale"
+                        ? "border-primary bg-primary/10"
+                        : "border-muted bg-card hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="p-3 rounded-xl bg-primary/15">
+                      <ShoppingCart className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold leading-tight">Venta al crédito</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Producto o servicio a pagar en cuotas</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 1: Search or create client */}
+          {step === 1 && (
+            <motion.div
+              key="step1"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-3 mb-1">
                   <div className="p-2 rounded-xl bg-primary/20">
                     <Users className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="font-semibold">Tipo de Contacto</h2>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Buscar o crear cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {operationType === "sale" ? "¿A quién vas a vender al crédito?" : "¿A quién vas a prestar?"}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => {
-                      setContactType("new");
-                      setIsContactLocked(false);
-                      setFormData((prev) => ({
-                        ...prev,
-                        firstName: "",
-                        lastName: "",
-                        phoneCountryCode: DEFAULT_COUNTRY_CODE,
-                        phoneNumber: "",
-                        dni: "",
-                        address: "",
-                        reference: "",
-                      }));
-                      setStep(1);
-                    }}
-                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      contactType === "new"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <UserPlus className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm text-center">Contacto<br/>nuevo</span>
-                  </button>
-                  <button
-                    onClick={() => setContactType("existing")}
-                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      contactType === "existing"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <Users className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm text-center">Contacto<br/>existente</span>
-                  </button>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar cliente por nombre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-muted/50 pl-9"
+                    autoFocus
+                  />
                 </div>
 
-                {contactType === "existing" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3"
-                  >
-                    <Label>Buscar deudor</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Escribe un nombre..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-muted/50 pl-9"
-                      />
-                    </div>
-                    <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
-                      {filteredDebtors.length > 0 ? (
-                        filteredDebtors.map((d) => (
-                          <button
-                            key={d.name}
-                            onClick={() => handleSelectDebtor(d)}
-                            className="w-full text-left p-3 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2"
-                          >
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span>{d.name}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          {existingDebtors.length === 0
-                            ? "No hay deudores registrados"
-                            : "No se encontraron coincidencias"}
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                <button
+                  onClick={() => {
+                    setContactType("new");
+                    setIsContactLocked(false);
+                    setFormData((prev) => ({
+                      ...prev,
+                      firstName: "",
+                      lastName: "",
+                      phoneCountryCode: DEFAULT_COUNTRY_CODE,
+                      phoneNumber: "",
+                      dni: "",
+                      address: "",
+                      reference: "",
+                    }));
+                    setStep(2);
+                  }}
+                  className="w-full p-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-3 text-left active:scale-[0.99]"
+                >
+                  <div className="p-2 rounded-lg bg-primary/15">
+                    <UserPlus className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-tight">Crear nuevo cliente</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">Registrar datos por primera vez</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold px-1">
+                    {searchQuery.trim() ? "Resultados" : "Clientes recientes"}
+                  </p>
+                  <div className="max-h-72 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
+                    {filteredDebtors.length > 0 ? (
+                      filteredDebtors.map((d) => (
+                        <button
+                          key={d.name}
+                          onClick={() => handleSelectDebtor(d)}
+                          className="w-full text-left p-3 rounded-lg hover:bg-primary/15 transition-colors flex items-center gap-3 active:scale-[0.99]"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{d.name}</p>
+                            {d.phoneNumber && (
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {d.phoneCountryCode} {d.phoneNumber}
+                              </p>
+                            )}
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        {existingDebtors.length === 0
+                          ? "Aún no tienes clientes registrados"
+                          : "No se encontraron coincidencias"}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}
