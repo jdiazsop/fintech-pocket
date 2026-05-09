@@ -39,32 +39,32 @@
 
     --radius: 0.75rem;
 
-    /* Status Colors */
-    --status-success: 142 76% 45%;
+    /* Status Colors — softer, premium */
+    --status-success: 152 50% 48%;
     --status-success-foreground: 0 0% 100%;
-    --status-warning: 32 95% 55%;
+    --status-warning: 35 80% 58%;
     --status-warning-foreground: 0 0% 100%;
-    --status-danger: 0 84% 60%;
+    --status-danger: 0 65% 58%;
     --status-danger-foreground: 0 0% 100%;
 
     /* Custom Fintech Colors */
-    --fintech-blue: 217 91% 60%;
-    --fintech-blue-glow: 217 91% 70%;
-    --slate-900: 222 47% 11%;
-    --slate-800: 217 33% 17%;
-    --slate-700: 215 25% 27%;
-    --slate-600: 215 20% 40%;
+    --fintech-blue: 222 76% 58%;
+    --fintech-blue-glow: 222 76% 68%;
+    --slate-900: 222 39% 11%;
+    --slate-800: 220 30% 14%;
+    --slate-700: 220 25% 20%;
+    --slate-600: 215 18% 36%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(217 33% 20%) 0%, hsl(217 33% 15%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(142 76% 45%) 0%, hsl(142 76% 35%) 100%);
-    --gradient-danger: linear-gradient(135deg, hsl(0 84% 60%) 0%, hsl(0 84% 50%) 100%);
+    /* Gradients — subtle */
+    --gradient-primary: linear-gradient(135deg, hsl(222 76% 58%) 0%, hsl(222 76% 50%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(220 30% 15%) 0%, hsl(220 30% 13%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(152 50% 48%) 0%, hsl(152 50% 38%) 100%);
+    --gradient-danger: linear-gradient(135deg, hsl(0 65% 58%) 0%, hsl(0 65% 48%) 100%);
 
-    /* Shadows */
-    --shadow-card: 0 4px 20px -4px hsl(217 91% 60% / 0.15);
-    --shadow-elevated: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
-    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.3);
+    /* Shadows — soft depth, no glow */
+    --shadow-card: 0 1px 2px hsl(0 0% 0% / 0.2), 0 1px 0 hsl(220 20% 30% / 0.08) inset;
+    --shadow-elevated: 0 8px 24px -12px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 4px 16px -4px hsl(222 76% 58% / 0.25);
 
     /* Sidebar */
     --sidebar-background: 222 47% 11%;
