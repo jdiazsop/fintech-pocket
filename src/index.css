@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,96 +8,104 @@
 
 @layer base {
   :root {
-    /* Soft Light Fintech Premium */
-    --background: 220 33% 97%;          /* #F6F8FC */
+    /* Surfaces */
+    --background: 220 33% 98%;          /* #F7F9FC */
     --foreground: 222 47% 11%;          /* #0F172A */
 
-    --card: 0 0% 100%;                  /* #FFFFFF */
+    --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 221 83% 53%;             /* #2563EB */
+    /* Brand — refined indigo-blue */
+    --primary: 222 78% 50%;             /* #1E45D8 — premium fintech blue */
     --primary-foreground: 0 0% 100%;
+    --primary-soft: 222 90% 96%;
+    --primary-glow: 217 91% 62%;
 
-    --secondary: 220 20% 97%;
+    --secondary: 220 24% 96%;
     --secondary-foreground: 222 47% 11%;
 
     --muted: 220 20% 96%;
-    --muted-foreground: 215 16% 47%;    /* #64748B */
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 214 95% 93%;              /* #DBEAFE — soft blue accent */
-    --accent-foreground: 221 83% 45%;
+    --accent: 222 90% 96%;              /* soft brand accent */
+    --accent-foreground: 222 78% 42%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;              /* #E5E7EB */
-    --input: 215 20% 90%;               /* #E2E8F0 */
-    --ring: 221 83% 53%;
+    --border: 220 16% 92%;              /* #E4E7EC */
+    --input: 220 16% 90%;
+    --ring: 222 78% 50%;
 
-    --radius: 0.75rem;
+    --radius: 0.875rem;                 /* slightly rounder, more premium */
 
-    /* Status colors — soft, informative */
-    --status-success: 152 50% 40%;
+    /* Status — single semantic source of truth */
+    --status-success: 152 60% 38%;      /* #28A06B */
     --status-success-foreground: 0 0% 100%;
-    --status-warning: 35 80% 45%;
+    --status-success-soft: 152 70% 95%;
+    --status-warning: 30 92% 48%;       /* #ED8E0C */
     --status-warning-foreground: 0 0% 100%;
-    --status-danger: 0 72% 51%;
+    --status-warning-soft: 38 100% 95%;
+    --status-danger: 0 74% 52%;         /* #E5484D */
     --status-danger-foreground: 0 0% 100%;
+    --status-danger-soft: 0 90% 96%;
+    --status-info: 222 78% 50%;
+    --status-info-soft: 222 90% 96%;
 
     /* Custom Fintech Colors */
-    --fintech-blue: 221 83% 53%;
-    --fintech-blue-glow: 217 91% 65%;
+    --fintech-blue: 222 78% 50%;
+    --fintech-blue-glow: 217 91% 62%;
     --slate-900: 222 47% 11%;
     --slate-800: 215 28% 17%;
     --slate-700: 215 19% 35%;
     --slate-600: 215 16% 47%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(217 91% 60%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
-    --gradient-success: linear-gradient(135deg, hsl(152 50% 45%) 0%, hsl(152 50% 38%) 100%);
-    --gradient-danger: linear-gradient(135deg, hsl(0 72% 55%) 0%, hsl(0 72% 48%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(222 78% 50%) 0%, hsl(217 91% 60%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 30% 99%) 100%);
+    --gradient-success: linear-gradient(135deg, hsl(152 60% 42%) 0%, hsl(152 60% 35%) 100%);
+    --gradient-danger: linear-gradient(135deg, hsl(0 74% 56%) 0%, hsl(0 74% 48%) 100%);
 
-    /* Shadows — soft depth, premium */
-    --shadow-card: 0 2px 8px hsl(222 47% 11% / 0.04);
-    --shadow-elevated: 0 4px 16px hsl(222 47% 11% / 0.06), 0 2px 4px hsl(222 47% 11% / 0.03);
-    --shadow-glow: 0 6px 20px -8px hsl(221 83% 53% / 0.25);
+    /* Shadows */
+    --shadow-card: 0 1px 2px hsl(222 47% 11% / 0.04), 0 1px 3px hsl(222 47% 11% / 0.03);
+    --shadow-elevated: 0 6px 20px -8px hsl(222 47% 11% / 0.10), 0 2px 6px hsl(222 47% 11% / 0.04);
+    --shadow-glow: 0 8px 24px -10px hsl(222 78% 50% / 0.35);
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary: 222 78% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 20% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 220 16% 90%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-ring: 222 78% 50%;
   }
 
   .dark {
-    /* Keep dark tokens identical to light to enforce light mode everywhere */
-    --background: 220 33% 97%;
+    /* Light mode enforced */
+    --background: 220 33% 98%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
+    --primary: 222 78% 50%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 97%;
+    --secondary: 220 24% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 220 20% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 214 95% 93%;
-    --accent-foreground: 221 83% 45%;
+    --accent: 222 90% 96%;
+    --accent-foreground: 222 78% 42%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 215 20% 90%;
-    --ring: 221 83% 53%;
+    --border: 220 16% 92%;
+    --input: 220 16% 90%;
+    --ring: 222 78% 50%;
   }
 }
 
@@ -114,8 +122,18 @@
 
   body {
     @apply bg-background text-foreground;
-    font-feature-settings: 'ss01' on, 'ss02' on, 'cv01' on;
+    font-feature-settings: 'ss01' on, 'ss02' on, 'cv01' on, 'cv11' on;
+    letter-spacing: -0.005em;
   }
+
+  /* Typographic hierarchy — display font for headings */
+  h1, h2, h3, .font-display {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+  }
+  h1 { @apply text-2xl font-bold; }
+  h2 { @apply text-lg font-semibold; }
+  h3 { @apply text-base font-semibold; }
 
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -127,32 +145,35 @@
 }
 
 @layer components {
-  /* Cards — soft, elevated, minimal */
+  /* Cards */
   .fintech-card {
-    @apply bg-card rounded-xl border border-border/70;
+    @apply bg-card rounded-2xl border border-border/70;
     box-shadow: var(--shadow-card);
   }
 
   .fintech-card-elevated {
-    @apply bg-card rounded-xl border border-border/70;
+    @apply bg-card rounded-2xl border border-border/70;
     box-shadow: var(--shadow-elevated);
   }
 
-  /* Status badges — soft pastel */
+  /* Status badges */
   .status-badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium;
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold tracking-tight;
   }
 
   .status-success {
-    @apply bg-emerald-50 text-emerald-700 border border-emerald-100;
+    @apply text-emerald-700;
+    background-color: hsl(var(--status-success-soft));
   }
 
   .status-warning {
-    @apply bg-amber-50 text-amber-700 border border-amber-100;
+    @apply text-amber-700;
+    background-color: hsl(var(--status-warning-soft));
   }
 
   .status-danger {
-    @apply bg-red-50 text-red-700 border border-red-100;
+    @apply text-red-700;
+    background-color: hsl(var(--status-danger-soft));
   }
 
   /* KPI Card */
@@ -161,9 +182,9 @@
     background: var(--gradient-card);
   }
 
-  /* Bottom Navigation — light, minimal */
+  /* Bottom Navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-white/85 backdrop-blur-2xl border-t border-border/70 safe-area-bottom;
+    @apply fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-2xl border-t border-border/70 safe-area-bottom;
   }
 
   .bottom-nav-item {
@@ -181,7 +202,7 @@
 
   /* Inputs */
   .input-fintech {
-    @apply bg-white border border-border focus:border-primary focus:ring-1 focus:ring-primary/30 rounded-lg;
+    @apply bg-white border border-border focus:border-primary focus:ring-2 focus:ring-primary/20 rounded-xl;
   }
 
   /* Chip buttons */
@@ -251,5 +272,10 @@
 
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  .text-display {
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
 }
