@@ -67,7 +67,7 @@ export default function NewLoan() {
   const isNewClientFlow = searchParams.get("newClient") === "1";
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(isNewClientFlow ? 1 : 0);
+  const [step, setStep] = useState(isNewClientFlow ? 2 : 0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("loan");
