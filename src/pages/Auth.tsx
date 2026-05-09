@@ -35,7 +35,7 @@ export default function Auth() {
       if (mode !== "forgot") {
         passwordSchema.parse(password);
       }
-      if (mode === "register" && !acceptedTerms) {
+      if (mode !== "forgot" && !acceptedTerms) {
         toast({
           title: "Error",
           description: "Debes aceptar los términos y condiciones",
