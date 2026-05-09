@@ -842,7 +842,7 @@ export default function NewLoan() {
 
               <Button
                 onClick={() => {
-                  if (validateStep1()) setStep(2);
+                  if (validateStep1()) setStep(3);
                 }}
                 className="w-full bg-primary hover:bg-primary/90"
               >
@@ -852,9 +852,9 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {step === 2 && !reviewing && (
+          {step === 3 && !reviewing && (
             <motion.div
-              key="step2"
+              key="step3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
