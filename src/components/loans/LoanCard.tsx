@@ -45,7 +45,7 @@ export const LoanCard = ({
       transition={{ duration: 0.3, delay }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className="fintech-card p-4 cursor-pointer hover:border-primary/50 transition-colors"
+      className="fintech-card p-3.5 cursor-pointer hover:border-primary/40 transition-colors"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
