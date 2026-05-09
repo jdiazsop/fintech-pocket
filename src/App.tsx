@@ -83,6 +83,14 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/new-client"
+        element={
+          <ProtectedRoute>
+            <NewClient />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/operations"
         element={
           <ProtectedRoute>
