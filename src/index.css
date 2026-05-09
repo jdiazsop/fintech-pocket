@@ -8,8 +8,8 @@
 
 @layer base {
   :root {
-    /* Light Fintech Theme — Premium minimal */
-    --background: 220 33% 98%;          /* #F8FAFC */
+    /* Soft Light Fintech Premium */
+    --background: 220 33% 97%;          /* #F6F8FC */
     --foreground: 222 47% 11%;          /* #0F172A */
 
     --card: 0 0% 100%;                  /* #FFFFFF */
@@ -21,20 +21,20 @@
     --primary: 221 83% 53%;             /* #2563EB */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 20% 96%;
+    --secondary: 220 20% 97%;
     --secondary-foreground: 222 47% 11%;
 
     --muted: 220 20% 96%;
     --muted-foreground: 215 16% 47%;    /* #64748B */
 
-    --accent: 221 83% 53%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 214 95% 93%;              /* #DBEAFE — soft blue accent */
+    --accent-foreground: 221 83% 45%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
+    --border: 220 13% 91%;              /* #E5E7EB */
+    --input: 215 20% 90%;               /* #E2E8F0 */
     --ring: 221 83% 53%;
 
     --radius: 0.75rem;
@@ -61,10 +61,10 @@
     --gradient-success: linear-gradient(135deg, hsl(152 50% 45%) 0%, hsl(152 50% 38%) 100%);
     --gradient-danger: linear-gradient(135deg, hsl(0 72% 55%) 0%, hsl(0 72% 48%) 100%);
 
-    /* Shadows — soft and elegant */
-    --shadow-card: 0 1px 2px hsl(220 40% 20% / 0.04), 0 1px 3px hsl(220 40% 20% / 0.03);
-    --shadow-elevated: 0 4px 16px -4px hsl(220 40% 20% / 0.08), 0 2px 6px -2px hsl(220 40% 20% / 0.05);
-    --shadow-glow: 0 4px 14px -4px hsl(221 83% 53% / 0.18);
+    /* Shadows — soft depth, premium */
+    --shadow-card: 0 2px 8px hsl(222 47% 11% / 0.04);
+    --shadow-elevated: 0 4px 16px hsl(222 47% 11% / 0.06), 0 2px 4px hsl(222 47% 11% / 0.03);
+    --shadow-glow: 0 6px 20px -8px hsl(221 83% 53% / 0.25);
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
@@ -79,7 +79,7 @@
 
   .dark {
     /* Keep dark tokens identical to light to enforce light mode everywhere */
-    --background: 220 33% 98%;
+    --background: 220 33% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -87,16 +87,16 @@
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 96%;
+    --secondary: 220 20% 97%;
     --secondary-foreground: 222 47% 11%;
     --muted: 220 20% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 221 83% 53%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 214 95% 93%;
+    --accent-foreground: 221 83% 45%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
+    --border: 220 13% 91%;
+    --input: 215 20% 90%;
     --ring: 221 83% 53%;
   }
 }

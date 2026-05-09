@@ -29,7 +29,7 @@ export const BottomNav = () => {
               {isActive && (
                 <motion.div
                   layoutId="activeTab"
-                  className="absolute inset-0 bg-primary/10 rounded-xl"
+                  className="absolute inset-0 bg-accent rounded-xl"
                   transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
               )}
