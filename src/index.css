@@ -79,7 +79,7 @@
 
   .dark {
     /* Keep dark tokens identical to light to enforce light mode everywhere */
-    --background: 220 33% 98%;
+    --background: 220 33% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -87,16 +87,16 @@
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 96%;
+    --secondary: 220 20% 97%;
     --secondary-foreground: 222 47% 11%;
     --muted: 220 20% 96%;
     --muted-foreground: 215 16% 47%;
-    --accent: 221 83% 53%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 214 95% 93%;
+    --accent-foreground: 221 83% 45%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 16% 90%;
-    --input: 220 16% 90%;
+    --border: 220 13% 91%;
+    --input: 215 20% 90%;
     --ring: 221 83% 53%;
   }
 }
