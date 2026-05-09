@@ -154,7 +154,9 @@ export default function NewLoan() {
       reference: d.reference,
     }));
     setIsContactLocked(true);
-    setStep(1);
+    setContactType("existing");
+    // Skip "Datos del cliente" step — go directly to calculator
+    setStep(3);
   };
 
   const updateForm = (field: keyof LoanFormData, value: string | number) => {
