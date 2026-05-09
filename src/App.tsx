@@ -3,7 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewLoan from "./pages/NewLoan";
@@ -24,9 +26,24 @@ const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, acceptedTerms, profileLoading, signOut } = useAuth();
+  const { toast } = useToast();
 
-  if (loading) {
+  const blocked = !!user && acceptedTerms === false;
+
+  useEffect(() => {
+    if (blocked) {
+      toast({
+        title: "Acceso bloqueado",
+        description:
+          "Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.",
+        variant: "destructive",
+      });
+      signOut();
+    }
+  }, [blocked, signOut, toast]);
+
+  if (loading || (user && profileLoading)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-pulse">
@@ -36,7 +53,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  if (!user || blocked) {
     return <Navigate to="/auth" replace />;
   }
 
