@@ -485,6 +485,7 @@ export default function Dashboard() {
         onOpenChange={setQuickPayOpen}
         onPaymentRegistered={fetchDashboardData}
       />
+      <NewOperationSheet open={newOpOpen} onOpenChange={setNewOpOpen} />
     </AppLayout>
   );
 }
