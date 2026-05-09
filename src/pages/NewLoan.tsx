@@ -107,6 +107,35 @@ export default function NewLoan() {
     daysOrInstallments: 30,
   });
 
+  // Structured location capture (UX only, persisted into `address` field)
+  const [department, setDepartment] = useState<string>("");
+  const [province, setProvince] = useState<string>("");
+  const [district, setDistrict] = useState<string>("");
+  const [exactAddress, setExactAddress] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const provincesForDept = useMemo(
+    () => PERU_DEPARTMENTS.find((d) => d.name === department)?.provinces || [],
+    [department]
+  );
+  const districtSuggestions = useMemo(() => {
+    if (!department || !province) return [];
+    return DISTRICT_SUGGESTIONS[`${department}|${province}`] || [];
+  }, [department, province]);
+
+  const composedAddress = useMemo(() => {
+    const loc = [district.trim(), province, department].filter(Boolean).join(", ");
+    const exact = exactAddress.trim();
+    if (exact && loc) return `${exact} — ${loc}`;
+    return exact || loc;
+  }, [exactAddress, district, province, department]);
+
+  // Keep formData.address in sync so existing submit logic works untouched
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, address: composedAddress }));
+  }, [composedAddress]);
+
+
   // Fetch existing debtors (latest record per name)
   useEffect(() => {
     const fetchDebtors = async () => {
