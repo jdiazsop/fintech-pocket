@@ -125,8 +125,7 @@ export default function Auth() {
           >
             <span className="text-3xl font-bold text-primary">C</span>
           </motion.div>
-          <h1 className="text-2xl font-bold text-foreground">Credify</h1>
-          <p className="text-muted-foreground mt-1">Tu cuaderno digital de préstamos</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight font-display">Credify</h1>
         </div>
 
         {/* Form Card */}
