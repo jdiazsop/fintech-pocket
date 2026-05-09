@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { lovable } from "@/integrations/lovable";
+import { LegalDialog } from "@/components/legal/LegalDialog";
 import { z } from "zod";
 
 const emailSchema = z.string().email("Email inválido").max(255, "Email muy largo");
