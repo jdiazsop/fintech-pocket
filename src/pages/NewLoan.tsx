@@ -116,6 +116,8 @@ export default function NewLoan() {
   const [district, setDistrict] = useState<string>("");
   const [exactAddress, setExactAddress] = useState<string>("");
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [districtOpen, setDistrictOpen] = useState(false);
+  const [showAddressDetails, setShowAddressDetails] = useState(false);
 
   const provincesForDept = useMemo(
     () => PERU_DEPARTMENTS.find((d) => d.name === department)?.provinces || [],
