@@ -249,8 +249,23 @@ export default function Auth() {
                     />
                     <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
                       Acepto los{" "}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Términos y Condiciones</a> y la{" "}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Política de Privacidad</a>
+                      <LegalDialog
+                        type="terms"
+                        trigger={
+                          <button type="button" className="text-primary hover:underline font-medium">
+                            Términos y Condiciones
+                          </button>
+                        }
+                      />{" "}
+                      y la{" "}
+                      <LegalDialog
+                        type="privacy"
+                        trigger={
+                          <button type="button" className="text-primary hover:underline font-medium">
+                            Política de Privacidad
+                          </button>
+                        }
+                      />
                     </Label>
                   </div>
                 )}
