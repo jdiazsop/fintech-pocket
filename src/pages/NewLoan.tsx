@@ -401,6 +401,10 @@ export default function NewLoan() {
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
+      if (hasPresetType) {
+        navigate(-1);
+        return;
+      }
       setStep(0);
       setContactType(null);
       setSearchQuery("");
