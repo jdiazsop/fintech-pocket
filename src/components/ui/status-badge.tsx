@@ -6,11 +6,11 @@ const statusBadgeVariants = cva(
   {
     variants: {
       variant: {
-        success: "bg-emerald-500/10 text-emerald-300/90 border border-emerald-500/20",
-        warning: "bg-amber-500/10 text-amber-300/90 border border-amber-500/20",
-        danger: "bg-red-500/10 text-red-300/90 border border-red-500/20",
-        default: "bg-primary/10 text-primary/90 border border-primary/20",
-        muted: "bg-muted/60 text-muted-foreground border border-border/50",
+        success: "bg-emerald-50 text-emerald-700 border border-emerald-100",
+        warning: "bg-amber-50 text-amber-700 border border-amber-100",
+        danger: "bg-red-50 text-red-700 border border-red-100",
+        default: "bg-blue-50 text-blue-700 border border-blue-100",
+        muted: "bg-slate-100 text-slate-600 border border-slate-200",
       },
     },
     defaultVariants: {
@@ -36,11 +36,11 @@ export const StatusBadge = ({
       {dot && (
         <span className={cn(
           "w-1.5 h-1.5 rounded-full",
-          variant === "success" && "bg-emerald-400/80",
-          variant === "warning" && "bg-amber-400/80",
-          variant === "danger" && "bg-red-400/80",
-          variant === "default" && "bg-primary/80",
-          variant === "muted" && "bg-muted-foreground/70",
+          variant === "success" && "bg-emerald-500",
+          variant === "warning" && "bg-amber-500",
+          variant === "danger" && "bg-red-500",
+          variant === "default" && "bg-blue-500",
+          variant === "muted" && "bg-slate-400",
         )} />
       )}
       {children}
