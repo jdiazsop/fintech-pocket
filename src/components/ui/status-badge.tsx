@@ -36,11 +36,11 @@ export const StatusBadge = ({
       {dot && (
         <span className={cn(
           "w-1.5 h-1.5 rounded-full",
-          variant === "success" && "bg-emerald-400",
-          variant === "warning" && "bg-orange-400",
-          variant === "danger" && "bg-red-400",
-          variant === "default" && "bg-primary",
-          variant === "muted" && "bg-muted-foreground",
+          variant === "success" && "bg-emerald-400/80",
+          variant === "warning" && "bg-amber-400/80",
+          variant === "danger" && "bg-red-400/80",
+          variant === "default" && "bg-primary/80",
+          variant === "muted" && "bg-muted-foreground/70",
         )} />
       )}
       {children}
