@@ -748,9 +748,13 @@ export default function NewLoan() {
                   />
                 </label>
                 <div className="min-w-0">
-                  <h2 className="text-lg font-semibold leading-tight">Nuevo cliente</h2>
+                  <h2 className="text-lg font-semibold leading-tight">
+                    {operationType === "sale"
+                      ? "¿A quién le venderás al crédito?"
+                      : "¿Con quién realizarás esta operación?"}
+                  </h2>
                   <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-                    Agreguemos a la persona con quien tendrás esta {operationType === "sale" ? "venta" : "operación"}.
+                    Empecemos por identificar a la persona.
                   </p>
                 </div>
               </div>
