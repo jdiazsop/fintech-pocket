@@ -765,10 +765,7 @@ export default function NewLoan() {
                   <div className="p-2 rounded-xl bg-primary/15">
                     <User className="w-4 h-4 text-primary" />
                   </div>
-                  <div>
-                    <h3 className="text-sm font-semibold leading-tight">Datos personales</h3>
-                    <p className="text-[11px] text-muted-foreground leading-tight">¿Cómo identificamos a tu cliente?</p>
-                  </div>
+                  <h3 className="text-sm font-semibold leading-tight">Datos personales</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
