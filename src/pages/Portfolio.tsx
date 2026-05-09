@@ -101,6 +101,27 @@ export default function Portfolio() {
     };
   }, [user]);
 
+  // Realtime: refetch when this user's clients/loans change anywhere
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`portfolio-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "clients", filter: `user_id=eq.${user.id}` },
+        () => fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "loans", filter: `user_id=eq.${user.id}` },
+        () => fetchData(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
