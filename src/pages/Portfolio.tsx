@@ -37,7 +37,16 @@ interface Installment {
   status: string;
 }
 
-type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time";
+interface ClientRow {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  dni: string | null;
+  phone_country_code: string | null;
+  phone_number: string | null;
+}
+
+type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time" | "no_ops";
 
 interface ClientCard {
   key: string;
@@ -68,6 +77,7 @@ export default function Portfolio() {
   const isMobile = useIsMobile();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
+  const [contacts, setContacts] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -79,11 +89,12 @@ export default function Portfolio() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: loansData } = await supabase
-        .from("loans")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [{ data: loansData }, { data: clientsData }] = await Promise.all([
+        supabase.from("loans").select("*").order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number").order("created_at", { ascending: false }),
+      ]);
       setLoans((loansData as Loan[]) || []);
+      setContacts((clientsData as ClientRow[]) || []);
 
       const ids = (loansData || []).map((l) => l.id);
       if (ids.length) {
@@ -161,6 +172,30 @@ export default function Portfolio() {
       else client.status = "on_time";
     });
 
+    // Merge contacts (clients table) so that clients without operations also appear
+    contacts.forEach((c) => {
+      const dni = (c.dni || "").trim().toLowerCase();
+      const pn = (c.phone_number || "").trim().toLowerCase();
+      const fullName = `${c.first_name || ""} ${c.last_name || ""}`.trim();
+      const key = dni || pn || fullName.toLowerCase() || c.id;
+      if (map.has(key)) return; // already represented by a loan
+      const cc = (c.phone_country_code || "").replace(/\D/g, "");
+      const pnDigits = (c.phone_number || "").replace(/\D/g, "");
+      const fullPhone = cc && pnDigits ? `${cc}${pnDigits}` : pnDigits;
+      map.set(key, {
+        key: `contact:${c.id}`,
+        displayName: fullName || "Sin nombre",
+        phone: fullPhone,
+        loans: [],
+        totalPending: 0,
+        overdueInstallments: 0,
+        nextDueDate: null,
+        daysToNext: null,
+        pendingConfirm: false,
+        status: "no_ops",
+      });
+    });
+
     let arr = Array.from(map.values());
 
     // Filter by search
@@ -178,7 +213,7 @@ export default function Portfolio() {
     } else {
       arr.sort((a, b) => {
         const rank = (s: ClientStatus) =>
-          s === "overdue" ? 0 : s === "upcoming" ? 1 : s === "pending_confirm" ? 2 : 3;
+          s === "overdue" ? 0 : s === "upcoming" ? 1 : s === "pending_confirm" ? 2 : s === "on_time" ? 3 : 4;
         const r = rank(a.status) - rank(b.status);
         if (r !== 0) return r;
         return b.totalPending - a.totalPending;
@@ -186,7 +221,7 @@ export default function Portfolio() {
     }
 
     return arr;
-  }, [loans, installments, search, filter]);
+  }, [loans, installments, contacts, search, filter]);
 
   const summary = useMemo(() => {
     const total = clients.reduce((s, c) => s + c.totalPending, 0);
@@ -209,6 +244,7 @@ export default function Portfolio() {
   };
 
   const openClient = (c: ClientCard) => {
+    if (c.loans.length === 0) return; // No-op clients have nothing to open yet
     if (c.loans.length === 1) {
       navigate(`/loan/${c.loans[0].id}`);
     } else {
@@ -224,6 +260,8 @@ export default function Portfolio() {
         return { color: "text-orange-400", bg: "bg-orange-500/15 border-orange-500/30", icon: Clock, label: "Próximo" };
       case "pending_confirm":
         return { color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", icon: MailQuestion, label: "Pend. confirmación" };
+      case "no_ops":
+        return { color: "text-muted-foreground", bg: "bg-muted/30 border-border", icon: Users, label: "Sin operaciones" };
       default:
         return { color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCircle2, label: "Al día" };
     }
@@ -334,27 +372,39 @@ export default function Portfolio() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
-                          <span className="inline-flex items-center gap-1">
-                            {c.loans.length === 1 && c.loans[0].amount_lent !== c.loans[0].amount_to_return ? (
-                              <Wallet className="w-3 h-3" />
-                            ) : (
-                              <ShoppingBag className="w-3 h-3" />
-                            )}
-                            {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
-                          </span>
-                          {c.overdueInstallments > 0 && (
-                            <span className="text-red-400">· {c.overdueInstallments} cuota{c.overdueInstallments === 1 ? "" : "s"} vencida{c.overdueInstallments === 1 ? "" : "s"}</span>
-                          )}
-                          {c.overdueInstallments === 0 && c.daysToNext !== null && c.totalPending > 0 && (
-                            <span>
-                              · {c.daysToNext === 0 ? "Vence hoy" : c.daysToNext > 0 ? `Vence en ${c.daysToNext}d` : "Vencido"}
-                            </span>
+                          {c.loans.length === 0 ? (
+                            <span className="italic">Sin operaciones registradas</span>
+                          ) : (
+                            <>
+                              <span className="inline-flex items-center gap-1">
+                                {c.loans.length === 1 && c.loans[0].amount_lent !== c.loans[0].amount_to_return ? (
+                                  <Wallet className="w-3 h-3" />
+                                ) : (
+                                  <ShoppingBag className="w-3 h-3" />
+                                )}
+                                {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
+                              </span>
+                              {c.overdueInstallments > 0 && (
+                                <span className="text-red-400">· {c.overdueInstallments} cuota{c.overdueInstallments === 1 ? "" : "s"} vencida{c.overdueInstallments === 1 ? "" : "s"}</span>
+                              )}
+                              {c.overdueInstallments === 0 && c.daysToNext !== null && c.totalPending > 0 && (
+                                <span>
+                                  · {c.daysToNext === 0 ? "Vence hoy" : c.daysToNext > 0 ? `Vence en ${c.daysToNext}d` : "Vencido"}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end flex-shrink-0">
-                        <p className="text-base font-bold text-primary tabular-nums">{formatCurrency(c.totalPending)}</p>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                        {c.loans.length === 0 ? (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <>
+                            <p className="text-base font-bold text-primary tabular-nums">{formatCurrency(c.totalPending)}</p>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                          </>
+                        )}
                       </div>
                     </div>
                   </button>
