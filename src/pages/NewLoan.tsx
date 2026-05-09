@@ -670,7 +670,7 @@ export default function NewLoan() {
                 </button>
 
                 <div className="space-y-2">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold px-1">
+                  <p className="text-[11px] text-muted-foreground font-semibold px-1">
                     {searchQuery.trim() ? "Resultados" : "Clientes recientes"}
                   </p>
                   <div className="max-h-72 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
@@ -1357,7 +1357,7 @@ export default function NewLoan() {
                       return (
                         <div className="mt-4 pt-3 border-t border-primary/20">
                           <div className="rounded-lg bg-primary/10 border border-primary/20 p-3">
-                            <p className="text-[10px] uppercase tracking-wide text-primary/80 font-semibold">
+                            <p className="text-[10px] text-primary/80 font-semibold">
                               Próxima cuota
                             </p>
                             <div className="flex items-end justify-between gap-3 mt-1">
@@ -1478,7 +1478,7 @@ export default function NewLoan() {
             }) => (
               <div className="flex items-start justify-between gap-3 py-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                  <p className="text-[11px] text-muted-foreground">{label}</p>
                   <div className={`text-sm mt-0.5 ${accent ? "font-semibold text-primary" : "font-medium"}`}>
                     {value}
                   </div>
@@ -1583,7 +1583,7 @@ export default function NewLoan() {
                   {/* Cronograma resumido */}
                   {(upcoming.length > 0 || remaining > 0) && (
                     <div className="mt-3 pt-3 border-t border-border/60">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground mb-2">
+                      <p className="text-[11px] text-muted-foreground mb-2">
                         Cronograma
                       </p>
                       <div className="space-y-1.5">
@@ -1669,7 +1669,7 @@ export default function NewLoan() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="h-px flex-1 bg-border/60" />
-                  <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground">
                     Siguiente paso
                   </span>
                   <div className="h-px flex-1 bg-border/60" />
