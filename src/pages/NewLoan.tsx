@@ -14,7 +14,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { addDays, addWeeks, addMonths, format } from "date-fns";
+import { addDays, addWeeks, addMonths, format, parse } from "date-fns";
+import { es } from "date-fns/locale";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import { es } from "date-fns/locale";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
