@@ -127,32 +127,32 @@
 }
 
 @layer components {
-  /* Fintech Card Styles */
+  /* Fintech Card Styles — soft, elevated minimalism */
   .fintech-card {
-    @apply bg-card rounded-xl border border-border/50;
+    @apply bg-card rounded-xl border border-border/40;
     box-shadow: var(--shadow-card);
   }
 
   .fintech-card-elevated {
-    @apply bg-card rounded-xl border border-border/50;
+    @apply bg-card rounded-xl border border-border/40;
     box-shadow: var(--shadow-elevated);
   }
 
-  /* Status Badge Variants */
+  /* Status Badge Variants — softer */
   .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    @apply inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium;
   }
 
   .status-success {
-    @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+    @apply bg-emerald-500/10 text-emerald-300/90 border border-emerald-500/20;
   }
 
   .status-warning {
-    @apply bg-orange-500/20 text-orange-400 border border-orange-500/30;
+    @apply bg-amber-500/10 text-amber-300/90 border border-amber-500/20;
   }
 
   .status-danger {
-    @apply bg-red-500/20 text-red-400 border border-red-500/30;
+    @apply bg-red-500/10 text-red-300/90 border border-red-500/20;
   }
 
   /* KPI Card */
@@ -161,25 +161,20 @@
     background: var(--gradient-card);
   }
 
-  /* Bottom Navigation */
+  /* Bottom Navigation — minimal, light */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border/50 safe-area-bottom;
-    box-shadow: 0 -4px 20px hsl(0 0% 0% / 0.3);
+    @apply fixed bottom-0 left-0 right-0 bg-background/85 backdrop-blur-2xl border-t border-border/40 safe-area-bottom;
   }
 
   .bottom-nav-item {
-    @apply flex flex-col items-center justify-center gap-1 py-2 px-4 text-muted-foreground transition-colors duration-200;
+    @apply flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 text-muted-foreground/70 transition-colors duration-200;
   }
 
   .bottom-nav-item.active {
     @apply text-primary;
   }
 
-  .bottom-nav-item.active svg {
-    filter: drop-shadow(0 0 8px hsl(217 91% 60% / 0.5));
-  }
-
-  /* Glow Effects */
+  /* Glow Effects — kept subtle */
   .glow-primary {
     box-shadow: var(--shadow-glow);
   }
