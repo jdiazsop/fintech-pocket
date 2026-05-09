@@ -249,7 +249,7 @@ export default function Portfolio() {
               </p>
             </div>
           </div>
-          <Button onClick={() => navigate("/new-loan?newClient=1")} size="icon" className="rounded-xl bg-primary hover:bg-primary/90" aria-label="Crear nuevo cliente">
+          <Button onClick={() => navigate("/new-client")} size="icon" className="rounded-xl bg-primary hover:bg-primary/90" aria-label="Crear nuevo cliente">
             <Plus className="w-5 h-5" />
           </Button>
         </motion.div>
