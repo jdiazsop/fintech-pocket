@@ -667,66 +667,26 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {step === 1 && (
+          {step === 2 && (
             <motion.div
-              key="step1"
+              key="step2"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              {/* Operation type selector */}
-              <div className="fintech-card p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">Tipo de operación</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de operación">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={operationType === "loan"}
-                    onClick={() => setOperationType("loan")}
-                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
-                      operationType === "loan"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <HandCoins className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">Préstamo</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">Dinero prestado</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={operationType === "sale"}
-                    onClick={() => setOperationType("sale")}
-                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
-                      operationType === "sale"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <ShoppingCart className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">Venta</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">Venta al crédito</p>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Step 1: Basic Info */}
+              {/* Step 2: Datos del cliente */}
               <div className="fintech-card p-5 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-xl bg-primary/20">
                     <User className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="font-semibold">
-                    {operationType === "sale" ? "Datos de la venta" : "Datos del préstamo"}
-                  </h2>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Datos del cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {operationType === "sale" ? "Para tu venta al crédito" : "Para tu préstamo"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
