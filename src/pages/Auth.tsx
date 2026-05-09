@@ -108,6 +108,32 @@ export default function Auth() {
     }
   };
 
+  const handleGoogle = async () => {
+    if (!acceptedTerms) {
+      toast({
+        title: "Error",
+        description: "Debes aceptar los términos y condiciones",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: `${window.location.origin}/dashboard`,
+      });
+      if (result.error) {
+        toast({
+          title: "Error",
+          description: "No se pudo iniciar sesión con Google",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
       <motion.div
