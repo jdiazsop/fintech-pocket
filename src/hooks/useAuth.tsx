@@ -40,25 +40,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, acceptedTerms: boolean) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: redirectUrl,
+        data: {
+          accepted_terms: acceptedTerms,
+        },
       },
     });
     return { error };
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    return { error };
+    if (error) return { error };
+
+    // Verify accepted_terms in profile; block access if not accepted
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("accepted_terms")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (!profile?.accepted_terms) {
+        await supabase.auth.signOut();
+        return {
+          error: new Error(
+            "Debes aceptar los Términos y Condiciones y la Política de Privacidad para acceder."
+          ),
+        };
+      }
+    }
+    return { error: null };
   };
 
   const signOut = async () => {
