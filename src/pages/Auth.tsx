@@ -78,7 +78,7 @@ export default function Auth() {
           navigate("/dashboard");
         }
       } else if (mode === "register") {
-        const { error } = await signUp(email, password);
+        const { error } = await signUp(email, password, acceptedTerms);
         if (error) {
           let message = "Error al crear cuenta";
           if (error.message.includes("already registered")) {
