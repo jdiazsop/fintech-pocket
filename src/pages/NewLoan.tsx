@@ -147,29 +147,53 @@ export default function NewLoan() {
   useEffect(() => {
     const fetchDebtors = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from("loans")
-        .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
-      if (data) {
-        const map = new Map<string, ExistingDebtor>();
-        for (const l of data as any[]) {
-          if (!map.has(l.name)) {
-            map.set(l.name, {
-              name: l.name,
-              firstName: l.first_name || "",
-              lastName: l.last_name || "",
-              phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
-              phoneNumber: l.phone_number || "",
-              dni: l.dni || "",
-              address: l.address || "",
-              reference: l.reference || "",
-            });
-          }
+      const [{ data: loansData }, { data: clientsData }] = await Promise.all([
+        supabase
+          .from("loans")
+          .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("clients")
+          .select("first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
+
+      const map = new Map<string, ExistingDebtor>();
+      // Loans first (preserve existing precedence for clients with operations)
+      for (const l of (loansData as any[]) || []) {
+        if (!map.has(l.name)) {
+          map.set(l.name, {
+            name: l.name,
+            firstName: l.first_name || "",
+            lastName: l.last_name || "",
+            phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
+            phoneNumber: l.phone_number || "",
+            dni: l.dni || "",
+            address: l.address || "",
+            reference: l.reference || "",
+          });
         }
-        setExistingDebtors(Array.from(map.values()));
       }
+      // Then contacts-only clients (no operations yet)
+      for (const c of (clientsData as any[]) || []) {
+        const fullName = `${c.first_name || ""} ${c.last_name || ""}`.trim();
+        if (!fullName) continue;
+        if (!map.has(fullName)) {
+          map.set(fullName, {
+            name: fullName,
+            firstName: c.first_name || "",
+            lastName: c.last_name || "",
+            phoneCountryCode: c.phone_country_code || DEFAULT_COUNTRY_CODE,
+            phoneNumber: c.phone_number || "",
+            dni: c.dni || "",
+            address: c.address || "",
+            reference: c.reference || "",
+          });
+        }
+      }
+      setExistingDebtors(Array.from(map.values()));
     };
     fetchDebtors();
   }, [user]);
