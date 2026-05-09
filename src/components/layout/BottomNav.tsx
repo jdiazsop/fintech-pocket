@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const navItems = [
   { path: "/dashboard", icon: Home, label: "Inicio" },
-  { path: "/new-loan", icon: Briefcase, label: "Operaciones" },
+  { path: "/operations", icon: Briefcase, label: "Operaciones" },
   { path: "/portfolio", icon: Users, label: "Clientes" },
   { path: "/subscription", icon: Crown, label: "Suscripción" },
 ];

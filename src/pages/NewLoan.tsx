@@ -65,12 +65,14 @@ export default function NewLoan() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isNewClientFlow = searchParams.get("newClient") === "1";
+  const presetType = searchParams.get("type"); // "loan" | "sale"
+  const hasPresetType = presetType === "loan" || presetType === "sale";
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(isNewClientFlow ? 2 : 0);
+  const [step, setStep] = useState(isNewClientFlow ? 2 : hasPresetType ? 1 : 0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [operationType, setOperationType] = useState<OperationType>("loan");
+  const [operationType, setOperationType] = useState<OperationType>(hasPresetType ? (presetType as OperationType) : "loan");
   const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
   const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -399,6 +401,10 @@ export default function NewLoan() {
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
+      if (hasPresetType) {
+        navigate(-1);
+        return;
+      }
       setStep(0);
       setContactType(null);
       setSearchQuery("");
