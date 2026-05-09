@@ -860,7 +860,7 @@ export default function NewLoan() {
                 </div>
               </div>
 
-              {/* Section: Ubicación */}
+              {/* Section: Ubicación (progressive disclosure) */}
               <div className="fintech-card p-5 space-y-4">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-primary/15">
@@ -868,7 +868,7 @@ export default function NewLoan() {
                   </div>
                   <div>
                     <h3 className="text-sm font-semibold leading-tight">Ubicación</h3>
-                    <p className="text-[11px] text-muted-foreground leading-tight">Opcional, mejora la trazabilidad</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Opcional · ayuda a tu trazabilidad</p>
                   </div>
                 </div>
 
@@ -893,99 +893,109 @@ export default function NewLoan() {
                     </Select>
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <Building2 className="w-3.5 h-3.5" />
-                      Provincia
-                    </Label>
-                    <Select
-                      value={province}
-                      onValueChange={(v) => { setProvince(v); setDistrict(""); }}
-                      disabled={!department}
+                    <Label className="text-xs text-muted-foreground">Distrito</Label>
+                    <Popover open={districtOpen} onOpenChange={setDistrictOpen}>
+                      <PopoverTrigger asChild>
+                        <button
+                          type="button"
+                          disabled={!department}
+                          className="w-full h-11 px-3 rounded-md bg-muted/40 border border-input flex items-center justify-between text-left text-sm disabled:opacity-50"
+                        >
+                          <span className={district ? "" : "text-muted-foreground"}>
+                            {district || (department ? "Buscar distrito..." : "Elige depto.")}
+                          </span>
+                          <ChevronsUpDown className="w-4 h-4 text-muted-foreground shrink-0" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="p-0 w-[--radix-popover-trigger-width]" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar distrito..." />
+                          <CommandList>
+                            <CommandEmpty>Sin resultados</CommandEmpty>
+                            {(() => {
+                              const all = new Set<string>();
+                              if (province) {
+                                (DISTRICT_SUGGESTIONS[`${department}|${province}`] || []).forEach((s) => all.add(s));
+                              }
+                              if (department) {
+                                (PERU_DEPARTMENTS.find((d) => d.name === department)?.provinces || []).forEach((p) => {
+                                  (DISTRICT_SUGGESTIONS[`${department}|${p}`] || []).forEach((s) => all.add(s));
+                                });
+                              }
+                              const items = Array.from(all).sort((a, b) => a.localeCompare(b));
+                              return (
+                                <CommandGroup>
+                                  {items.map((s) => (
+                                    <CommandItem
+                                      key={s}
+                                      value={s}
+                                      onSelect={(v) => {
+                                        setDistrict(v);
+                                        setDistrictOpen(false);
+                                      }}
+                                    >
+                                      {s}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              );
+                            })()}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
+                <Collapsible open={showAddressDetails} onOpenChange={setShowAddressDetails}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="w-full flex items-center justify-between text-xs text-primary hover:text-primary/80 py-1"
                     >
-                      <SelectTrigger className="bg-muted/40 h-11">
-                        <SelectValue placeholder={department ? "Selecciona" : "Elige depto."} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-72">
-                        {provincesForDept.map((p) => (
-                          <SelectItem key={p} value={p}>{p}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="district" className="text-xs text-muted-foreground">Distrito</Label>
-                  <Input
-                    id="district"
-                    list="district-suggestions"
-                    placeholder={province ? "Empieza a escribir..." : "Elige provincia primero"}
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    disabled={!province}
-                    className="bg-muted/40 h-11"
-                  />
-                  {districtSuggestions.length > 0 && (
-                    <datalist id="district-suggestions">
-                      {districtSuggestions.map((s) => <option key={s} value={s} />)}
-                    </datalist>
-                  )}
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="exactAddress" className="text-xs text-muted-foreground">
-                    Dirección exacta <span className="text-muted-foreground/60">(opcional)</span>
-                  </Label>
-                  <Input
-                    id="exactAddress"
-                    placeholder="Av. Principal 123, Dpto. 4B"
-                    value={exactAddress}
-                    onChange={(e) => setExactAddress(e.target.value)}
-                    className="bg-muted/40 h-11"
-                    maxLength={200}
-                  />
-                </div>
-              </div>
-
-              {/* Section: Detalles de la operación */}
-              <div className="fintech-card p-5 space-y-4">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-primary/15">
-                    <FileText className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold leading-tight">Detalles de la operación</h3>
-                    <p className="text-[11px] text-muted-foreground leading-tight">Contexto y fecha de inicio</p>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="concept" className="text-xs text-muted-foreground">
-                    Concepto <span className="text-muted-foreground/60">(opcional)</span>
-                  </Label>
-                  <Input
-                    id="concept"
-                    placeholder="Ej: Mercadería, capital de trabajo..."
-                    value={formData.concept}
-                    onChange={(e) => updateForm("concept", e.target.value)}
-                    className="bg-muted/40 h-11"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="startDate" className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Fecha de inicio
-                  </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    max={format(new Date(), "yyyy-MM-dd")}
-                    onChange={(e) => updateForm("startDate", e.target.value)}
-                    className="bg-muted/40 h-11"
-                  />
-                </div>
+                      <span className="flex items-center gap-1.5">
+                        <Plus className="w-3.5 h-3.5" />
+                        {showAddressDetails ? "Ocultar dirección exacta" : "Agregar dirección exacta"}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showAddressDetails ? "rotate-180" : ""}`} />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pt-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5" />
+                        Provincia
+                      </Label>
+                      <Select
+                        value={province}
+                        onValueChange={(v) => { setProvince(v); setDistrict(""); }}
+                        disabled={!department}
+                      >
+                        <SelectTrigger className="bg-muted/40 h-11">
+                          <SelectValue placeholder={department ? "Selecciona" : "Elige depto."} />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-72">
+                          {provincesForDept.map((p) => (
+                            <SelectItem key={p} value={p}>{p}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="exactAddress" className="text-xs text-muted-foreground">
+                        Dirección exacta
+                      </Label>
+                      <Input
+                        id="exactAddress"
+                        placeholder="Av. Principal 123, Dpto. 4B"
+                        value={exactAddress}
+                        onChange={(e) => setExactAddress(e.target.value)}
+                        className="bg-muted/40 h-11"
+                        maxLength={200}
+                      />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <Button
