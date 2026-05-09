@@ -1320,7 +1320,7 @@ export default function NewLoan() {
                       value={fullName || "—"}
                       onEdit={() => {
                         setReviewing(false);
-                        setStep(1);
+                        setStep(2);
                       }}
                     />
                     <Row
