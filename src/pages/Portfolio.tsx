@@ -86,6 +86,21 @@ export default function Portfolio() {
     if (user) fetchData();
   }, [user]);
 
+  // Refetch when the tab/route regains focus or visibility (e.g., returning from /new-client)
+  useEffect(() => {
+    if (!user) return;
+    const onFocus = () => fetchData();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchData();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
