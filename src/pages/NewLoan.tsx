@@ -1240,8 +1240,8 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {/* Step 2.5: Review before registering */}
-          {step === 2 && reviewing && (() => {
+          {/* Step 3.5: Review before registering */}
+          {step === 3 && reviewing && (() => {
             const allInst = generateInstallments();
             const next = allInst[0];
             const last = allInst[allInst.length - 1];
