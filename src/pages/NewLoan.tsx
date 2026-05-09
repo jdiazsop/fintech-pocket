@@ -1018,6 +1018,49 @@ export default function NewLoan() {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-6"
             >
+              {/* Section: Detalles de la operación (motivo/producto + fecha) */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/15">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                  <h3 className="text-sm font-semibold leading-tight">Detalles de la operación</h3>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="concept" className="text-xs text-muted-foreground">
+                    {operationType === "sale" ? "Producto o detalle de venta" : "Motivo del préstamo"}{" "}
+                    <span className="text-muted-foreground/60">(opcional)</span>
+                  </Label>
+                  <Input
+                    id="concept"
+                    placeholder={
+                      operationType === "sale"
+                        ? "Ej: iPhone 15, Laptop Lenovo, Mercadería..."
+                        : "Ej: Capital de trabajo, Emergencia, Salud..."
+                    }
+                    value={formData.concept}
+                    onChange={(e) => updateForm("concept", e.target.value)}
+                    className="bg-muted/40 h-11"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="startDate" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Fecha de inicio
+                  </Label>
+                  <Input
+                    id="startDate"
+                    type="date"
+                    value={formData.startDate}
+                    max={format(new Date(), "yyyy-MM-dd")}
+                    onChange={(e) => updateForm("startDate", e.target.value)}
+                    className="bg-muted/40 h-11"
+                  />
+                </div>
+              </div>
+
               {/* Step 2: Calculator */}
               <div className="fintech-card p-5 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
