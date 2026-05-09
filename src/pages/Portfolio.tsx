@@ -372,27 +372,39 @@ export default function Portfolio() {
                           </span>
                         </div>
                         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
-                          <span className="inline-flex items-center gap-1">
-                            {c.loans.length === 1 && c.loans[0].amount_lent !== c.loans[0].amount_to_return ? (
-                              <Wallet className="w-3 h-3" />
-                            ) : (
-                              <ShoppingBag className="w-3 h-3" />
-                            )}
-                            {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
-                          </span>
-                          {c.overdueInstallments > 0 && (
-                            <span className="text-red-400">· {c.overdueInstallments} cuota{c.overdueInstallments === 1 ? "" : "s"} vencida{c.overdueInstallments === 1 ? "" : "s"}</span>
-                          )}
-                          {c.overdueInstallments === 0 && c.daysToNext !== null && c.totalPending > 0 && (
-                            <span>
-                              · {c.daysToNext === 0 ? "Vence hoy" : c.daysToNext > 0 ? `Vence en ${c.daysToNext}d` : "Vencido"}
-                            </span>
+                          {c.loans.length === 0 ? (
+                            <span className="italic">Sin operaciones registradas</span>
+                          ) : (
+                            <>
+                              <span className="inline-flex items-center gap-1">
+                                {c.loans.length === 1 && c.loans[0].amount_lent !== c.loans[0].amount_to_return ? (
+                                  <Wallet className="w-3 h-3" />
+                                ) : (
+                                  <ShoppingBag className="w-3 h-3" />
+                                )}
+                                {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
+                              </span>
+                              {c.overdueInstallments > 0 && (
+                                <span className="text-red-400">· {c.overdueInstallments} cuota{c.overdueInstallments === 1 ? "" : "s"} vencida{c.overdueInstallments === 1 ? "" : "s"}</span>
+                              )}
+                              {c.overdueInstallments === 0 && c.daysToNext !== null && c.totalPending > 0 && (
+                                <span>
+                                  · {c.daysToNext === 0 ? "Vence hoy" : c.daysToNext > 0 ? `Vence en ${c.daysToNext}d` : "Vencido"}
+                                </span>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-col items-end flex-shrink-0">
-                        <p className="text-base font-bold text-primary tabular-nums">{formatCurrency(c.totalPending)}</p>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                        {c.loans.length === 0 ? (
+                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                        ) : (
+                          <>
+                            <p className="text-base font-bold text-primary tabular-nums">{formatCurrency(c.totalPending)}</p>
+                            <ChevronRight className="w-4 h-4 text-muted-foreground mt-1" />
+                          </>
+                        )}
                       </div>
                     </div>
                   </button>
