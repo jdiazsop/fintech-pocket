@@ -399,13 +399,17 @@ export default function NewLoan() {
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
+      setStep(0);
+      setContactType(null);
+      setSearchQuery("");
+      setIsContactLocked(false);
+    } else if (step === 2) {
       if (isNewClientFlow) {
         navigate(-1);
         return;
       }
-      setStep(0);
+      setStep(1);
       setContactType(null);
-      setSearchQuery("");
       setIsContactLocked(false);
       setFormData((prev) => ({
         ...prev,
@@ -418,7 +422,14 @@ export default function NewLoan() {
         reference: "",
       }));
     } else if (step === 3) {
-      // Already created — going back skips to portfolio
+      // Back from calculator: existing client → search; new client → datos del cliente
+      if (contactType === "existing") {
+        setStep(1);
+        setIsContactLocked(false);
+      } else {
+        setStep(2);
+      }
+    } else if (step === 4) {
       navigate("/portfolio");
     } else {
       setStep(step - 1);
