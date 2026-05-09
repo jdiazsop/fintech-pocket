@@ -228,16 +228,16 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <button
-              onClick={() => navigate("/new-loan")}
-              aria-label="Registrar nueva operación de préstamo"
+              onClick={() => navigate("/new-loan?newClient=1")}
+              aria-label="Crear nuevo cliente"
               className="group flex flex-col items-start gap-2 p-3 sm:p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/15 active:scale-[0.98] transition-all text-left"
             >
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                <PlusCircle className="w-5 h-5 text-primary" />
+                <UserPlus className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm sm:text-base font-semibold leading-tight">Registrar operación</p>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Nuevo préstamo</p>
+                <p className="text-sm sm:text-base font-semibold leading-tight">Nuevo cliente</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Registrar contacto</p>
               </div>
             </button>
 
