@@ -266,7 +266,7 @@ export default function Portfolio() {
         </div>
 
         {/* Filters */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
           {FILTERS.map((f) => (
             <button
               key={f.key}
