@@ -7,6 +7,8 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  acceptedTerms: boolean | null;
+  profileLoading: boolean;
   signUp: (email: string, password: string, acceptedTerms: boolean) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -19,18 +21,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [acceptedTerms, setAcceptedTerms] = useState<boolean | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        if (!session?.user) {
+          setAcceptedTerms(null);
+        }
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -39,6 +44,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Load accepted_terms from profile whenever user changes (deferred to avoid auth deadlock)
+  useEffect(() => {
+    if (!user) {
+      setAcceptedTerms(null);
+      setProfileLoading(false);
+      return;
+    }
+    setProfileLoading(true);
+    const userId = user.id;
+    setTimeout(async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("accepted_terms")
+        .eq("user_id", userId)
+        .maybeSingle();
+      setAcceptedTerms(profile?.accepted_terms ?? false);
+      setProfileLoading(false);
+    }, 0);
+  }, [user?.id]);
 
   const signUp = async (email: string, password: string, acceptedTerms: boolean) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
