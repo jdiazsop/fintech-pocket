@@ -360,7 +360,7 @@ export default function NewLoan() {
         description: `Operación de ${fullName} creada exitosamente`,
       });
 
-      setStep(3);
+      setStep(4);
     } catch (error) {
       console.error("Error creating loan:", error);
       toast({
