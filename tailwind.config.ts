@@ -15,6 +15,24 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif'],
+      },
+      letterSpacing: {
+        tightest: '-0.03em',
+        tighter: '-0.02em',
+        tight: '-0.01em',
+      },
+      fontSize: {
+        // Mobile-first fintech type scale
+        'display-lg': ['2rem', { lineHeight: '1.1', letterSpacing: '-0.025em', fontWeight: '700' }],
+        'display': ['1.5rem', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'h1': ['1.375rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'h2': ['1.125rem', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '600' }],
+        'h3': ['1rem', { lineHeight: '1.35', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'body': ['0.9375rem', { lineHeight: '1.5', letterSpacing: '-0.005em' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.5' }],
+        'caption': ['0.75rem', { lineHeight: '1.4', letterSpacing: '0' }],
+        'micro': ['0.6875rem', { lineHeight: '1.3', letterSpacing: '0.01em', fontWeight: '500' }],
       },
       colors: {
         border: "hsl(var(--border))",
