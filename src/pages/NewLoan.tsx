@@ -1050,16 +1050,37 @@ export default function NewLoan() {
                 <div className="space-y-1.5">
                   <Label htmlFor="startDate" className="text-xs text-muted-foreground flex items-center gap-1.5">
                     <Calendar className="w-3.5 h-3.5" />
-                    Fecha de inicio
+                    Fecha de la operación
                   </Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={formData.startDate}
-                    max={format(new Date(), "yyyy-MM-dd")}
-                    onChange={(e) => updateForm("startDate", e.target.value)}
-                    className="bg-muted/40 h-11"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="startDate"
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "bg-muted/40 h-11 w-full justify-start text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {formData.startDate
+                          ? format(parse(formData.startDate, "yyyy-MM-dd", new Date()), "dd/MM/yyyy", { locale: es })
+                          : "Selecciona una fecha"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarPicker
+                        mode="single"
+                        locale={es}
+                        selected={formData.startDate ? parse(formData.startDate, "yyyy-MM-dd", new Date()) : undefined}
+                        onSelect={(d) => d && updateForm("startDate", format(d, "yyyy-MM-dd"))}
+                        disabled={(date) => date > new Date()}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
