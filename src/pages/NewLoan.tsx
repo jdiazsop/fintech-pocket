@@ -1435,10 +1435,10 @@ export default function NewLoan() {
             );
           })()}
 
-          {/* Step 3: Success + send agreement (integrated screen) */}
-          {step === 3 && createdLoan && (
+          {/* Step 4: Success + send agreement (integrated screen) */}
+          {step === 4 && createdLoan && (
             <motion.div
-              key="step3"
+              key="step4"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
