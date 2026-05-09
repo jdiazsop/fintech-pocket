@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NewLoan from "./pages/NewLoan";
+import NewClient from "./pages/NewClient";
 import Operations from "./pages/Operations";
 import Portfolio from "./pages/Portfolio";
 import LoanDetail from "./pages/LoanDetail";
@@ -78,6 +79,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <NewLoan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/new-client"
+        element={
+          <ProtectedRoute>
+            <NewClient />
           </ProtectedRoute>
         }
       />
