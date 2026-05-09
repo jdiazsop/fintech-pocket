@@ -37,7 +37,16 @@ interface Installment {
   status: string;
 }
 
-type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time";
+interface ClientRow {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  dni: string | null;
+  phone_country_code: string | null;
+  phone_number: string | null;
+}
+
+type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time" | "no_ops";
 
 interface ClientCard {
   key: string;
