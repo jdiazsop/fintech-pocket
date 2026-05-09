@@ -67,7 +67,7 @@ export default function NewLoan() {
   const isNewClientFlow = searchParams.get("newClient") === "1";
   const { user } = useAuth();
   const { toast } = useToast();
-  const [step, setStep] = useState(isNewClientFlow ? 1 : 0);
+  const [step, setStep] = useState(isNewClientFlow ? 2 : 0);
   const [loading, setLoading] = useState(false);
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>("loan");
@@ -154,7 +154,9 @@ export default function NewLoan() {
       reference: d.reference,
     }));
     setIsContactLocked(true);
-    setStep(1);
+    setContactType("existing");
+    // Skip "Datos del cliente" step — go directly to calculator
+    setStep(3);
   };
 
   const updateForm = (field: keyof LoanFormData, value: string | number) => {
@@ -358,7 +360,7 @@ export default function NewLoan() {
         description: `Operación de ${fullName} creada exitosamente`,
       });
 
-      setStep(3);
+      setStep(4);
     } catch (error) {
       console.error("Error creating loan:", error);
       toast({
@@ -387,7 +389,7 @@ export default function NewLoan() {
     };
   };
 
-  const summary = step === 2 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
+  const summary = step === 3 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
 
   const handleBackNavigation = () => {
     if (reviewing) {
@@ -397,13 +399,17 @@ export default function NewLoan() {
     if (step === 0) {
       navigate(-1);
     } else if (step === 1) {
+      setStep(0);
+      setContactType(null);
+      setSearchQuery("");
+      setIsContactLocked(false);
+    } else if (step === 2) {
       if (isNewClientFlow) {
         navigate(-1);
         return;
       }
-      setStep(0);
+      setStep(1);
       setContactType(null);
-      setSearchQuery("");
       setIsContactLocked(false);
       setFormData((prev) => ({
         ...prev,
@@ -416,7 +422,14 @@ export default function NewLoan() {
         reference: "",
       }));
     } else if (step === 3) {
-      // Already created — going back skips to portfolio
+      // Back from calculator: existing client → search; new client → datos del cliente
+      if (contactType === "existing") {
+        setStep(1);
+        setIsContactLocked(false);
+      } else {
+        setStep(2);
+      }
+    } else if (step === 4) {
       navigate("/portfolio");
     } else {
       setStep(step - 1);
@@ -473,7 +486,7 @@ export default function NewLoan() {
             <h1 className="text-xl font-bold">
               Nueva operación
             </h1>
-            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 4</p>
+            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 5</p>
           </div>
         </div>
 
@@ -483,10 +496,11 @@ export default function NewLoan() {
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 4 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
-          {/* Step 0: Contact Type Selection */}
+          {/* Step 0: Operation Type */}
           {step === 0 && (
             <motion.div
               key="step0"
@@ -496,95 +510,64 @@ export default function NewLoan() {
               className="space-y-6"
             >
               <div className="fintech-card p-5 space-y-5">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-1">
                   <div className="p-2 rounded-xl bg-primary/20">
-                    <Users className="w-5 h-5 text-primary" />
+                    <Calculator className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="font-semibold">Tipo de Contacto</h2>
+                  <div>
+                    <h2 className="font-semibold leading-tight">¿Qué deseas registrar?</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Elige el tipo de acuerdo</p>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <button
                     onClick={() => {
-                      setContactType("new");
-                      setIsContactLocked(false);
-                      setFormData((prev) => ({
-                        ...prev,
-                        firstName: "",
-                        lastName: "",
-                        phoneCountryCode: DEFAULT_COUNTRY_CODE,
-                        phoneNumber: "",
-                        dni: "",
-                        address: "",
-                        reference: "",
-                      }));
+                      setOperationType("loan");
                       setStep(1);
                     }}
-                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      contactType === "new"
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left active:scale-[0.99] ${
+                      operationType === "loan"
                         ? "border-primary bg-primary/10"
                         : "border-muted bg-card hover:border-primary/50"
                     }`}
                   >
-                    <UserPlus className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm text-center">Contacto<br/>nuevo</span>
+                    <div className="p-3 rounded-xl bg-primary/15">
+                      <HandCoins className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold leading-tight">Préstamo</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Dinero prestado a devolver</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
                   </button>
+
                   <button
-                    onClick={() => setContactType("existing")}
-                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${
-                      contactType === "existing"
+                    onClick={() => {
+                      setOperationType("sale");
+                      setStep(1);
+                    }}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left active:scale-[0.99] ${
+                      operationType === "sale"
                         ? "border-primary bg-primary/10"
                         : "border-muted bg-card hover:border-primary/50"
                     }`}
                   >
-                    <Users className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-sm text-center">Contacto<br/>existente</span>
+                    <div className="p-3 rounded-xl bg-primary/15">
+                      <ShoppingCart className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-base font-semibold leading-tight">Venta al crédito</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Producto o servicio a pagar en cuotas</p>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-muted-foreground" />
                   </button>
                 </div>
-
-                {contactType === "existing" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="space-y-3"
-                  >
-                    <Label>Buscar deudor</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Escribe un nombre..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-muted/50 pl-9"
-                      />
-                    </div>
-                    <div className="max-h-48 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
-                      {filteredDebtors.length > 0 ? (
-                        filteredDebtors.map((d) => (
-                          <button
-                            key={d.name}
-                            onClick={() => handleSelectDebtor(d)}
-                            className="w-full text-left p-3 rounded-lg hover:bg-primary/20 transition-colors flex items-center gap-2"
-                          >
-                            <User className="w-4 h-4 text-muted-foreground" />
-                            <span>{d.name}</span>
-                          </button>
-                        ))
-                      ) : (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          {existingDebtors.length === 0
-                            ? "No hay deudores registrados"
-                            : "No se encontraron coincidencias"}
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
               </div>
             </motion.div>
           )}
 
+          {/* Step 1: Search or create client */}
           {step === 1 && (
             <motion.div
               key="step1"
@@ -593,58 +576,117 @@ export default function NewLoan() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              {/* Operation type selector */}
-              <div className="fintech-card p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">Tipo de operación</span>
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="p-2 rounded-xl bg-primary/20">
+                    <Users className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Buscar o crear cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {operationType === "sale" ? "¿A quién vas a vender al crédito?" : "¿A quién vas a prestar?"}
+                    </p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tipo de operación">
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={operationType === "loan"}
-                    onClick={() => setOperationType("loan")}
-                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
-                      operationType === "loan"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <HandCoins className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">Préstamo</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">Dinero prestado</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked={operationType === "sale"}
-                    onClick={() => setOperationType("sale")}
-                    className={`p-3 rounded-xl border-2 transition-all flex items-center gap-2 text-left ${
-                      operationType === "sale"
-                        ? "border-primary bg-primary/10"
-                        : "border-muted bg-card hover:border-primary/50"
-                    }`}
-                  >
-                    <ShoppingCart className="w-5 h-5 text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">Venta</p>
-                      <p className="text-[11px] text-muted-foreground leading-tight">Venta al crédito</p>
-                    </div>
-                  </button>
+
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar cliente por nombre..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-muted/50 pl-9"
+                    autoFocus
+                  />
+                </div>
+
+                <button
+                  onClick={() => {
+                    setContactType("new");
+                    setIsContactLocked(false);
+                    setFormData((prev) => ({
+                      ...prev,
+                      firstName: "",
+                      lastName: "",
+                      phoneCountryCode: DEFAULT_COUNTRY_CODE,
+                      phoneNumber: "",
+                      dni: "",
+                      address: "",
+                      reference: "",
+                    }));
+                    setStep(2);
+                  }}
+                  className="w-full p-3 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-3 text-left active:scale-[0.99]"
+                >
+                  <div className="p-2 rounded-lg bg-primary/15">
+                    <UserPlus className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold leading-tight">Crear nuevo cliente</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">Registrar datos por primera vez</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                </button>
+
+                <div className="space-y-2">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold px-1">
+                    {searchQuery.trim() ? "Resultados" : "Clientes recientes"}
+                  </p>
+                  <div className="max-h-72 overflow-y-auto space-y-1 rounded-lg bg-muted/30 p-2">
+                    {filteredDebtors.length > 0 ? (
+                      filteredDebtors.map((d) => (
+                        <button
+                          key={d.name}
+                          onClick={() => handleSelectDebtor(d)}
+                          className="w-full text-left p-3 rounded-lg hover:bg-primary/15 transition-colors flex items-center gap-3 active:scale-[0.99]"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
+                            <User className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate">{d.name}</p>
+                            {d.phoneNumber && (
+                              <p className="text-[11px] text-muted-foreground truncate">
+                                {d.phoneCountryCode} {d.phoneNumber}
+                              </p>
+                            )}
+                          </div>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        </button>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-6">
+                        {existingDebtors.length === 0
+                          ? "Aún no tienes clientes registrados"
+                          : "No se encontraron coincidencias"}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
+            </motion.div>
+          )}
 
-              {/* Step 1: Basic Info */}
+          {step === 2 && (
+            <motion.div
+              key="step2"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className="space-y-6"
+            >
+              {/* Step 2: Datos del cliente */}
               <div className="fintech-card p-5 space-y-5">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="p-2 rounded-xl bg-primary/20">
                     <User className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="font-semibold">
-                    {operationType === "sale" ? "Datos de la venta" : "Datos del préstamo"}
-                  </h2>
+                  <div>
+                    <h2 className="font-semibold leading-tight">Datos del cliente</h2>
+                    <p className="text-[11px] text-muted-foreground leading-tight">
+                      {operationType === "sale" ? "Para tu venta al crédito" : "Para tu préstamo"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -800,7 +842,7 @@ export default function NewLoan() {
 
               <Button
                 onClick={() => {
-                  if (validateStep1()) setStep(2);
+                  if (validateStep1()) setStep(3);
                 }}
                 className="w-full bg-primary hover:bg-primary/90"
               >
@@ -810,9 +852,9 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {step === 2 && !reviewing && (
+          {step === 3 && !reviewing && (
             <motion.div
-              key="step2"
+              key="step3"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
@@ -1198,8 +1240,8 @@ export default function NewLoan() {
             </motion.div>
           )}
 
-          {/* Step 2.5: Review before registering */}
-          {step === 2 && reviewing && (() => {
+          {/* Step 3.5: Review before registering */}
+          {step === 3 && reviewing && (() => {
             const allInst = generateInstallments();
             const next = allInst[0];
             const last = allInst[allInst.length - 1];
@@ -1278,7 +1320,7 @@ export default function NewLoan() {
                       value={fullName || "—"}
                       onEdit={() => {
                         setReviewing(false);
-                        setStep(1);
+                        setStep(2);
                       }}
                     />
                     <Row
@@ -1393,10 +1435,10 @@ export default function NewLoan() {
             );
           })()}
 
-          {/* Step 3: Success + send agreement (integrated screen) */}
-          {step === 3 && createdLoan && (
+          {/* Step 4: Success + send agreement (integrated screen) */}
+          {step === 4 && createdLoan && (
             <motion.div
-              key="step3"
+              key="step4"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
