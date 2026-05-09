@@ -77,6 +77,7 @@ export default function Portfolio() {
   const isMobile = useIsMobile();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
+  const [contacts, setContacts] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
@@ -88,11 +89,12 @@ export default function Portfolio() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const { data: loansData } = await supabase
-        .from("loans")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const [{ data: loansData }, { data: clientsData }] = await Promise.all([
+        supabase.from("loans").select("*").order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number").order("created_at", { ascending: false }),
+      ]);
       setLoans((loansData as Loan[]) || []);
+      setContacts((clientsData as ClientRow[]) || []);
 
       const ids = (loansData || []).map((l) => l.id);
       if (ids.length) {
