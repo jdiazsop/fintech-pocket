@@ -486,7 +486,7 @@ export default function NewLoan() {
             <h1 className="text-xl font-bold">
               Nueva operación
             </h1>
-            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 4</p>
+            <p className="text-sm text-muted-foreground">Paso {currentStepDisplay} de 5</p>
           </div>
         </div>
 
@@ -496,6 +496,7 @@ export default function NewLoan() {
           <div className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-primary" : "bg-muted"}`} />
           <div className={`h-1 flex-1 rounded-full ${step >= 3 ? "bg-primary" : "bg-muted"}`} />
+          <div className={`h-1 flex-1 rounded-full ${step >= 4 ? "bg-primary" : "bg-muted"}`} />
         </div>
 
         <AnimatePresence mode="wait">
