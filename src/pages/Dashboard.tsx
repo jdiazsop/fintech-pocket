@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, UserPlus, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame, UserCircle2 } from "lucide-react";
+import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame, UserCircle2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { QuickPaymentSheet } from "@/components/payments/QuickPaymentSheet";
+import { NewOperationSheet } from "@/components/operations/NewOperationSheet";
 
 interface Loan {
   id: string;
@@ -56,6 +57,7 @@ export default function Dashboard() {
   const [prioritySort, setPrioritySort] = useState<PrioritySort>("most_overdue");
   const [showAllPriority, setShowAllPriority] = useState(false);
   const [quickPayOpen, setQuickPayOpen] = useState(false);
+  const [newOpOpen, setNewOpOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -228,16 +230,16 @@ export default function Dashboard() {
           </div>
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             <button
-              onClick={() => navigate("/new-loan?newClient=1")}
-              aria-label="Crear nuevo cliente"
+              onClick={() => setNewOpOpen(true)}
+              aria-label="Crear nueva operación"
               className="group flex flex-col items-start gap-2 p-3 sm:p-4 rounded-xl bg-primary/10 border border-primary/30 hover:bg-primary/15 active:scale-[0.98] transition-all text-left"
             >
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                <UserPlus className="w-5 h-5 text-primary" />
+                <PlusCircle className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-sm sm:text-base font-semibold leading-tight">Nuevo cliente</p>
-                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Registrar contacto</p>
+                <p className="text-sm sm:text-base font-semibold leading-tight">Nueva operación</p>
+                <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Préstamo o venta</p>
               </div>
             </button>
 
