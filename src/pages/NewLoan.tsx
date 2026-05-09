@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart, Paperclip, MessageCircle, ShieldCheck, SkipForward } from "lucide-react";
+import { ArrowLeft, ArrowRight, User, FileText, Calendar, Calculator, Check, Loader2, UserPlus, Users, Search, Phone, IdCard, MapPin, HandCoins, ShoppingCart, Paperclip, MessageCircle, ShieldCheck, SkipForward, Camera, X, Building2, Globe2 } from "lucide-react";
+import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,35 @@ export default function NewLoan() {
     frequency: "weekly",
     daysOrInstallments: 30,
   });
+
+  // Structured location capture (UX only, persisted into `address` field)
+  const [department, setDepartment] = useState<string>("");
+  const [province, setProvince] = useState<string>("");
+  const [district, setDistrict] = useState<string>("");
+  const [exactAddress, setExactAddress] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+
+  const provincesForDept = useMemo(
+    () => PERU_DEPARTMENTS.find((d) => d.name === department)?.provinces || [],
+    [department]
+  );
+  const districtSuggestions = useMemo(() => {
+    if (!department || !province) return [];
+    return DISTRICT_SUGGESTIONS[`${department}|${province}`] || [];
+  }, [department, province]);
+
+  const composedAddress = useMemo(() => {
+    const loc = [district.trim(), province, department].filter(Boolean).join(", ");
+    const exact = exactAddress.trim();
+    if (exact && loc) return `${exact} — ${loc}`;
+    return exact || loc;
+  }, [exactAddress, district, province, department]);
+
+  // Keep formData.address in sync so existing submit logic works untouched
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, address: composedAddress }));
+  }, [composedAddress]);
+
 
   // Fetch existing debtors (latest record per name)
   useEffect(() => {
@@ -681,49 +711,102 @@ export default function NewLoan() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              {/* Step 2: Datos del cliente */}
-              <div className="fintech-card p-5 space-y-5">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-xl bg-primary/20">
-                    <User className="w-5 h-5 text-primary" />
+              {/* Header onboarding-style */}
+              <div className="flex items-center gap-3 px-1">
+                <label className="relative cursor-pointer group">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center overflow-hidden border border-primary/30">
+                    {avatarPreview ? (
+                      <img src={avatarPreview} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-primary" />
+                    )}
+                  </div>
+                  {avatarPreview && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); setAvatarPreview(null); }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+                      aria-label="Quitar foto"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setAvatarPreview(URL.createObjectURL(f));
+                    }}
+                  />
+                </label>
+                <div className="min-w-0">
+                  <h2 className="text-lg font-semibold leading-tight">Nuevo cliente</h2>
+                  <p className="text-xs text-muted-foreground leading-tight mt-0.5">
+                    Agreguemos a la persona con quien tendrás esta {operationType === "sale" ? "venta" : "operación"}.
+                  </p>
+                </div>
+              </div>
+
+              {/* Section: Datos personales */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/15">
+                    <User className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <h2 className="font-semibold leading-tight">Datos del cliente</h2>
-                    <p className="text-[11px] text-muted-foreground leading-tight">
-                      {operationType === "sale" ? "Para tu venta al crédito" : "Para tu préstamo"}
-                    </p>
+                    <h3 className="text-sm font-semibold leading-tight">Datos personales</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">¿Cómo identificamos a tu cliente?</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">Nombres *</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="firstName" className="text-xs text-muted-foreground">Nombres</Label>
                     <Input
                       id="firstName"
-                      placeholder="Ej: Juan"
+                      placeholder="Juan Carlos"
                       value={formData.firstName}
                       onChange={(e) => updateForm("firstName", e.target.value)}
-                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Apellidos *</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="lastName" className="text-xs text-muted-foreground">Apellidos</Label>
                     <Input
                       id="lastName"
-                      placeholder="Ej: Pérez"
+                      placeholder="Pérez Gómez"
                       value={formData.lastName}
                       onChange={(e) => updateForm("lastName", e.target.value)}
-                      className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phoneNumber" className="flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Número de celular *
+                <div className="space-y-1.5">
+                  <Label htmlFor="dni" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <IdCard className="w-3.5 h-3.5" />
+                    DNI o CE
+                  </Label>
+                  <Input
+                    id="dni"
+                    placeholder="12345678"
+                    value={formData.dni}
+                    onChange={(e) => updateForm("dni", e.target.value)}
+                    className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isContactLocked}
+                    maxLength={20}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="phoneNumber" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5" />
+                    Celular
                   </Label>
                   <div className="flex gap-2">
                     <Select
@@ -731,7 +814,7 @@ export default function NewLoan() {
                       onValueChange={(v) => updateForm("phoneCountryCode", v)}
                       disabled={isContactLocked}
                     >
-                      <SelectTrigger className="bg-muted/50 w-[110px] shrink-0">
+                      <SelectTrigger className="bg-muted/40 w-[110px] shrink-0 h-11">
                         <SelectValue>
                           {(() => {
                             const c = COUNTRY_CODES.find((x) => x.code === formData.phoneCountryCode);
@@ -760,80 +843,133 @@ export default function NewLoan() {
                       id="phoneNumber"
                       type="tel"
                       inputMode="numeric"
-                      placeholder="987654321"
+                      placeholder="987 654 321"
                       value={formData.phoneNumber}
                       onChange={(e) => updateForm("phoneNumber", e.target.value.replace(/\D/g, ""))}
-                      className={`bg-muted/50 flex-1 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                      className={`bg-muted/40 flex-1 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
                       maxLength={15}
                     />
                   </div>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="dni" className="flex items-center gap-2">
-                    <IdCard className="w-4 h-4" />
-                    DNI / CE *
-                  </Label>
-                  <Input
-                    id="dni"
-                    placeholder="Ej: 12345678"
-                    value={formData.dni}
-                    onChange={(e) => updateForm("dni", e.target.value)}
-                    className={`bg-muted/50 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
-                    disabled={isContactLocked}
-                    maxLength={20}
-                  />
+              {/* Section: Ubicación */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/15">
+                    <MapPin className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold leading-tight">Ubicación</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Opcional, mejora la trazabilidad</p>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="address" className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4" />
-                    Dirección (Opcional)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Globe2 className="w-3.5 h-3.5" />
+                      Departamento
+                    </Label>
+                    <Select
+                      value={department}
+                      onValueChange={(v) => { setDepartment(v); setProvince(""); setDistrict(""); }}
+                    >
+                      <SelectTrigger className="bg-muted/40 h-11">
+                        <SelectValue placeholder="Selecciona" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {PERU_DEPARTMENTS.map((d) => (
+                          <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <Building2 className="w-3.5 h-3.5" />
+                      Provincia
+                    </Label>
+                    <Select
+                      value={province}
+                      onValueChange={(v) => { setProvince(v); setDistrict(""); }}
+                      disabled={!department}
+                    >
+                      <SelectTrigger className="bg-muted/40 h-11">
+                        <SelectValue placeholder={department ? "Selecciona" : "Elige depto."} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-72">
+                        {provincesForDept.map((p) => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="district" className="text-xs text-muted-foreground">Distrito</Label>
+                  <Input
+                    id="district"
+                    list="district-suggestions"
+                    placeholder={province ? "Empieza a escribir..." : "Elige provincia primero"}
+                    value={district}
+                    onChange={(e) => setDistrict(e.target.value)}
+                    disabled={!province}
+                    className="bg-muted/40 h-11"
+                  />
+                  {districtSuggestions.length > 0 && (
+                    <datalist id="district-suggestions">
+                      {districtSuggestions.map((s) => <option key={s} value={s} />)}
+                    </datalist>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="exactAddress" className="text-xs text-muted-foreground">
+                    Dirección exacta <span className="text-muted-foreground/60">(opcional)</span>
                   </Label>
                   <Input
-                    id="address"
-                    placeholder="Ej: Av. Principal 123"
-                    value={formData.address}
-                    onChange={(e) => updateForm("address", e.target.value)}
-                    className="bg-muted/50"
+                    id="exactAddress"
+                    placeholder="Av. Principal 123, Dpto. 4B"
+                    value={exactAddress}
+                    onChange={(e) => setExactAddress(e.target.value)}
+                    className="bg-muted/40 h-11"
                     maxLength={200}
                   />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="reference" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Referencia (Opcional)
-                  </Label>
-                  <Input
-                    id="reference"
-                    placeholder="Ej: Frente al parque"
-                    value={formData.reference}
-                    onChange={(e) => updateForm("reference", e.target.value)}
-                    className="bg-muted/50"
-                    maxLength={200}
-                  />
+              {/* Section: Detalles de la operación */}
+              <div className="fintech-card p-5 space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-primary/15">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold leading-tight">Detalles de la operación</h3>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Contexto y fecha de inicio</p>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="concept" className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Concepto (Opcional)
+                <div className="space-y-1.5">
+                  <Label htmlFor="concept" className="text-xs text-muted-foreground">
+                    Concepto <span className="text-muted-foreground/60">(opcional)</span>
                   </Label>
                   <Input
                     id="concept"
-                    placeholder="Ej: Mercadería, Dinero, etc."
+                    placeholder="Ej: Mercadería, capital de trabajo..."
                     value={formData.concept}
                     onChange={(e) => updateForm("concept", e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/40 h-11"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="startDate" className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    Fecha de Inicio
+                <div className="space-y-1.5">
+                  <Label htmlFor="startDate" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Fecha de inicio
                   </Label>
                   <Input
                     id="startDate"
@@ -841,7 +977,7 @@ export default function NewLoan() {
                     value={formData.startDate}
                     max={format(new Date(), "yyyy-MM-dd")}
                     onChange={(e) => updateForm("startDate", e.target.value)}
-                    className="bg-muted/50"
+                    className="bg-muted/40 h-11"
                   />
                 </div>
               </div>
