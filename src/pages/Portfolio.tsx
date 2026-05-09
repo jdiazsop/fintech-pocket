@@ -213,7 +213,7 @@ export default function Portfolio() {
     } else {
       arr.sort((a, b) => {
         const rank = (s: ClientStatus) =>
-          s === "overdue" ? 0 : s === "upcoming" ? 1 : s === "pending_confirm" ? 2 : 3;
+          s === "overdue" ? 0 : s === "upcoming" ? 1 : s === "pending_confirm" ? 2 : s === "on_time" ? 3 : 4;
         const r = rank(a.status) - rank(b.status);
         if (r !== 0) return r;
         return b.totalPending - a.totalPending;
@@ -221,7 +221,7 @@ export default function Portfolio() {
     }
 
     return arr;
-  }, [loans, installments, search, filter]);
+  }, [loans, installments, contacts, search, filter]);
 
   const summary = useMemo(() => {
     const total = clients.reduce((s, c) => s + c.totalPending, 0);
