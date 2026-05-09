@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      clients: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          dni: string | null
+          first_name: string
+          id: string
+          last_name: string | null
+          notes: string | null
+          phone_country_code: string | null
+          phone_number: string | null
+          reference: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          dni?: string | null
+          first_name: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone_country_code?: string | null
+          phone_number?: string | null
+          reference?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          dni?: string | null
+          first_name?: string
+          id?: string
+          last_name?: string | null
+          notes?: string | null
+          phone_country_code?: string | null
+          phone_number?: string | null
+          reference?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       installments: {
         Row: {
           amount: number
