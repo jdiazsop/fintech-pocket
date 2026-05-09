@@ -172,7 +172,7 @@ export default function NewClient() {
           animate={{ opacity: 1, y: 0 }}
           className="fintech-card p-4 space-y-4"
         >
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <User className="w-3.5 h-3.5" /> Datos personales
           </div>
 
@@ -227,7 +227,7 @@ export default function NewClient() {
         >
           <Collapsible open={showAddress} onOpenChange={setShowAddress}>
             <CollapsibleTrigger className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <MapPin className="w-3.5 h-3.5" /> Ubicación <span className="normal-case lowercase">(opcional)</span>
               </div>
               <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />

@@ -287,15 +287,15 @@ export default function ClientDetail() {
 
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="rounded-lg bg-muted/30 p-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Operaciones</p>
+              <p className="text-[10px] text-muted-foreground">Operaciones</p>
               <p className="font-semibold tabular-nums">{loans.length}</p>
             </div>
             <div className="rounded-lg bg-muted/30 p-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Activas</p>
+              <p className="text-[10px] text-muted-foreground">Activas</p>
               <p className="font-semibold tabular-nums">{summary.active}</p>
             </div>
             <div className="rounded-lg bg-muted/30 p-2">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Vencidas</p>
+              <p className="text-[10px] text-muted-foreground">Vencidas</p>
               <p className={`font-semibold tabular-nums ${summary.totalOverdue > 0 ? "text-red-400" : ""}`}>
                 {summary.totalOverdue}
               </p>
@@ -327,7 +327,7 @@ export default function ClientDetail() {
         {/* Operaciones */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            <h2 className="text-sm font-semibold text-muted-foreground">
               Operaciones registradas
             </h2>
             <Button
@@ -355,7 +355,7 @@ export default function ClientDetail() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-muted/40 px-2 py-0.5 rounded-full">
                         <TypeIcon className="w-3 h-3" />
                         {e.isSale ? "Venta al crédito" : "Préstamo"}
                       </span>

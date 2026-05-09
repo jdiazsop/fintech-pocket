@@ -334,7 +334,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
               <Flame className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" />
-              <h2 className="text-sm sm:text-base font-semibold uppercase tracking-wide text-foreground/90 truncate">
+              <h2 className="text-sm sm:text-base font-semibold text-foreground/90 truncate">
                 Cobranzas prioritarias
               </h2>
             </div>
