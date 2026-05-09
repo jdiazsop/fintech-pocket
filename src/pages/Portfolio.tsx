@@ -244,6 +244,7 @@ export default function Portfolio() {
   };
 
   const openClient = (c: ClientCard) => {
+    if (c.loans.length === 0) return; // No-op clients have nothing to open yet
     if (c.loans.length === 1) {
       navigate(`/loan/${c.loans[0].id}`);
     } else {
@@ -259,6 +260,8 @@ export default function Portfolio() {
         return { color: "text-orange-400", bg: "bg-orange-500/15 border-orange-500/30", icon: Clock, label: "Próximo" };
       case "pending_confirm":
         return { color: "text-blue-400", bg: "bg-blue-500/15 border-blue-500/30", icon: MailQuestion, label: "Pend. confirmación" };
+      case "no_ops":
+        return { color: "text-muted-foreground", bg: "bg-muted/30 border-border", icon: Users, label: "Sin operaciones" };
       default:
         return { color: "text-emerald-400", bg: "bg-emerald-500/15 border-emerald-500/30", icon: CheckCircle2, label: "Al día" };
     }
