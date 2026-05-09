@@ -172,6 +172,30 @@ export default function Portfolio() {
       else client.status = "on_time";
     });
 
+    // Merge contacts (clients table) so that clients without operations also appear
+    contacts.forEach((c) => {
+      const dni = (c.dni || "").trim().toLowerCase();
+      const pn = (c.phone_number || "").trim().toLowerCase();
+      const fullName = `${c.first_name || ""} ${c.last_name || ""}`.trim();
+      const key = dni || pn || fullName.toLowerCase() || c.id;
+      if (map.has(key)) return; // already represented by a loan
+      const cc = (c.phone_country_code || "").replace(/\D/g, "");
+      const pnDigits = (c.phone_number || "").replace(/\D/g, "");
+      const fullPhone = cc && pnDigits ? `${cc}${pnDigits}` : pnDigits;
+      map.set(key, {
+        key: `contact:${c.id}`,
+        displayName: fullName || "Sin nombre",
+        phone: fullPhone,
+        loans: [],
+        totalPending: 0,
+        overdueInstallments: 0,
+        nextDueDate: null,
+        daysToNext: null,
+        pendingConfirm: false,
+        status: "no_ops",
+      });
+    });
+
     let arr = Array.from(map.values());
 
     // Filter by search
