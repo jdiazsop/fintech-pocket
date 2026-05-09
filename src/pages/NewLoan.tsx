@@ -389,7 +389,7 @@ export default function NewLoan() {
     };
   };
 
-  const summary = step === 2 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
+  const summary = step === 3 && formData.daysOrInstallments > 0 ? getPaymentSummary() : null;
 
   const handleBackNavigation = () => {
     if (reviewing) {
