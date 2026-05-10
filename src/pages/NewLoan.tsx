@@ -198,11 +198,20 @@ export default function NewLoan() {
     fetchDebtors();
   }, [user]);
 
-  // Filtered debtors for search
+  // Filtered debtors for search (name, DNI o teléfono)
   const filteredDebtors = useMemo(() => {
     if (!searchQuery.trim()) return existingDebtors;
-    const q = searchQuery.toLowerCase();
-    return existingDebtors.filter((d) => d.name.toLowerCase().includes(q));
+    const q = searchQuery.toLowerCase().replace(/\s+/g, "");
+    return existingDebtors.filter((d) => {
+      const name = d.name.toLowerCase();
+      const dni = (d.dni || "").toLowerCase();
+      const phone = `${d.phoneCountryCode || ""}${d.phoneNumber || ""}`.toLowerCase();
+      return (
+        name.includes(searchQuery.toLowerCase()) ||
+        dni.includes(q) ||
+        phone.includes(q)
+      );
+    });
   }, [searchQuery, existingDebtors]);
 
   const handleSelectDebtor = (d: ExistingDebtor) => {
@@ -385,8 +394,41 @@ export default function NewLoan() {
 
       if (installmentsError) throw installmentsError;
 
-      // Upload evidences (best-effort: fail silently per file)
+      // Sync contact into `clients` table (single source of truth for the address book).
+      // Best-effort: if a contact with same DNI/phone exists, update it; otherwise insert.
+      try {
+        const dniTrim = formData.dni.trim();
+        const phoneTrim = formData.phoneNumber.trim();
+        const { data: existing } = await supabase
+          .from("clients")
+          .select("id, dni, phone_number")
+          .eq("user_id", user.id);
+        const match = (existing as any[] || []).find((c) =>
+          (dniTrim && c.dni && c.dni.trim() === dniTrim) ||
+          (phoneTrim && c.phone_number && c.phone_number.trim() === phoneTrim),
+        );
+        const payload = {
+          user_id: user.id,
+          first_name: formData.firstName.trim(),
+          last_name: formData.lastName.trim() || null,
+          phone_country_code: formData.phoneCountryCode,
+          phone_number: phoneTrim || null,
+          dni: dniTrim || null,
+          address: formData.address.trim() || null,
+          reference: formData.reference.trim() || null,
+        };
+        if (match) {
+          await supabase.from("clients").update(payload).eq("id", match.id);
+        } else {
+          await supabase.from("clients").insert(payload as any);
+        }
+      } catch (e) {
+        console.error("Client sync failed (non-blocking):", e);
+      }
+
+      // Upload evidences (best-effort: report failures via toast)
       if (evidences.length > 0) {
+        const failed: string[] = [];
         for (const ev of evidences) {
           try {
             const safeName = ev.file.name.replace(/[^\w.\-]/g, "_");
@@ -406,7 +448,15 @@ export default function NewLoan() {
             });
           } catch (e) {
             console.error("Evidence upload failed:", ev.file.name, e);
+            failed.push(ev.file.name);
           }
+        }
+        if (failed.length) {
+          toast({
+            title: "Algunas evidencias no se subieron",
+            description: failed.join(", "),
+            variant: "destructive",
+          });
         }
       }
 
