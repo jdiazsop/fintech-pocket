@@ -60,6 +60,42 @@ export default function Operations() {
     if (user) fetchData();
   }, [user]);
 
+  // Refetch on focus / visibility change (volver desde otra vista)
+  useEffect(() => {
+    if (!user) return;
+    const onFocus = () => fetchData();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fetchData();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user]);
+
+  // Realtime: refresca cuando cambian préstamos o cuotas del usuario
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`operations-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "loans", filter: `user_id=eq.${user.id}` },
+        () => fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "installments" },
+        () => fetchData(),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const fetchData = async () => {
     setLoading(true);
     try {
