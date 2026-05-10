@@ -74,7 +74,7 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
         if (error) throw error;
       }
 
-      // Sync the address-book entry. Match by clientId, else by DNI/phone for this user.
+      // Sync into address book (clients). Direct update if clientId given, else dedup helper.
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
@@ -90,21 +90,7 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
           if (clientId) {
             await supabase.from("clients").update(clientPayload).eq("id", clientId);
           } else {
-            const { data: existing } = await supabase
-              .from("clients")
-              .select("id, dni, phone_number")
-              .eq("user_id", user.id);
-            const dniT = payload.dni;
-            const phoneT = payload.phone_number;
-            const match = (existing as any[] || []).find((c) =>
-              (dniT && c.dni && c.dni.trim() === dniT) ||
-              (phoneT && c.phone_number && c.phone_number.trim() === phoneT),
-            );
-            if (match) {
-              await supabase.from("clients").update(clientPayload).eq("id", match.id);
-            } else {
-              await supabase.from("clients").insert({ user_id: user.id, ...clientPayload } as any);
-            }
+            await upsertClient(user.id, clientPayload);
           }
         }
       } catch (e) {
