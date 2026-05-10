@@ -198,11 +198,20 @@ export default function NewLoan() {
     fetchDebtors();
   }, [user]);
 
-  // Filtered debtors for search
+  // Filtered debtors for search (name, DNI o teléfono)
   const filteredDebtors = useMemo(() => {
     if (!searchQuery.trim()) return existingDebtors;
-    const q = searchQuery.toLowerCase();
-    return existingDebtors.filter((d) => d.name.toLowerCase().includes(q));
+    const q = searchQuery.toLowerCase().replace(/\s+/g, "");
+    return existingDebtors.filter((d) => {
+      const name = d.name.toLowerCase();
+      const dni = (d.dni || "").toLowerCase();
+      const phone = `${d.phoneCountryCode || ""}${d.phoneNumber || ""}`.toLowerCase();
+      return (
+        name.includes(searchQuery.toLowerCase()) ||
+        dni.includes(q) ||
+        phone.includes(q)
+      );
+    });
   }, [searchQuery, existingDebtors]);
 
   const handleSelectDebtor = (d: ExistingDebtor) => {
