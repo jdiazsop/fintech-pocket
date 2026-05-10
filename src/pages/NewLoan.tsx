@@ -394,34 +394,17 @@ export default function NewLoan() {
 
       if (installmentsError) throw installmentsError;
 
-      // Sync contact into `clients` table (single source of truth for the address book).
-      // Best-effort: if a contact with same DNI/phone exists, update it; otherwise insert.
+      // Sync contact into `clients` (deduplicated by DNI/teléfono via upsertClient).
       try {
-        const dniTrim = formData.dni.trim();
-        const phoneTrim = formData.phoneNumber.trim();
-        const { data: existing } = await supabase
-          .from("clients")
-          .select("id, dni, phone_number")
-          .eq("user_id", user.id);
-        const match = (existing as any[] || []).find((c) =>
-          (dniTrim && c.dni && c.dni.trim() === dniTrim) ||
-          (phoneTrim && c.phone_number && c.phone_number.trim() === phoneTrim),
-        );
-        const payload = {
-          user_id: user.id,
+        await upsertClient(user.id, {
           first_name: formData.firstName.trim(),
           last_name: formData.lastName.trim() || null,
           phone_country_code: formData.phoneCountryCode,
-          phone_number: phoneTrim || null,
-          dni: dniTrim || null,
+          phone_number: formData.phoneNumber.trim() || null,
+          dni: formData.dni.trim() || null,
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
-        };
-        if (match) {
-          await supabase.from("clients").update(payload).eq("id", match.id);
-        } else {
-          await supabase.from("clients").insert(payload as any);
-        }
+        });
       } catch (e) {
         console.error("Client sync failed (non-blocking):", e);
       }
