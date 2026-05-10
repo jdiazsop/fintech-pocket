@@ -216,7 +216,7 @@ export const QuickPaymentSheet = ({ open, onOpenChange, onPaymentRegistered }: Q
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[90vh] bg-card border-border">
+      <DrawerContent className="max-h-[92vh] min-h-[78vh] bg-card border-border">
         <DrawerHeader className="text-left flex flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {step !== "search" && step !== "success" && (

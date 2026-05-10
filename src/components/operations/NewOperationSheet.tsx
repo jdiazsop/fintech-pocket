@@ -31,7 +31,7 @@ export const NewOperationSheet = ({ open, onOpenChange }: NewOperationSheetProps
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-3xl p-5 pb-8 max-w-lg mx-auto"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-3xl p-5 pb-10 max-w-lg mx-auto min-h-[48vh] flex flex-col"
             role="dialog"
             aria-label="Nueva operación"
           >
