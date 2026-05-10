@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { upsertClient } from "@/lib/clientSync";
 import { toast } from "sonner";
 
 interface ClientFields {
