@@ -36,7 +36,7 @@ export default function Auth() {
       if (mode !== "forgot") {
         passwordSchema.parse(password);
       }
-      if (mode !== "forgot" && !acceptedTerms) {
+      if (mode === "register" && !acceptedTerms) {
         toast({
           title: "Error",
           description: "Debes aceptar los términos y condiciones",
@@ -110,7 +110,7 @@ export default function Auth() {
   };
 
   const handleGoogle = async () => {
-    if (!acceptedTerms) {
+    if (mode === "register" && !acceptedTerms) {
       toast({
         title: "Error",
         description: "Debes aceptar los términos y condiciones",
@@ -240,7 +240,7 @@ export default function Auth() {
                   </div>
                 )}
 
-                {mode !== "forgot" && (
+                {mode === "register" && (
                   <div className="flex items-start gap-2">
                     <Checkbox
                       id="terms"
