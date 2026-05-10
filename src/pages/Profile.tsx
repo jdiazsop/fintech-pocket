@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2 } from "lucide-react";
+import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2, Share2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -50,6 +50,36 @@ export default function Profile() {
       });
     } finally {
       setIsSendingReport(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = "https://fintech-pocket.lovable.app";
+    const shareText = "Te invito a usar Credify, tu cuaderno digital de préstamos y ventas al crédito.";
+    const shareData = {
+      title: "Credify",
+      text: shareText,
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      toast({
+        title: "Enlace copiado",
+        description: "Pégalo donde quieras compartir Credify.",
+      });
+    } catch {
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+        "_blank"
+      );
     }
   };
 
@@ -149,6 +179,30 @@ export default function Profile() {
               <Send className="w-4 h-4 mr-2" />
             )}
             {isSendingReport ? "Enviando..." : "Enviar Reporte"}
+          </Button>
+        </motion.div>
+
+        {/* Share Credify */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="fintech-card p-5 space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold">Compartir Credify</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Invita a otros y ayúdanos a crecer.
+          </p>
+          <Button
+            onClick={handleShare}
+            variant="outline"
+            className="w-full border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Compartir Credify
           </Button>
         </motion.div>
 
