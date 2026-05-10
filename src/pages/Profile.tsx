@@ -182,6 +182,30 @@ export default function Profile() {
           </Button>
         </motion.div>
 
+        {/* Share Credify */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.35 }}
+          className="fintech-card p-5 space-y-3"
+        >
+          <div className="flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold">Compartir Credify</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Invita a otros y ayúdanos a crecer.
+          </p>
+          <Button
+            onClick={handleShare}
+            variant="outline"
+            className="w-full border-primary/30 text-primary hover:bg-primary/10"
+          >
+            <Share2 className="w-4 h-4 mr-2" />
+            Compartir Credify
+          </Button>
+        </motion.div>
+
         {/* Sign Out */}
         <motion.div initial={{
         opacity: 0,
