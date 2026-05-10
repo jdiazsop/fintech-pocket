@@ -53,6 +53,36 @@ export default function Profile() {
     }
   };
 
+  const handleShare = async () => {
+    const shareUrl = "https://fintech-pocket.lovable.app";
+    const shareText = "Te invito a usar Credify, tu cuaderno digital de préstamos y ventas al crédito.";
+    const shareData = {
+      title: "Credify",
+      text: shareText,
+      url: shareUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        return;
+      }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+      toast({
+        title: "Enlace copiado",
+        description: "Pégalo donde quieras compartir Credify.",
+      });
+    } catch {
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
+        "_blank"
+      );
+    }
+  };
+
   return <AppLayout>
       <div className="px-4 py-6 space-y-6">
         {/* Header */}
