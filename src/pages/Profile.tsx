@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2 } from "lucide-react";
+import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2, Share2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
