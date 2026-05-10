@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
+import { upsertClient } from "@/lib/clientSync";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly" | "monthly";
