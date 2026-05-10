@@ -29,11 +29,13 @@ interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   loanIds: string[];
+  /** Optional client row id (clients table). If provided, that row is also updated. */
+  clientId?: string | null;
   initial: ClientFields;
   onSaved?: () => void;
 }
 
-export function EditClientDialog({ open, onOpenChange, loanIds, initial, onSaved }: Props) {
+export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initial, onSaved }: Props) {
   const [form, setForm] = useState<ClientFields>(initial);
   const [saving, setSaving] = useState(false);
 
@@ -49,7 +51,10 @@ export function EditClientDialog({ open, onOpenChange, loanIds, initial, onSaved
       toast.error("El nombre es obligatorio");
       return;
     }
-    if (loanIds.length === 0) return;
+    if (loanIds.length === 0 && !clientId) {
+      toast.error("No se encontró el cliente para actualizar");
+      return;
+    }
     setSaving(true);
     try {
       const payload = {
@@ -62,10 +67,54 @@ export function EditClientDialog({ open, onOpenChange, loanIds, initial, onSaved
         address: form.address?.trim() || null,
         reference: form.reference?.trim() || null,
       };
-      const { error } = await supabase.from("loans").update(payload).in("id", loanIds);
-      if (error) throw error;
+
+      // Update all linked loans (preserves existing behavior)
+      if (loanIds.length > 0) {
+        const { error } = await supabase.from("loans").update(payload).in("id", loanIds);
+        if (error) throw error;
+      }
+
+      // Sync the address-book entry. Match by clientId, else by DNI/phone for this user.
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const clientPayload = {
+            first_name: payload.first_name || payload.name,
+            last_name: payload.last_name,
+            dni: payload.dni,
+            phone_country_code: payload.phone_country_code,
+            phone_number: payload.phone_number,
+            address: payload.address,
+            reference: payload.reference,
+          };
+          if (clientId) {
+            await supabase.from("clients").update(clientPayload).eq("id", clientId);
+          } else {
+            const { data: existing } = await supabase
+              .from("clients")
+              .select("id, dni, phone_number")
+              .eq("user_id", user.id);
+            const dniT = payload.dni;
+            const phoneT = payload.phone_number;
+            const match = (existing as any[] || []).find((c) =>
+              (dniT && c.dni && c.dni.trim() === dniT) ||
+              (phoneT && c.phone_number && c.phone_number.trim() === phoneT),
+            );
+            if (match) {
+              await supabase.from("clients").update(clientPayload).eq("id", match.id);
+            } else {
+              await supabase.from("clients").insert({ user_id: user.id, ...clientPayload } as any);
+            }
+          }
+        }
+      } catch (e) {
+        console.error("Client sync failed (non-blocking):", e);
+      }
+
       toast.success("Datos del cliente actualizados", {
-        description: `Se actualizaron ${loanIds.length} operación(es) asociadas.`,
+        description: loanIds.length > 0
+          ? `Se actualizaron ${loanIds.length} operación(es) asociadas.`
+          : "Contacto actualizado.",
       });
       onOpenChange(false);
       onSaved?.();
