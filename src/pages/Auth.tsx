@@ -125,11 +125,7 @@ export default function Auth() {
 
   const handleGoogle = async () => {
     if (mode === "register" && !acceptedTerms) {
-      toast({
-        title: "Error",
-        description: "Debes aceptar los términos y condiciones",
-        variant: "destructive",
-      });
+      setTermsError("Debes aceptar los Términos y Condiciones y la Política de Privacidad");
       return;
     }
     setLoading(true);
