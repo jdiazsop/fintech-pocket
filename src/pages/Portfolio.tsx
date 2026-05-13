@@ -134,7 +134,7 @@ export default function Portfolio() {
     try {
       const [{ data: loansData }, { data: clientsData }] = await Promise.all([
         supabase.from("loans").select("*").order("created_at", { ascending: false }),
-        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number").order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number, address, reference").order("created_at", { ascending: false }),
       ]);
       setLoans((loansData as Loan[]) || []);
       setContacts((clientsData as ClientRow[]) || []);
