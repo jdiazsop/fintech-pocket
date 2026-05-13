@@ -120,7 +120,7 @@ export default function ClientDetail() {
         Number(l.amount_returned),
         Number(l.amount_to_return),
       );
-      const isSale = Number(l.amount_lent) === Number(l.amount_to_return);
+      const isSale = ((l as any).operation_type ?? (Number(l.amount_lent) === Number(l.amount_to_return) ? "sale" : "loan")) === "sale";
       const progress = Number(l.amount_to_return) > 0
         ? (Number(l.amount_returned) / Number(l.amount_to_return)) * 100
         : 0;

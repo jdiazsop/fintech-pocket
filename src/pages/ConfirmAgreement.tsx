@@ -89,7 +89,7 @@ export default function ConfirmAgreement() {
     );
   }
 
-  const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
+  const isSale = ((loan as any).operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
   const startDate = format(parseLocal(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es });
   const installmentAmount = schedule[0]?.amount ?? 0;
   const lastDue = schedule.length > 0 ? schedule[schedule.length - 1].due_date : null;

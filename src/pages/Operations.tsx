@@ -124,7 +124,7 @@ export default function Operations() {
     const today = getTodayInLima();
     const items = loans.map((l) => {
       const insts = installments.filter((i) => i.loan_id === l.id);
-      const isSale = Number(l.amount_lent) === Number(l.amount_to_return);
+      const isSale = ((l as any).operation_type ?? (Number(l.amount_lent) === Number(l.amount_to_return) ? "sale" : "loan")) === "sale";
       const status = calculateLoanDisplayStatus(l.status, insts as any, Number(l.amount_returned), Number(l.amount_to_return));
       const pending = Number(l.amount_to_return) - Number(l.amount_returned);
       const progress = Number(l.amount_to_return) > 0 ? Math.min(100, (Number(l.amount_returned) / Number(l.amount_to_return)) * 100) : 0;
