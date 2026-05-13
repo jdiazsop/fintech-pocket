@@ -82,6 +82,7 @@ export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  const isMobile = useIsMobile();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [contacts, setContacts] = useState<ClientRow[]>([]);
