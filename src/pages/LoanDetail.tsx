@@ -416,6 +416,25 @@ export default function LoanDetail() {
     setDeleting(true);
 
     try {
+      // Best-effort: delete evidence files from storage before removing the loan
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const prefix = `${user.id}/${loan.id}`;
+          const { data: files } = await supabase.storage
+            .from("operation-evidences")
+            .list(prefix, { limit: 100 });
+          if (files && files.length > 0) {
+            await supabase.storage
+              .from("operation-evidences")
+              .remove(files.map((f) => `${prefix}/${f.name}`));
+          }
+        }
+      } catch (storageErr) {
+        console.warn("Storage cleanup failed (continuing with delete):", storageErr);
+      }
+
+      // DB cascade removes installments, payments and evidences rows
       const { error } = await supabase
         .from("loans")
         .delete()
