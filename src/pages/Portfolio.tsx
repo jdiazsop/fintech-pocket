@@ -9,7 +9,6 @@ import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, getTodayInLima } from "@/lib/loanUtils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface Loan {
