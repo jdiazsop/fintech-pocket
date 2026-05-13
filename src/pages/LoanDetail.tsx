@@ -250,7 +250,12 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     // (iOS Safari blocks popups opened after an `await`).
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
-    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
+    // Rotate token on each send so old links can't be reused
+    const newToken =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : loan.confirmation_token;
+    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${newToken}`;
     const sorted = [...installments].sort((a, b) => a.number - b.number);
     const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
     const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
@@ -271,9 +276,16 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     const popup = window.open(waUrl, "_blank");
 
     try {
+      // Token expires in 30 days
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updErr } = await supabase
         .from("loans")
-        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+        .update({
+          confirmation_status: "pending",
+          confirmation_sent_at: new Date().toISOString(),
+          confirmation_token: newToken,
+          confirmation_token_expires_at: expiresAt,
+        } as any)
         .eq("id", loan.id);
       if (updErr) throw updErr;
 
