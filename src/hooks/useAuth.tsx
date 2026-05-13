@@ -82,29 +82,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) return { error };
-
-    // Verify accepted_terms in profile; block access if not accepted
-    if (data.user) {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("accepted_terms")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
-
-      if (!profile?.accepted_terms) {
-        await supabase.auth.signOut();
-        return {
-          error: new Error(
-            "Debes aceptar los Términos y Condiciones y la Política de Privacidad para acceder."
-          ),
-        };
-      }
-    }
+    // Term acceptance is enforced by <AcceptTermsGate /> after login
+    // so users (incl. Google OAuth) can complete acceptance in-app
+    // instead of being silently signed out.
     return { error: null };
   };
 
