@@ -197,6 +197,121 @@ const InstallmentsSection = ({ installments, getInstallmentDisplayStatus, format
   );
 };
 
+interface ConsentCardProps {
+  loan: Loan;
+  installments: Installment[];
+  onSent: () => void;
+}
+
+const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
+  const { toast } = useToast();
+  const [sending, setSending] = useState(false);
+  const status = loan.confirmation_status || "not_sent";
+
+  const visual =
+    status === "confirmed"
+      ? { Icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10 border-emerald-500/30", label: "Aceptado por el cliente" }
+      : status === "rejected"
+      ? { Icon: XCircle, color: "text-red-400", bg: "bg-red-500/10 border-red-500/30", label: "Rechazado por el cliente" }
+      : status === "pending"
+      ? { Icon: Clock, color: "text-orange-400", bg: "bg-orange-500/10 border-orange-500/30", label: "Pendiente de aceptación" }
+      : { Icon: ShieldCheck, color: "text-primary", bg: "bg-primary/10 border-primary/30", label: "Sin solicitar consentimiento" };
+
+  const fmtDateTime = (iso?: string | null) => {
+    if (!iso) return null;
+    return format(new Date(iso), "dd MMM yyyy, HH:mm", { locale: es });
+  };
+
+  const canSendOrResend = status === "not_sent" || status === "pending" || status === "rejected";
+  const ctaLabel = status === "not_sent" ? "Solicitar consentimiento" : status === "pending" ? "Reenviar enlace" : "Reenviar solicitud";
+
+  const handleSend = async () => {
+    if (!loan.phone_number || !loan.phone_country_code) {
+      toast({ title: "Falta teléfono", description: "Agrega un número de WhatsApp al cliente para enviar el acuerdo.", variant: "destructive" });
+      return;
+    }
+    if (!loan.confirmation_token) {
+      toast({ title: "Error", description: "Esta operación no tiene enlace de confirmación.", variant: "destructive" });
+      return;
+    }
+    if (installments.length === 0) {
+      toast({ title: "Sin cronograma", description: "No hay cuotas generadas todavía.", variant: "destructive" });
+      return;
+    }
+    setSending(true);
+    try {
+      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+      const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
+      const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
+      const sorted = [...installments].sort((a, b) => a.number - b.number);
+      const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
+      const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
+      const message = buildAgreementMessage({
+        name: loan.name,
+        operationType: isSale ? "sale" : "loan",
+        amount: Number(loan.amount_to_return),
+        numInstallments: sorted.length,
+        installmentAmount: Number(sorted[0].amount),
+        startDate: loan.start_date,
+        endDate: lastDue,
+        paymentType: loan.payment_type as "single" | "installments",
+        confirmUrl,
+      });
+
+      await supabase
+        .from("loans")
+        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+        .eq("id", loan.id);
+
+      window.open(buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message), "_blank");
+      toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
+      onSent();
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Error", description: "No se pudo enviar el enlace.", variant: "destructive" });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const Icon = visual.Icon;
+  return (
+    <div className={`fintech-card p-4 border ${visual.bg}`}>
+      <div className="flex items-start gap-3">
+        <div className={`p-2 rounded-lg bg-background/40 ${visual.color}`}>
+          <Icon className="w-4 h-4" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold">Consentimiento digital</p>
+            <span className={`text-[10px] font-semibold ${visual.color}`}>· {visual.label}</span>
+          </div>
+          <div className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+            {loan.confirmation_sent_at && <p>Enviado: {fmtDateTime(loan.confirmation_sent_at)}</p>}
+            {loan.confirmation_responded_at && (
+              <p>
+                {status === "confirmed" ? "Aceptado" : status === "rejected" ? "Rechazado"  : "Respondido"}:{" "}
+                {fmtDateTime(loan.confirmation_responded_at)}
+              </p>
+            )}
+            {status === "not_sent" && <p>Aún no se ha solicitado al cliente.</p>}
+          </div>
+          {canSendOrResend && (
+            <Button
+              onClick={handleSend}
+              disabled={sending}
+              size="sm"
+              className="mt-3 bg-primary hover:bg-primary/90"
+            >
+              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function LoanDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
