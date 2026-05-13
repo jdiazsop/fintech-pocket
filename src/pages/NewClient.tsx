@@ -60,16 +60,20 @@ export default function NewClient() {
   }, [exactAddress, district, province, department]);
 
   const validate = () => {
-    if (!firstName.trim()) {
-      toast({ title: "Falta información", description: "Ingresa los nombres", variant: "destructive" });
+    if (!firstName.trim() || !isValidName(firstName)) {
+      toast({ title: "Nombre inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!lastName.trim()) {
-      toast({ title: "Falta información", description: "Ingresa los apellidos", variant: "destructive" });
+    if (!lastName.trim() || !isValidName(lastName)) {
+      toast({ title: "Apellido inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!phoneNumber.trim() || !/^\d{6,15}$/.test(phoneNumber.trim())) {
-      toast({ title: "Celular inválido", description: "Ingresa un número válido (solo dígitos)", variant: "destructive" });
+    if (!isValidPhone(phoneNumber)) {
+      toast({ title: "Celular inválido", description: PHONE_ERROR, variant: "destructive" });
+      return false;
+    }
+    if (dni.trim() && !isValidDni(dni)) {
+      toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
     return true;
@@ -79,6 +83,20 @@ export default function NewClient() {
     if (!validate() || !user) return;
     setLoading(true);
     try {
+      const dup = await findDuplicateClient(user.id, {
+        dni: dni.trim() || null,
+        phone: phoneNumber.trim() || null,
+      });
+      if (dup) {
+        const fullName = `${dup.first_name} ${dup.last_name || ""}`.trim();
+        toast({
+          title: "Cliente ya registrado",
+          description: `${fullName} ya existe en tu cartera (${dup.matched === "dni" ? "mismo DNI" : "mismo celular"}).`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("clients")
         .insert({
@@ -87,7 +105,7 @@ export default function NewClient() {
           last_name: lastName.trim() || null,
           phone_country_code: phoneCountryCode,
           phone_number: phoneNumber.trim(),
-          dni: dni.trim() || null,
+          dni: dni.trim().toUpperCase() || null,
           address: composedAddress || null,
           reference: reference.trim() || null,
         } as any)
@@ -98,11 +116,15 @@ export default function NewClient() {
       toast({ title: "Cliente creado", description: "Se guardó correctamente" });
     } catch (e: any) {
       console.error(e);
-      toast({ title: "Error", description: "No se pudo guardar el cliente", variant: "destructive" });
+      const msg = e?.code === "23505"
+        ? "Ya existe un cliente con ese DNI o celular."
+        : "No se pudo guardar el cliente";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
 
   if (created) {
     return (
