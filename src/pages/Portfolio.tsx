@@ -309,6 +309,51 @@ export default function Portfolio() {
     }
   };
 
+  const openEdit = (c: ClientCard) => {
+    if (c.loans.length > 0) {
+      const l = c.loans[0];
+      const dni = (l.dni || "").trim();
+      const pn = (l.phone_number || "").trim();
+      const contact = contacts.find(
+        (k) => (dni && k.dni === dni) || (pn && k.phone_number === pn),
+      );
+      setEditTarget({
+        loanIds: c.loans.map((x) => x.id),
+        clientId: contact?.id ?? null,
+        initial: {
+          name: l.name,
+          first_name: l.first_name ?? contact?.first_name ?? null,
+          last_name: l.last_name ?? contact?.last_name ?? null,
+          dni: l.dni ?? contact?.dni ?? null,
+          phone_country_code: l.phone_country_code ?? contact?.phone_country_code ?? null,
+          phone_number: l.phone_number ?? contact?.phone_number ?? null,
+          address: l.address ?? contact?.address ?? null,
+          reference: l.reference ?? contact?.reference ?? null,
+        },
+      });
+      return;
+    }
+    if (!c.key.startsWith("contact:")) return;
+    const contactId = c.key.slice("contact:".length);
+    const contact = contacts.find((k) => k.id === contactId);
+    if (!contact) return;
+    const fullName = `${contact.first_name || ""} ${contact.last_name || ""}`.trim();
+    setEditTarget({
+      loanIds: [],
+      clientId: contact.id,
+      initial: {
+        name: fullName || contact.first_name || "",
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        dni: contact.dni,
+        phone_country_code: contact.phone_country_code,
+        phone_number: contact.phone_number,
+        address: contact.address,
+        reference: contact.reference,
+      },
+    });
+  };
+
   const statusVisual = (s: ClientStatus) => {
     switch (s) {
       case "overdue":
