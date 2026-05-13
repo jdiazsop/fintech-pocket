@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, UserCog } from "lucide-react";
+import { Loader2, UserCog, AlertTriangle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +7,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -44,6 +54,8 @@ interface Props {
 export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initial, onSaved }: Props) {
   const [form, setForm] = useState<ClientFields>(initial);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sensitiveChanges, setSensitiveChanges] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) setForm(initial);
@@ -77,6 +89,22 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       toast.error("No se encontró el cliente para actualizar");
       return;
     }
+
+    // Detect changes to sensitive fields and confirm before persisting.
+    const changes: string[] = [];
+    const norm = (v: string | null | undefined) => (v || "").trim().toUpperCase();
+    if (norm(form.dni) !== norm(initial.dni)) changes.push("Documento (DNI/CE)");
+    if ((form.phone_number || "").trim() !== (initial.phone_number || "").trim()) changes.push("Número de celular");
+    if ((form.phone_country_code || "").trim() !== (initial.phone_country_code || "").trim()) changes.push("Código de país");
+    if (changes.length > 0) {
+      setSensitiveChanges(changes);
+      setConfirmOpen(true);
+      return;
+    }
+    await persist();
+  };
+
+  const persist = async () => {
     setSaving(true);
     try {
       const payload = {
@@ -281,6 +309,41 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
           </Button>
         </div>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              Confirmar cambios sensibles
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás modificando datos de identidad/contacto del cliente. Asegúrate de que los nuevos valores sean correctos antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="text-sm space-y-1 pl-1">
+            {sensitiveChanges.map((c) => (
+              <li key={c} className="flex items-center gap-2 text-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                {c}
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Revisar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                setConfirmOpen(false);
+                await persist();
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Confirmar y guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

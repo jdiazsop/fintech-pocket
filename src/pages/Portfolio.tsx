@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Search, Users, Plus, MessageCircle, Phone, ChevronRight, AlertTriangle, Clock, CheckCircle2, MailQuestion, Wallet, ShoppingBag } from "lucide-react";
+import { Search, Users, Plus, MessageCircle, Phone, ChevronRight, AlertTriangle, Clock, CheckCircle2, MailQuestion, Wallet, ShoppingBag, Pencil } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, getTodayInLima } from "@/lib/loanUtils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface Loan {
@@ -25,6 +25,10 @@ interface Loan {
   phone_country_code: string | null;
   phone_number: string | null;
   dni: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  address: string | null;
+  reference: string | null;
 }
 
 interface Installment {
@@ -44,6 +48,8 @@ interface ClientRow {
   dni: string | null;
   phone_country_code: string | null;
   phone_number: string | null;
+  address: string | null;
+  reference: string | null;
 }
 
 type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time" | "no_ops";
@@ -74,13 +80,27 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [contacts, setContacts] = useState<ClientRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [editTarget, setEditTarget] = useState<{
+    loanIds: string[];
+    clientId: string | null;
+    initial: {
+      name: string;
+      first_name: string | null;
+      last_name: string | null;
+      dni: string | null;
+      phone_country_code: string | null;
+      phone_number: string | null;
+      address: string | null;
+      reference: string | null;
+    };
+  } | null>(null);
 
   useEffect(() => {
     if (user) fetchData();
@@ -127,7 +147,7 @@ export default function Portfolio() {
     try {
       const [{ data: loansData }, { data: clientsData }] = await Promise.all([
         supabase.from("loans").select("*").order("created_at", { ascending: false }),
-        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number").order("created_at", { ascending: false }),
+        supabase.from("clients").select("id, first_name, last_name, dni, phone_country_code, phone_number, address, reference").order("created_at", { ascending: false }),
       ]);
       setLoans((loansData as Loan[]) || []);
       setContacts((clientsData as ClientRow[]) || []);
@@ -288,6 +308,51 @@ export default function Portfolio() {
     }
   };
 
+  const openEdit = (c: ClientCard) => {
+    if (c.loans.length > 0) {
+      const l = c.loans[0];
+      const dni = (l.dni || "").trim();
+      const pn = (l.phone_number || "").trim();
+      const contact = contacts.find(
+        (k) => (dni && k.dni === dni) || (pn && k.phone_number === pn),
+      );
+      setEditTarget({
+        loanIds: c.loans.map((x) => x.id),
+        clientId: contact?.id ?? null,
+        initial: {
+          name: l.name,
+          first_name: l.first_name ?? contact?.first_name ?? null,
+          last_name: l.last_name ?? contact?.last_name ?? null,
+          dni: l.dni ?? contact?.dni ?? null,
+          phone_country_code: l.phone_country_code ?? contact?.phone_country_code ?? null,
+          phone_number: l.phone_number ?? contact?.phone_number ?? null,
+          address: l.address ?? contact?.address ?? null,
+          reference: l.reference ?? contact?.reference ?? null,
+        },
+      });
+      return;
+    }
+    if (!c.key.startsWith("contact:")) return;
+    const contactId = c.key.slice("contact:".length);
+    const contact = contacts.find((k) => k.id === contactId);
+    if (!contact) return;
+    const fullName = `${contact.first_name || ""} ${contact.last_name || ""}`.trim();
+    setEditTarget({
+      loanIds: [],
+      clientId: contact.id,
+      initial: {
+        name: fullName || contact.first_name || "",
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        dni: contact.dni,
+        phone_country_code: contact.phone_country_code,
+        phone_number: contact.phone_number,
+        address: contact.address,
+        reference: contact.reference,
+      },
+    });
+  };
+
   const statusVisual = (s: ClientStatus) => {
     switch (s) {
       case "overdue":
@@ -445,23 +510,31 @@ export default function Portfolio() {
                     </div>
                   </button>
 
-                  <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
-                    {isMobile && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleCall(c); }}
-                        disabled={!c.phone}
-                        className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium disabled:opacity-40"
-                      >
-                        <Phone className="w-4 h-4" />
-                        Llamar
-                      </button>
-                    )}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCall(c); }}
+                      disabled={!c.phone}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-xs font-medium disabled:opacity-40"
+                      aria-label={`Llamar a ${c.displayName}`}
+                    >
+                      <Phone className="w-4 h-4" />
+                      Llamar
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleWhatsApp(c); }}
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-sm font-medium text-emerald-400"
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-xs font-medium text-emerald-400"
+                      aria-label={`Enviar WhatsApp a ${c.displayName}`}
                     >
                       <MessageCircle className="w-4 h-4" />
                       WhatsApp
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 active:scale-[0.98] transition-all text-xs font-medium text-primary"
+                      aria-label={`Editar datos de ${c.displayName}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Editar
                     </button>
                   </div>
                 </motion.article>
@@ -469,6 +542,17 @@ export default function Portfolio() {
             })
           )}
         </div>
+
+        {editTarget && (
+          <EditClientDialog
+            open={!!editTarget}
+            onOpenChange={(v) => !v && setEditTarget(null)}
+            loanIds={editTarget.loanIds}
+            clientId={editTarget.clientId}
+            initial={editTarget.initial}
+            onSaved={fetchData}
+          />
+        )}
       </div>
     </AppLayout>
   );
