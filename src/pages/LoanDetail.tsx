@@ -454,52 +454,13 @@ export default function LoanDetail() {
     setSavingPayment(true);
 
     try {
-      // Register payment
-      const { error: paymentError } = await supabase
-        .from("payments_history")
-        .insert({
-          loan_id: loan.id,
-          amount_paid: amount,
-          notes: paymentNotes.trim() || null,
-        });
-
-      if (paymentError) throw paymentError;
-
-      // Update loan
-      const newAmountReturned = loan.amount_returned + amount;
-      const newStatus = newAmountReturned >= loan.amount_to_return ? "paid" : "partial";
-
-      const { error: loanError } = await supabase
-        .from("loans")
-        .update({
-          amount_returned: newAmountReturned,
-          status: newStatus,
-        })
-        .eq("id", loan.id);
-
-      if (loanError) throw loanError;
-
-      // Update installments (simple approach: mark as paid in order)
-      let remainingPayment = amount;
-      for (const inst of installments.filter(i => i.status !== "paid")) {
-        if (remainingPayment <= 0) break;
-
-        const instPending = inst.amount - inst.amount_paid;
-        const payForInst = Math.min(remainingPayment, instPending);
-
-        const newInstPaid = inst.amount_paid + payForInst;
-        const newInstStatus = newInstPaid >= inst.amount ? "paid" : "partial";
-
-        await supabase
-          .from("installments")
-          .update({
-            amount_paid: newInstPaid,
-            status: newInstStatus,
-          })
-          .eq("id", inst.id);
-
-        remainingPayment -= payForInst;
-      }
+      // Atomic: insert payment + update loan + distribute across installments in one transaction
+      const { error: rpcError } = await (supabase as any).rpc("register_payment", {
+        _loan_id: loan.id,
+        _amount: amount,
+        _notes: paymentNotes.trim() || null,
+      });
+      if (rpcError) throw rpcError;
 
       toast({
         title: "Pago registrado",
