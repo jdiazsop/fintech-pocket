@@ -12,8 +12,25 @@ import { lovable } from "@/integrations/lovable";
 import { LegalDialog } from "@/components/legal/LegalDialog";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Email inválido").max(255, "Email muy largo");
-const passwordSchema = z.string().min(6, "Mínimo 6 caracteres").max(72, "Máximo 72 caracteres");
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresa tu correo electrónico")
+  .email("Correo inválido. Debe incluir “@” y un dominio válido")
+  .max(255, "El correo es demasiado largo");
+
+const passwordSchema = z
+  .string()
+  .min(8, "La contraseña debe tener al menos 8 caracteres")
+  .max(72, "La contraseña no puede superar 72 caracteres")
+  .refine((v) => /[A-Za-z]/.test(v), "Debe incluir al menos una letra")
+  .refine((v) => /\d/.test(v), "Debe incluir al menos un número")
+  .refine((v) => !/^\s|\s$/.test(v), "No debe tener espacios al inicio o al final");
+
+const validateField = (schema: z.ZodTypeAny, value: string): string | null => {
+  const r = schema.safeParse(value);
+  return r.success ? null : r.error.errors[0].message;
+};
 
 type AuthMode = "login" | "register" | "forgot";
 
