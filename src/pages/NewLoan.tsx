@@ -258,10 +258,14 @@ export default function NewLoan() {
       toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
-    const startDate = new Date(formData.startDate);
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    if (startDate > today) {
+    // Compare as YYYY-MM-DD in Lima time to avoid UTC drift near midnight.
+    const todayLima = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Lima",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    if ((formData.startDate || "") > todayLima) {
       toast({ title: "Error", description: "La fecha no puede ser futura", variant: "destructive" });
       return false;
     }

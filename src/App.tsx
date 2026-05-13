@@ -3,10 +3,11 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter, BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useState } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { AcceptTermsGate } from "@/components/legal/AcceptTermsGate";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import NewLoan from "./pages/NewLoan";
 import NewClient from "./pages/NewClient";
@@ -21,27 +22,11 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Detect if running on GitHub Pages
 const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
 
-// Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, acceptedTerms, profileLoading, signOut } = useAuth();
-  const { toast } = useToast();
-
-  const blocked = !!user && acceptedTerms === false;
-
-  useEffect(() => {
-    if (blocked) {
-      toast({
-        title: "Acceso bloqueado",
-        description:
-          "Debes aceptar los Términos y Condiciones y la Política de Privacidad para continuar.",
-        variant: "destructive",
-      });
-      signOut();
-    }
-  }, [blocked, signOut, toast]);
+  const [acceptedNow, setAcceptedNow] = useState(false);
 
   if (loading || (user && profileLoading)) {
     return (
@@ -53,8 +38,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user || blocked) {
+  if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (acceptedTerms === false && !acceptedNow) {
+    return (
+      <>
+        <AcceptTermsGate
+          open
+          userId={user.id}
+          email={user.email ?? null}
+          onAccepted={() => setAcceptedNow(true)}
+          onDecline={async () => { await signOut(); }}
+        />
+        <div className="min-h-screen bg-background" />
+      </>
+    );
   }
 
   return <>{children}</>;
@@ -83,6 +83,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route
         path="/dashboard"
         element={
