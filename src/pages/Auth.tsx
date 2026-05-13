@@ -214,19 +214,29 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Correo electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
+                      autoComplete="email"
                       placeholder="tu@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-muted/50 border-border"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError(null);
+                      }}
+                      onBlur={() => setEmailError(validateField(emailSchema, email))}
+                      aria-invalid={!!emailError}
+                      className={`pl-10 bg-muted/50 border-border ${emailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       required
                     />
                   </div>
+                  {emailError && (
+                    <p className="text-xs text-destructive mt-1">{emailError}</p>
+                  )}
                 </div>
 
                 {mode !== "forgot" && (
@@ -237,10 +247,16 @@ export default function Auth() {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete={mode === "register" ? "new-password" : "current-password"}
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 pr-10 bg-muted/50 border-border"
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (passwordError) setPasswordError(null);
+                        }}
+                        onBlur={() => mode === "register" && setPasswordError(validateField(passwordSchema, password))}
+                        aria-invalid={!!passwordError}
+                        className={`pl-10 pr-10 bg-muted/50 border-border ${passwordError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
                       />
                       <button
@@ -251,37 +267,54 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {passwordError ? (
+                      <p className="text-xs text-destructive mt-1">{passwordError}</p>
+                    ) : mode === "register" ? (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mínimo 8 caracteres, con al menos una letra y un número.
+                      </p>
+                    ) : null}
                   </div>
                 )}
 
                 {mode === "register" && (
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                      className="mt-0.5"
-                    />
-                    <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                      Acepto los{" "}
-                      <LegalDialog
-                        type="terms"
-                        trigger={
-                          <button type="button" className="text-primary hover:underline font-medium">
-                            Términos y Condiciones
-                          </button>
-                        }
-                      />{" "}
-                      y la{" "}
-                      <LegalDialog
-                        type="privacy"
-                        trigger={
-                          <button type="button" className="text-primary hover:underline font-medium">
-                            Política de Privacidad
-                          </button>
-                        }
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id="terms"
+                        checked={acceptedTerms}
+                        onCheckedChange={(checked) => {
+                          const v = checked === true;
+                          setAcceptedTerms(v);
+                          if (v) setTermsError(null);
+                        }}
+                        className="mt-0.5"
+                        aria-invalid={!!termsError}
                       />
-                    </Label>
+                      <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                        Acepto los{" "}
+                        <LegalDialog
+                          type="terms"
+                          trigger={
+                            <button type="button" className="text-primary hover:underline font-medium">
+                              Términos y Condiciones
+                            </button>
+                          }
+                        />{" "}
+                        y la{" "}
+                        <LegalDialog
+                          type="privacy"
+                          trigger={
+                            <button type="button" className="text-primary hover:underline font-medium">
+                              Política de Privacidad
+                            </button>
+                          }
+                        />
+                      </Label>
+                    </div>
+                    {termsError && (
+                      <p className="text-xs text-destructive ml-6">{termsError}</p>
+                    )}
                   </div>
                 )}
 
