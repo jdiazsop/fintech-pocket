@@ -242,20 +242,20 @@ export default function NewLoan() {
   };
 
   const validateStep1 = () => {
-    if (!formData.firstName.trim()) {
-      toast({ title: "Error", description: "Ingresa los nombres", variant: "destructive" });
+    if (!formData.firstName.trim() || !isValidName(formData.firstName)) {
+      toast({ title: "Nombre inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.lastName.trim()) {
-      toast({ title: "Error", description: "Ingresa los apellidos", variant: "destructive" });
+    if (!formData.lastName.trim() || !isValidName(formData.lastName)) {
+      toast({ title: "Apellido inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.phoneNumber.trim() || !/^\d{6,15}$/.test(formData.phoneNumber.trim())) {
-      toast({ title: "Error", description: "Ingresa un número de celular válido (solo dígitos)", variant: "destructive" });
+    if (!isValidPhone(formData.phoneNumber)) {
+      toast({ title: "Celular inválido", description: PHONE_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.dni.trim()) {
-      toast({ title: "Error", description: "Ingresa el DNI/CE", variant: "destructive" });
+    if (!formData.dni.trim() || !isValidDni(formData.dni)) {
+      toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
     const startDate = new Date(formData.startDate);
