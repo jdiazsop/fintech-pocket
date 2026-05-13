@@ -42,10 +42,33 @@ export default function Auth() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [termsError, setTermsError] = useState<string | null>(null);
 
   const { signIn, signUp, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  const validateForm = () => {
+    const eErr = validateField(emailSchema, email);
+    setEmailError(eErr);
+    let pErr: string | null = null;
+    if (mode !== "forgot") {
+      pErr = validateField(passwordSchema, password);
+      setPasswordError(pErr);
+    } else {
+      setPasswordError(null);
+    }
+    let tErr: string | null = null;
+    if (mode === "register" && !acceptedTerms) {
+      tErr = "Debes aceptar los Términos y Condiciones y la Política de Privacidad";
+      setTermsError(tErr);
+    } else {
+      setTermsError(null);
+    }
+    return !eErr && !pErr && !tErr;
+  };
 
   const validateForm = () => {
     try {
