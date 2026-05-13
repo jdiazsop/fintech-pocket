@@ -70,32 +70,6 @@ export default function Auth() {
     return !eErr && !pErr && !tErr;
   };
 
-  const validateForm = () => {
-    try {
-      emailSchema.parse(email);
-      if (mode !== "forgot") {
-        passwordSchema.parse(password);
-      }
-      if (mode === "register" && !acceptedTerms) {
-        toast({
-          title: "Error",
-          description: "Debes aceptar los términos y condiciones",
-          variant: "destructive",
-        });
-        return false;
-      }
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Error de validación",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      }
-      return false;
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
