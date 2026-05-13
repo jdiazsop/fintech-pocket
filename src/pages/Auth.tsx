@@ -54,8 +54,11 @@ export default function Auth() {
     const eErr = validateField(emailSchema, email);
     setEmailError(eErr);
     let pErr: string | null = null;
-    if (mode !== "forgot") {
+    if (mode === "register") {
       pErr = validateField(passwordSchema, password);
+      setPasswordError(pErr);
+    } else if (mode === "login") {
+      if (!password) pErr = "Ingresa tu contraseña";
       setPasswordError(pErr);
     } else {
       setPasswordError(null);
