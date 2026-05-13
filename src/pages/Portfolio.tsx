@@ -9,6 +9,7 @@ import { EditClientDialog } from "@/components/clients/EditClientDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, getTodayInLima } from "@/lib/loanUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { differenceInCalendarDays, parseISO } from "date-fns";
 
 interface Loan {
@@ -81,6 +82,7 @@ export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
   
+  const isMobile = useIsMobile();
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [contacts, setContacts] = useState<ClientRow[]>([]);
@@ -510,16 +512,18 @@ export default function Portfolio() {
                     </div>
                   </button>
 
-                  <div className="grid grid-cols-3 gap-2 mt-3">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCall(c); }}
-                      disabled={!c.phone}
-                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-xs font-medium disabled:opacity-40"
-                      aria-label={`Llamar a ${c.displayName}`}
-                    >
-                      <Phone className="w-4 h-4" />
-                      Llamar
-                    </button>
+                  <div className={`grid ${isMobile ? "grid-cols-3" : "grid-cols-2"} gap-2 mt-3`}>
+                    {isMobile && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCall(c); }}
+                        disabled={!c.phone}
+                        className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-xs font-medium disabled:opacity-40"
+                        aria-label={`Llamar a ${c.displayName}`}
+                      >
+                        <Phone className="w-4 h-4" />
+                        Llamar
+                      </button>
+                    )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleWhatsApp(c); }}
                       className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-xs font-medium text-emerald-400"
