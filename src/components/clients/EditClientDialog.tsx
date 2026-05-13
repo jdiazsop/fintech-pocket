@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { upsertClient } from "@/lib/clientSync";
+import { upsertClient, findDuplicateClient } from "@/lib/clientSync";
+import {
+  sanitizeName, sanitizeDigits, sanitizeDni,
+  isValidName, isValidPhone, isValidDni,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+} from "@/lib/validators";
 import { toast } from "sonner";
 
 interface ClientFields {
