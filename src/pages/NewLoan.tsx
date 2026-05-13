@@ -22,6 +22,11 @@ import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 import { upsertClient } from "@/lib/clientSync";
+import {
+  sanitizeName, sanitizeDigits, sanitizeDni,
+  isValidName, isValidPhone, isValidDni,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+} from "@/lib/validators";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly" | "monthly";
