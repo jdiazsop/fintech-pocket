@@ -511,23 +511,31 @@ export default function Portfolio() {
                     </div>
                   </button>
 
-                  <div className={`grid ${isMobile ? "grid-cols-2" : "grid-cols-1"} gap-2 mt-3`}>
-                    {isMobile && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleCall(c); }}
-                        disabled={!c.phone}
-                        className="flex items-center justify-center gap-2 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-sm font-medium disabled:opacity-40"
-                      >
-                        <Phone className="w-4 h-4" />
-                        Llamar
-                      </button>
-                    )}
+                  <div className="grid grid-cols-3 gap-2 mt-3">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleCall(c); }}
+                      disabled={!c.phone}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border bg-card hover:bg-accent/30 active:scale-[0.98] transition-all text-xs font-medium disabled:opacity-40"
+                      aria-label={`Llamar a ${c.displayName}`}
+                    >
+                      <Phone className="w-4 h-4" />
+                      Llamar
+                    </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleWhatsApp(c); }}
-                      className="flex items-center justify-center gap-2 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-sm font-medium text-emerald-400"
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-[0.98] transition-all text-xs font-medium text-emerald-400"
+                      aria-label={`Enviar WhatsApp a ${c.displayName}`}
                     >
                       <MessageCircle className="w-4 h-4" />
                       WhatsApp
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openEdit(c); }}
+                      className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-primary/40 bg-primary/10 hover:bg-primary/20 active:scale-[0.98] transition-all text-xs font-medium text-primary"
+                      aria-label={`Editar datos de ${c.displayName}`}
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Editar
                     </button>
                   </div>
                 </motion.article>
