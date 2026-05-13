@@ -239,36 +239,48 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
       return;
     }
     setSending(true);
-    try {
-      const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-      const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
-      const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
-      const sorted = [...installments].sort((a, b) => a.number - b.number);
-      const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
-      const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
-      const message = buildAgreementMessage({
-        name: loan.name,
-        operationType: isSale ? "sale" : "loan",
-        amount: Number(loan.amount_to_return),
-        numInstallments: sorted.length,
-        installmentAmount: Number(sorted[0].amount),
-        startDate: loan.start_date,
-        endDate: lastDue,
-        paymentType: loan.payment_type as "single" | "installments",
-        confirmUrl,
-      });
+    // Build message + URL synchronously so we can open WhatsApp inside the user gesture
+    // (iOS Safari blocks popups opened after an `await`).
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
+    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
+    const sorted = [...installments].sort((a, b) => a.number - b.number);
+    const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
+    const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
+    const message = buildAgreementMessage({
+      name: loan.name,
+      operationType: isSale ? "sale" : "loan",
+      amount: Number(loan.amount_to_return),
+      numInstallments: sorted.length,
+      installmentAmount: Number(sorted[0].amount),
+      startDate: loan.start_date,
+      endDate: lastDue,
+      paymentType: loan.payment_type as "single" | "installments",
+      confirmUrl,
+    });
+    const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message);
 
-      await supabase
+    // Open in the same tick as the click — must happen before any await.
+    const popup = window.open(waUrl, "_blank");
+
+    try {
+      const { error: updErr } = await supabase
         .from("loans")
         .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
         .eq("id", loan.id);
+      if (updErr) throw updErr;
 
-      window.open(buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message), "_blank");
-      toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
+      if (!popup) {
+        // Popup was blocked: fall back to in-page navigation so the link still reaches WhatsApp.
+        toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
+        window.location.href = waUrl;
+      } else {
+        toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
+      }
       onSent();
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "No se pudo enviar el enlace.", variant: "destructive" });
+      toast({ title: "Error", description: "No se pudo registrar el envío.", variant: "destructive" });
     } finally {
       setSending(false);
     }
