@@ -309,6 +309,41 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
           </Button>
         </div>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent className="bg-card border-border">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-orange-400" />
+              Confirmar cambios sensibles
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás modificando datos de identidad/contacto del cliente. Asegúrate de que los nuevos valores sean correctos antes de continuar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <ul className="text-sm space-y-1 pl-1">
+            {sensitiveChanges.map((c) => (
+              <li key={c} className="flex items-center gap-2 text-foreground">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+                {c}
+              </li>
+            ))}
+          </ul>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Revisar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                setConfirmOpen(false);
+                await persist();
+              }}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Confirmar y guardar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
