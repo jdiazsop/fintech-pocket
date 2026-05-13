@@ -20,6 +20,8 @@ interface LoanSummary {
   num_installments: number;
   confirmation_sent_at: string | null;
   confirmation_responded_at: string | null;
+  operation_type?: string | null;
+  expired?: boolean;
 }
 
 interface InstallmentRow {
@@ -53,6 +55,8 @@ export default function ConfirmAgreement() {
     ]);
     if (error || !data || data.length === 0) {
       setError("No encontramos esta operación. El enlace puede haber expirado.");
+    } else if ((data[0] as any).expired) {
+      setError("Este enlace ha expirado. Solicita un nuevo enlace al remitente.");
     } else {
       setLoan(data[0] as LoanSummary);
       setSchedule((instData as InstallmentRow[]) || []);
