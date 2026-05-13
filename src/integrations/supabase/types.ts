@@ -308,12 +308,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_installments_by_token: {
+        Args: { _token: string }
+        Returns: {
+          amount: number
+          due_date: string
+          number: number
+        }[]
+      }
       get_loan_by_token: {
         Args: { _token: string }
         Returns: {
           amount_lent: number
           amount_to_return: number
           concept: string
+          confirmation_responded_at: string
+          confirmation_sent_at: string
           confirmation_status: string
           frequency: string
           id: string
