@@ -207,11 +207,31 @@ export default function NewClient() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="firstName" className="text-xs">Nombres</Label>
-              <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Juan Carlos" />
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(sanitizeName(e.target.value))}
+                placeholder="Juan Carlos"
+                autoComplete="given-name"
+                aria-invalid={firstName.length > 0 && !isValidName(firstName)}
+              />
+              {firstName.length > 0 && !isValidName(firstName) && (
+                <p className="text-[11px] text-destructive mt-1">{NAME_ERROR}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="lastName" className="text-xs">Apellidos</Label>
-              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Pérez Soto" />
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(sanitizeName(e.target.value))}
+                placeholder="Pérez Soto"
+                autoComplete="family-name"
+                aria-invalid={lastName.length > 0 && !isValidName(lastName)}
+              />
+              {lastName.length > 0 && !isValidName(lastName) && (
+                <p className="text-[11px] text-destructive mt-1">{NAME_ERROR}</p>
+              )}
             </div>
           </div>
 
@@ -228,17 +248,34 @@ export default function NewClient() {
               </Select>
               <Input
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setPhoneNumber(sanitizeDigits(e.target.value))}
                 placeholder="987654321"
                 inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={15}
                 className="flex-1"
+                aria-invalid={phoneNumber.length > 0 && !isValidPhone(phoneNumber)}
               />
             </div>
+            {phoneNumber.length > 0 && !isValidPhone(phoneNumber) && (
+              <p className="text-[11px] text-destructive mt-1">{PHONE_ERROR}</p>
+            )}
           </div>
 
           <div>
             <Label htmlFor="dni" className="text-xs flex items-center gap-1"><IdCard className="w-3 h-3" /> DNI / CE <span className="text-muted-foreground normal-case">(opcional)</span></Label>
-            <Input id="dni" value={dni} onChange={(e) => setDni(e.target.value)} placeholder="12345678" />
+            <Input
+              id="dni"
+              value={dni}
+              onChange={(e) => setDni(sanitizeDni(e.target.value))}
+              placeholder="12345678"
+              inputMode="text"
+              maxLength={12}
+              aria-invalid={dni.length > 0 && !isValidDni(dni)}
+            />
+            {dni.length > 0 && !isValidDni(dni) && (
+              <p className="text-[11px] text-destructive mt-1">{DNI_ERROR}</p>
+            )}
           </div>
 
           <div>
