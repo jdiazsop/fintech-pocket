@@ -54,6 +54,8 @@ interface Props {
 export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initial, onSaved }: Props) {
   const [form, setForm] = useState<ClientFields>(initial);
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sensitiveChanges, setSensitiveChanges] = useState<string[]>([]);
 
   useEffect(() => {
     if (open) setForm(initial);
