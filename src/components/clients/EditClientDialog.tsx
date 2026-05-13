@@ -89,6 +89,22 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       toast.error("No se encontró el cliente para actualizar");
       return;
     }
+
+    // Detect changes to sensitive fields and confirm before persisting.
+    const changes: string[] = [];
+    const norm = (v: string | null | undefined) => (v || "").trim().toUpperCase();
+    if (norm(form.dni) !== norm(initial.dni)) changes.push("Documento (DNI/CE)");
+    if ((form.phone_number || "").trim() !== (initial.phone_number || "").trim()) changes.push("Número de celular");
+    if ((form.phone_country_code || "").trim() !== (initial.phone_country_code || "").trim()) changes.push("Código de país");
+    if (changes.length > 0) {
+      setSensitiveChanges(changes);
+      setConfirmOpen(true);
+      return;
+    }
+    await persist();
+  };
+
+  const persist = async () => {
     setSaving(true);
     try {
       const payload = {
