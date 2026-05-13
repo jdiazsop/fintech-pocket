@@ -81,7 +81,7 @@ const FILTERS: { key: FilterKey; label: string }[] = [
 export default function Portfolio() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  useIsMobile();
+  
   const [loans, setLoans] = useState<Loan[]>([]);
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [contacts, setContacts] = useState<ClientRow[]>([]);
