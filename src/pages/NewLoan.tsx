@@ -386,6 +386,7 @@ export default function NewLoan() {
           start_date: formData.startDate,
           payment_type: formData.paymentType,
           frequency: formData.paymentType === "installments" ? formData.frequency : null,
+          operation_type: operationType,
         } as any)
         .select()
         .single();
