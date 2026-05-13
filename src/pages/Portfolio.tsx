@@ -543,6 +543,17 @@ export default function Portfolio() {
             })
           )}
         </div>
+
+        {editTarget && (
+          <EditClientDialog
+            open={!!editTarget}
+            onOpenChange={(v) => !v && setEditTarget(null)}
+            loanIds={editTarget.loanIds}
+            clientId={editTarget.clientId}
+            initial={editTarget.initial}
+            onSaved={fetchData}
+          />
+        )}
       </div>
     </AppLayout>
   );
