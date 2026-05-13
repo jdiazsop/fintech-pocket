@@ -57,6 +57,22 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       toast.error("El nombre es obligatorio");
       return;
     }
+    if (form.first_name && !isValidName(form.first_name)) {
+      toast.error("Nombre inválido", { description: NAME_ERROR });
+      return;
+    }
+    if (form.last_name && !isValidName(form.last_name)) {
+      toast.error("Apellido inválido", { description: NAME_ERROR });
+      return;
+    }
+    if (form.phone_number && !isValidPhone(form.phone_number)) {
+      toast.error("Celular inválido", { description: PHONE_ERROR });
+      return;
+    }
+    if (form.dni && !isValidDni(form.dni)) {
+      toast.error("Documento inválido", { description: DNI_ERROR });
+      return;
+    }
     if (loanIds.length === 0 && !clientId) {
       toast.error("No se encontró el cliente para actualizar");
       return;
@@ -67,12 +83,30 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
         name: form.name.trim(),
         first_name: form.first_name?.trim() || null,
         last_name: form.last_name?.trim() || null,
-        dni: form.dni?.trim() || null,
+        dni: form.dni?.trim().toUpperCase() || null,
         phone_country_code: form.phone_country_code?.trim() || null,
         phone_number: form.phone_number?.trim() || null,
         address: form.address?.trim() || null,
         reference: form.reference?.trim() || null,
       };
+
+      // Duplicate check (excludes current client row when editing).
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && (payload.dni || payload.phone_number)) {
+        const dup = await findDuplicateClient(user.id, {
+          dni: payload.dni,
+          phone: payload.phone_number,
+          excludeId: clientId || null,
+        });
+        if (dup) {
+          const fullName = `${dup.first_name} ${dup.last_name || ""}`.trim();
+          toast.error("Cliente ya registrado", {
+            description: `${fullName} ya existe en tu cartera (${dup.matched === "dni" ? "mismo DNI" : "mismo celular"}).`,
+          });
+          setSaving(false);
+          return;
+        }
+      }
 
       // Update all linked loans (preserves existing behavior)
       if (loanIds.length > 0) {
