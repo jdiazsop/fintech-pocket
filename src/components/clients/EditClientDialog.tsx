@@ -12,7 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
-import { upsertClient } from "@/lib/clientSync";
+import { upsertClient, findDuplicateClient } from "@/lib/clientSync";
+import {
+  sanitizeName, sanitizeDigits, sanitizeDni,
+  isValidName, isValidPhone, isValidDni,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+} from "@/lib/validators";
 import { toast } from "sonner";
 
 interface ClientFields {
@@ -52,6 +57,22 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       toast.error("El nombre es obligatorio");
       return;
     }
+    if (form.first_name && !isValidName(form.first_name)) {
+      toast.error("Nombre inválido", { description: NAME_ERROR });
+      return;
+    }
+    if (form.last_name && !isValidName(form.last_name)) {
+      toast.error("Apellido inválido", { description: NAME_ERROR });
+      return;
+    }
+    if (form.phone_number && !isValidPhone(form.phone_number)) {
+      toast.error("Celular inválido", { description: PHONE_ERROR });
+      return;
+    }
+    if (form.dni && !isValidDni(form.dni)) {
+      toast.error("Documento inválido", { description: DNI_ERROR });
+      return;
+    }
     if (loanIds.length === 0 && !clientId) {
       toast.error("No se encontró el cliente para actualizar");
       return;
@@ -62,12 +83,30 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
         name: form.name.trim(),
         first_name: form.first_name?.trim() || null,
         last_name: form.last_name?.trim() || null,
-        dni: form.dni?.trim() || null,
+        dni: form.dni?.trim().toUpperCase() || null,
         phone_country_code: form.phone_country_code?.trim() || null,
         phone_number: form.phone_number?.trim() || null,
         address: form.address?.trim() || null,
         reference: form.reference?.trim() || null,
       };
+
+      // Duplicate check (excludes current client row when editing).
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && (payload.dni || payload.phone_number)) {
+        const dup = await findDuplicateClient(user.id, {
+          dni: payload.dni,
+          phone: payload.phone_number,
+          excludeId: clientId || null,
+        });
+        if (dup) {
+          const fullName = `${dup.first_name} ${dup.last_name || ""}`.trim();
+          toast.error("Cliente ya registrado", {
+            description: `${fullName} ya existe en tu cartera (${dup.matched === "dni" ? "mismo DNI" : "mismo celular"}).`,
+          });
+          setSaving(false);
+          return;
+        }
+      }
 
       // Update all linked loans (preserves existing behavior)
       if (loanIds.length > 0) {
@@ -143,18 +182,26 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
               <Input
                 id="c-first"
                 value={form.first_name || ""}
-                onChange={(e) => update("first_name", e.target.value)}
+                onChange={(e) => update("first_name", sanitizeName(e.target.value))}
                 className="bg-muted/50"
+                aria-invalid={!!form.first_name && !isValidName(form.first_name)}
               />
+              {!!form.first_name && !isValidName(form.first_name) && (
+                <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="c-last">Apellidos</Label>
               <Input
                 id="c-last"
                 value={form.last_name || ""}
-                onChange={(e) => update("last_name", e.target.value)}
+                onChange={(e) => update("last_name", sanitizeName(e.target.value))}
                 className="bg-muted/50"
+                aria-invalid={!!form.last_name && !isValidName(form.last_name)}
               />
+              {!!form.last_name && !isValidName(form.last_name) && (
+                <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+              )}
             </div>
           </div>
 
@@ -163,9 +210,14 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
             <Input
               id="c-dni"
               value={form.dni || ""}
-              onChange={(e) => update("dni", e.target.value)}
+              onChange={(e) => update("dni", sanitizeDni(e.target.value))}
               className="bg-muted/50"
+              maxLength={12}
+              aria-invalid={!!form.dni && !isValidDni(form.dni)}
             />
+            {!!form.dni && !isValidDni(form.dni) && (
+              <p className="text-[11px] text-destructive">{DNI_ERROR}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-[90px_1fr] gap-2">
@@ -175,19 +227,26 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
                 id="c-cc"
                 placeholder="51"
                 value={form.phone_country_code || ""}
-                onChange={(e) => update("phone_country_code", e.target.value)}
+                onChange={(e) => update("phone_country_code", sanitizeDigits(e.target.value).slice(0, 4))}
                 className="bg-muted/50"
+                inputMode="numeric"
+                maxLength={4}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="c-phone">Teléfono / WhatsApp</Label>
               <Input
                 id="c-phone"
-                inputMode="tel"
+                inputMode="numeric"
                 value={form.phone_number || ""}
-                onChange={(e) => update("phone_number", e.target.value)}
+                onChange={(e) => update("phone_number", sanitizeDigits(e.target.value))}
                 className="bg-muted/50"
+                maxLength={15}
+                aria-invalid={!!form.phone_number && !isValidPhone(form.phone_number)}
               />
+              {!!form.phone_number && !isValidPhone(form.phone_number) && (
+                <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
+              )}
             </div>
           </div>
 

@@ -15,6 +15,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
+import {
+  sanitizeName, sanitizeDigits, sanitizeDni,
+  isValidName, isValidPhone, isValidDni,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+} from "@/lib/validators";
+import { findDuplicateClient } from "@/lib/clientSync";
 
 export default function NewClient() {
   const navigate = useNavigate();
@@ -54,16 +60,20 @@ export default function NewClient() {
   }, [exactAddress, district, province, department]);
 
   const validate = () => {
-    if (!firstName.trim()) {
-      toast({ title: "Falta información", description: "Ingresa los nombres", variant: "destructive" });
+    if (!firstName.trim() || !isValidName(firstName)) {
+      toast({ title: "Nombre inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!lastName.trim()) {
-      toast({ title: "Falta información", description: "Ingresa los apellidos", variant: "destructive" });
+    if (!lastName.trim() || !isValidName(lastName)) {
+      toast({ title: "Apellido inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!phoneNumber.trim() || !/^\d{6,15}$/.test(phoneNumber.trim())) {
-      toast({ title: "Celular inválido", description: "Ingresa un número válido (solo dígitos)", variant: "destructive" });
+    if (!isValidPhone(phoneNumber)) {
+      toast({ title: "Celular inválido", description: PHONE_ERROR, variant: "destructive" });
+      return false;
+    }
+    if (dni.trim() && !isValidDni(dni)) {
+      toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
     return true;
@@ -73,6 +83,20 @@ export default function NewClient() {
     if (!validate() || !user) return;
     setLoading(true);
     try {
+      const dup = await findDuplicateClient(user.id, {
+        dni: dni.trim() || null,
+        phone: phoneNumber.trim() || null,
+      });
+      if (dup) {
+        const fullName = `${dup.first_name} ${dup.last_name || ""}`.trim();
+        toast({
+          title: "Cliente ya registrado",
+          description: `${fullName} ya existe en tu cartera (${dup.matched === "dni" ? "mismo DNI" : "mismo celular"}).`,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("clients")
         .insert({
@@ -81,7 +105,7 @@ export default function NewClient() {
           last_name: lastName.trim() || null,
           phone_country_code: phoneCountryCode,
           phone_number: phoneNumber.trim(),
-          dni: dni.trim() || null,
+          dni: dni.trim().toUpperCase() || null,
           address: composedAddress || null,
           reference: reference.trim() || null,
         } as any)
@@ -92,11 +116,15 @@ export default function NewClient() {
       toast({ title: "Cliente creado", description: "Se guardó correctamente" });
     } catch (e: any) {
       console.error(e);
-      toast({ title: "Error", description: "No se pudo guardar el cliente", variant: "destructive" });
+      const msg = e?.code === "23505"
+        ? "Ya existe un cliente con ese DNI o celular."
+        : "No se pudo guardar el cliente";
+      toast({ title: "Error", description: msg, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
+
 
   if (created) {
     return (
@@ -179,11 +207,31 @@ export default function NewClient() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="firstName" className="text-xs">Nombres</Label>
-              <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="Juan Carlos" />
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(sanitizeName(e.target.value))}
+                placeholder="Juan Carlos"
+                autoComplete="given-name"
+                aria-invalid={firstName.length > 0 && !isValidName(firstName)}
+              />
+              {firstName.length > 0 && !isValidName(firstName) && (
+                <p className="text-[11px] text-destructive mt-1">{NAME_ERROR}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="lastName" className="text-xs">Apellidos</Label>
-              <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Pérez Soto" />
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(sanitizeName(e.target.value))}
+                placeholder="Pérez Soto"
+                autoComplete="family-name"
+                aria-invalid={lastName.length > 0 && !isValidName(lastName)}
+              />
+              {lastName.length > 0 && !isValidName(lastName) && (
+                <p className="text-[11px] text-destructive mt-1">{NAME_ERROR}</p>
+              )}
             </div>
           </div>
 
@@ -200,17 +248,34 @@ export default function NewClient() {
               </Select>
               <Input
                 value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ""))}
+                onChange={(e) => setPhoneNumber(sanitizeDigits(e.target.value))}
                 placeholder="987654321"
                 inputMode="numeric"
+                autoComplete="tel-national"
+                maxLength={15}
                 className="flex-1"
+                aria-invalid={phoneNumber.length > 0 && !isValidPhone(phoneNumber)}
               />
             </div>
+            {phoneNumber.length > 0 && !isValidPhone(phoneNumber) && (
+              <p className="text-[11px] text-destructive mt-1">{PHONE_ERROR}</p>
+            )}
           </div>
 
           <div>
             <Label htmlFor="dni" className="text-xs flex items-center gap-1"><IdCard className="w-3 h-3" /> DNI / CE <span className="text-muted-foreground normal-case">(opcional)</span></Label>
-            <Input id="dni" value={dni} onChange={(e) => setDni(e.target.value)} placeholder="12345678" />
+            <Input
+              id="dni"
+              value={dni}
+              onChange={(e) => setDni(sanitizeDni(e.target.value))}
+              placeholder="12345678"
+              inputMode="text"
+              maxLength={12}
+              aria-invalid={dni.length > 0 && !isValidDni(dni)}
+            />
+            {dni.length > 0 && !isValidDni(dni) && (
+              <p className="text-[11px] text-destructive mt-1">{DNI_ERROR}</p>
+            )}
           </div>
 
           <div>

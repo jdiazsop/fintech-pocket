@@ -73,3 +73,34 @@ export async function upsertClient(
   }
   throw insErr;
 }
+
+/**
+ * Returns the existing client row (id + name) if a contact with the same DNI
+ * or phone is already registered for this user. Used to block duplicate creation.
+ * `excludeId` lets you ignore the current row when editing.
+ */
+export async function findDuplicateClient(
+  userId: string,
+  opts: { dni?: string | null; phone?: string | null; excludeId?: string | null },
+): Promise<{ id: string; first_name: string; last_name: string | null; matched: "dni" | "phone" } | null> {
+  const dni = opts.dni?.trim() || null;
+  const phone = opts.phone?.trim() || null;
+  if (!dni && !phone) return null;
+
+  const filters: string[] = [];
+  if (dni) filters.push(`dni.eq.${dni}`);
+  if (phone) filters.push(`phone_number.eq.${phone}`);
+
+  let query = supabase
+    .from("clients")
+    .select("id, first_name, last_name, dni, phone_number")
+    .eq("user_id", userId)
+    .or(filters.join(","));
+  if (opts.excludeId) query = query.neq("id", opts.excludeId);
+
+  const { data } = await query.limit(1);
+  const row = (data as any[])?.[0];
+  if (!row) return null;
+  const matched: "dni" | "phone" = dni && row.dni === dni ? "dni" : "phone";
+  return { id: row.id, first_name: row.first_name, last_name: row.last_name, matched };
+}

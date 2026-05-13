@@ -22,6 +22,11 @@ import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 import { upsertClient } from "@/lib/clientSync";
+import {
+  sanitizeName, sanitizeDigits, sanitizeDni,
+  isValidName, isValidPhone, isValidDni,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+} from "@/lib/validators";
 
 type PaymentType = "single" | "installments";
 type Frequency = "daily" | "weekly" | "biweekly" | "monthly";
@@ -237,20 +242,20 @@ export default function NewLoan() {
   };
 
   const validateStep1 = () => {
-    if (!formData.firstName.trim()) {
-      toast({ title: "Error", description: "Ingresa los nombres", variant: "destructive" });
+    if (!formData.firstName.trim() || !isValidName(formData.firstName)) {
+      toast({ title: "Nombre inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.lastName.trim()) {
-      toast({ title: "Error", description: "Ingresa los apellidos", variant: "destructive" });
+    if (!formData.lastName.trim() || !isValidName(formData.lastName)) {
+      toast({ title: "Apellido inválido", description: NAME_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.phoneNumber.trim() || !/^\d{6,15}$/.test(formData.phoneNumber.trim())) {
-      toast({ title: "Error", description: "Ingresa un número de celular válido (solo dígitos)", variant: "destructive" });
+    if (!isValidPhone(formData.phoneNumber)) {
+      toast({ title: "Celular inválido", description: PHONE_ERROR, variant: "destructive" });
       return false;
     }
-    if (!formData.dni.trim()) {
-      toast({ title: "Error", description: "Ingresa el DNI/CE", variant: "destructive" });
+    if (!formData.dni.trim() || !isValidDni(formData.dni)) {
+      toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
     const startDate = new Date(formData.startDate);
@@ -835,10 +840,15 @@ export default function NewLoan() {
                       id="firstName"
                       placeholder="Juan Carlos"
                       value={formData.firstName}
-                      onChange={(e) => updateForm("firstName", e.target.value)}
+                      onChange={(e) => updateForm("firstName", sanitizeName(e.target.value))}
                       className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
+                      autoComplete="given-name"
+                      aria-invalid={!!formData.firstName && !isValidName(formData.firstName)}
                     />
+                    {!!formData.firstName && !isValidName(formData.firstName) && !isContactLocked && (
+                      <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <Label htmlFor="lastName" className="text-xs text-muted-foreground">Apellidos</Label>
@@ -846,10 +856,15 @@ export default function NewLoan() {
                       id="lastName"
                       placeholder="Pérez Gómez"
                       value={formData.lastName}
-                      onChange={(e) => updateForm("lastName", e.target.value)}
+                      onChange={(e) => updateForm("lastName", sanitizeName(e.target.value))}
                       className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
+                      autoComplete="family-name"
+                      aria-invalid={!!formData.lastName && !isValidName(formData.lastName)}
                     />
+                    {!!formData.lastName && !isValidName(formData.lastName) && !isContactLocked && (
+                      <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+                    )}
                   </div>
                 </div>
 
@@ -862,11 +877,15 @@ export default function NewLoan() {
                     id="dni"
                     placeholder="12345678"
                     value={formData.dni}
-                    onChange={(e) => updateForm("dni", e.target.value)}
+                    onChange={(e) => updateForm("dni", sanitizeDni(e.target.value))}
                     className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                     disabled={isContactLocked}
-                    maxLength={20}
+                    maxLength={12}
+                    aria-invalid={!!formData.dni && !isValidDni(formData.dni)}
                   />
+                  {!!formData.dni && !isValidDni(formData.dni) && !isContactLocked && (
+                    <p className="text-[11px] text-destructive">{DNI_ERROR}</p>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -911,12 +930,16 @@ export default function NewLoan() {
                       inputMode="numeric"
                       placeholder="987 654 321"
                       value={formData.phoneNumber}
-                      onChange={(e) => updateForm("phoneNumber", e.target.value.replace(/\D/g, ""))}
+                      onChange={(e) => updateForm("phoneNumber", sanitizeDigits(e.target.value))}
                       className={`bg-muted/40 flex-1 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
                       disabled={isContactLocked}
                       maxLength={15}
+                      aria-invalid={!!formData.phoneNumber && !isValidPhone(formData.phoneNumber)}
                     />
                   </div>
+                  {!!formData.phoneNumber && !isValidPhone(formData.phoneNumber) && !isContactLocked && (
+                    <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
+                  )}
                 </div>
               </div>
 
