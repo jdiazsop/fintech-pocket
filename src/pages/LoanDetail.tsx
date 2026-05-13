@@ -28,6 +28,9 @@ interface Loan {
   payment_type: string;
   frequency: string | null;
   confirmation_status?: string | null;
+  confirmation_token?: string | null;
+  confirmation_sent_at?: string | null;
+  confirmation_responded_at?: string | null;
   phone_country_code?: string | null;
   phone_number?: string | null;
 }
