@@ -33,7 +33,14 @@ interface Loan {
   confirmation_responded_at?: string | null;
   phone_country_code?: string | null;
   phone_number?: string | null;
+  operation_type?: string | null;
 }
+
+// Parse a YYYY-MM-DD date string as a local date (avoid UTC offset bugs in Lima)
+const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
 
 interface Installment {
   id: string;
@@ -246,7 +253,7 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
     const sorted = [...installments].sort((a, b) => a.number - b.number);
     const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
-    const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
+    const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
     const message = buildAgreementMessage({
       name: loan.name,
       operationType: isSale ? "sale" : "loan",
@@ -604,7 +611,7 @@ export default function LoanDetail() {
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span>Inicio: {format(new Date(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es })}</span>
+            <span>Inicio: {format(parseLocalDate(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es })}</span>
           </div>
         </motion.div>
 
