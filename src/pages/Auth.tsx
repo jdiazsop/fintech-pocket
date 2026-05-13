@@ -12,8 +12,25 @@ import { lovable } from "@/integrations/lovable";
 import { LegalDialog } from "@/components/legal/LegalDialog";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Email inválido").max(255, "Email muy largo");
-const passwordSchema = z.string().min(6, "Mínimo 6 caracteres").max(72, "Máximo 72 caracteres");
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresa tu correo electrónico")
+  .email("Correo inválido. Debe incluir “@” y un dominio válido")
+  .max(255, "El correo es demasiado largo");
+
+const passwordSchema = z
+  .string()
+  .min(8, "La contraseña debe tener al menos 8 caracteres")
+  .max(72, "La contraseña no puede superar 72 caracteres")
+  .refine((v) => /[A-Za-z]/.test(v), "Debe incluir al menos una letra")
+  .refine((v) => /\d/.test(v), "Debe incluir al menos un número")
+  .refine((v) => !/^\s|\s$/.test(v), "No debe tener espacios al inicio o al final");
+
+const validateField = (schema: z.ZodTypeAny, value: string): string | null => {
+  const r = schema.safeParse(value);
+  return r.success ? null : r.error.errors[0].message;
+};
 
 type AuthMode = "login" | "register" | "forgot";
 
@@ -25,37 +42,34 @@ export default function Auth() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [termsError, setTermsError] = useState<string | null>(null);
 
   const { signIn, signUp, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   const validateForm = () => {
-    try {
-      emailSchema.parse(email);
-      if (mode !== "forgot") {
-        passwordSchema.parse(password);
-      }
-      if (mode === "register" && !acceptedTerms) {
-        toast({
-          title: "Error",
-          description: "Debes aceptar los términos y condiciones",
-          variant: "destructive",
-        });
-        return false;
-      }
-      return true;
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Error de validación",
-          description: error.errors[0].message,
-          variant: "destructive",
-        });
-      }
-      return false;
+    const eErr = validateField(emailSchema, email);
+    setEmailError(eErr);
+    let pErr: string | null = null;
+    if (mode !== "forgot") {
+      pErr = validateField(passwordSchema, password);
+      setPasswordError(pErr);
+    } else {
+      setPasswordError(null);
     }
+    let tErr: string | null = null;
+    if (mode === "register" && !acceptedTerms) {
+      tErr = "Debes aceptar los Términos y Condiciones y la Política de Privacidad";
+      setTermsError(tErr);
+    } else {
+      setTermsError(null);
+    }
+    return !eErr && !pErr && !tErr;
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,11 +125,7 @@ export default function Auth() {
 
   const handleGoogle = async () => {
     if (mode === "register" && !acceptedTerms) {
-      toast({
-        title: "Error",
-        description: "Debes aceptar los términos y condiciones",
-        variant: "destructive",
-      });
+      setTermsError("Debes aceptar los Términos y Condiciones y la Política de Privacidad");
       return;
     }
     setLoading(true);
@@ -200,19 +210,29 @@ export default function Auth() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Correo electrónico</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
+                      inputMode="email"
+                      autoComplete="email"
                       placeholder="tu@email.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10 bg-muted/50 border-border"
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError(null);
+                      }}
+                      onBlur={() => setEmailError(validateField(emailSchema, email))}
+                      aria-invalid={!!emailError}
+                      className={`pl-10 bg-muted/50 border-border ${emailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                       required
                     />
                   </div>
+                  {emailError && (
+                    <p className="text-xs text-destructive mt-1">{emailError}</p>
+                  )}
                 </div>
 
                 {mode !== "forgot" && (
@@ -223,10 +243,16 @@ export default function Auth() {
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}
+                        autoComplete={mode === "register" ? "new-password" : "current-password"}
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="pl-10 pr-10 bg-muted/50 border-border"
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (passwordError) setPasswordError(null);
+                        }}
+                        onBlur={() => mode === "register" && setPasswordError(validateField(passwordSchema, password))}
+                        aria-invalid={!!passwordError}
+                        className={`pl-10 pr-10 bg-muted/50 border-border ${passwordError ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
                       />
                       <button
@@ -237,37 +263,54 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {passwordError ? (
+                      <p className="text-xs text-destructive mt-1">{passwordError}</p>
+                    ) : mode === "register" ? (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Mínimo 8 caracteres, con al menos una letra y un número.
+                      </p>
+                    ) : null}
                   </div>
                 )}
 
                 {mode === "register" && (
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="terms"
-                      checked={acceptedTerms}
-                      onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
-                      className="mt-0.5"
-                    />
-                    <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
-                      Acepto los{" "}
-                      <LegalDialog
-                        type="terms"
-                        trigger={
-                          <button type="button" className="text-primary hover:underline font-medium">
-                            Términos y Condiciones
-                          </button>
-                        }
-                      />{" "}
-                      y la{" "}
-                      <LegalDialog
-                        type="privacy"
-                        trigger={
-                          <button type="button" className="text-primary hover:underline font-medium">
-                            Política de Privacidad
-                          </button>
-                        }
+                  <div className="space-y-1">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id="terms"
+                        checked={acceptedTerms}
+                        onCheckedChange={(checked) => {
+                          const v = checked === true;
+                          setAcceptedTerms(v);
+                          if (v) setTermsError(null);
+                        }}
+                        className="mt-0.5"
+                        aria-invalid={!!termsError}
                       />
-                    </Label>
+                      <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
+                        Acepto los{" "}
+                        <LegalDialog
+                          type="terms"
+                          trigger={
+                            <button type="button" className="text-primary hover:underline font-medium">
+                              Términos y Condiciones
+                            </button>
+                          }
+                        />{" "}
+                        y la{" "}
+                        <LegalDialog
+                          type="privacy"
+                          trigger={
+                            <button type="button" className="text-primary hover:underline font-medium">
+                              Política de Privacidad
+                            </button>
+                          }
+                        />
+                      </Label>
+                    </div>
+                    {termsError && (
+                      <p className="text-xs text-destructive ml-6">{termsError}</p>
+                    )}
                   </div>
                 )}
 
