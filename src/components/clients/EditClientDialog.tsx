@@ -182,18 +182,26 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
               <Input
                 id="c-first"
                 value={form.first_name || ""}
-                onChange={(e) => update("first_name", e.target.value)}
+                onChange={(e) => update("first_name", sanitizeName(e.target.value))}
                 className="bg-muted/50"
+                aria-invalid={!!form.first_name && !isValidName(form.first_name)}
               />
+              {!!form.first_name && !isValidName(form.first_name) && (
+                <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+              )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="c-last">Apellidos</Label>
               <Input
                 id="c-last"
                 value={form.last_name || ""}
-                onChange={(e) => update("last_name", e.target.value)}
+                onChange={(e) => update("last_name", sanitizeName(e.target.value))}
                 className="bg-muted/50"
+                aria-invalid={!!form.last_name && !isValidName(form.last_name)}
               />
+              {!!form.last_name && !isValidName(form.last_name) && (
+                <p className="text-[11px] text-destructive">{NAME_ERROR}</p>
+              )}
             </div>
           </div>
 
@@ -202,9 +210,14 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
             <Input
               id="c-dni"
               value={form.dni || ""}
-              onChange={(e) => update("dni", e.target.value)}
+              onChange={(e) => update("dni", sanitizeDni(e.target.value))}
               className="bg-muted/50"
+              maxLength={12}
+              aria-invalid={!!form.dni && !isValidDni(form.dni)}
             />
+            {!!form.dni && !isValidDni(form.dni) && (
+              <p className="text-[11px] text-destructive">{DNI_ERROR}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-[90px_1fr] gap-2">
@@ -214,19 +227,26 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
                 id="c-cc"
                 placeholder="51"
                 value={form.phone_country_code || ""}
-                onChange={(e) => update("phone_country_code", e.target.value)}
+                onChange={(e) => update("phone_country_code", sanitizeDigits(e.target.value).slice(0, 4))}
                 className="bg-muted/50"
+                inputMode="numeric"
+                maxLength={4}
               />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="c-phone">Teléfono / WhatsApp</Label>
               <Input
                 id="c-phone"
-                inputMode="tel"
+                inputMode="numeric"
                 value={form.phone_number || ""}
-                onChange={(e) => update("phone_number", e.target.value)}
+                onChange={(e) => update("phone_number", sanitizeDigits(e.target.value))}
                 className="bg-muted/50"
+                maxLength={15}
+                aria-invalid={!!form.phone_number && !isValidPhone(form.phone_number)}
               />
+              {!!form.phone_number && !isValidPhone(form.phone_number) && (
+                <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
+              )}
             </div>
           </div>
 
