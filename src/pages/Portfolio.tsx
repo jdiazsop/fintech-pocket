@@ -88,6 +88,20 @@ export default function Portfolio() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [editTarget, setEditTarget] = useState<{
+    loanIds: string[];
+    clientId: string | null;
+    initial: {
+      name: string;
+      first_name: string | null;
+      last_name: string | null;
+      dni: string | null;
+      phone_country_code: string | null;
+      phone_number: string | null;
+      address: string | null;
+      reference: string | null;
+    };
+  } | null>(null);
 
   useEffect(() => {
     if (user) fetchData();
