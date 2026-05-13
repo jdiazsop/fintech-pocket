@@ -161,6 +161,7 @@ export type Database = {
           confirmation_sent_at: string | null
           confirmation_status: string
           confirmation_token: string | null
+          confirmation_token_expires_at: string | null
           created_at: string
           dni: string | null
           first_name: string | null
@@ -168,6 +169,7 @@ export type Database = {
           id: string
           last_name: string | null
           name: string
+          operation_type: string
           payment_type: string
           phone_country_code: string | null
           phone_number: string | null
@@ -187,6 +189,7 @@ export type Database = {
           confirmation_sent_at?: string | null
           confirmation_status?: string
           confirmation_token?: string | null
+          confirmation_token_expires_at?: string | null
           created_at?: string
           dni?: string | null
           first_name?: string | null
@@ -194,6 +197,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           name: string
+          operation_type?: string
           payment_type: string
           phone_country_code?: string | null
           phone_number?: string | null
@@ -213,6 +217,7 @@ export type Database = {
           confirmation_sent_at?: string | null
           confirmation_status?: string
           confirmation_token?: string | null
+          confirmation_token_expires_at?: string | null
           created_at?: string
           dni?: string | null
           first_name?: string | null
@@ -220,6 +225,7 @@ export type Database = {
           id?: string
           last_name?: string | null
           name?: string
+          operation_type?: string
           payment_type?: string
           phone_country_code?: string | null
           phone_number?: string | null
@@ -325,13 +331,19 @@ export type Database = {
           confirmation_responded_at: string
           confirmation_sent_at: string
           confirmation_status: string
+          expired: boolean
           frequency: string
           id: string
           name: string
           num_installments: number
+          operation_type: string
           payment_type: string
           start_date: string
         }[]
+      }
+      register_payment: {
+        Args: { _amount: number; _loan_id: string; _notes?: string }
+        Returns: string
       }
       respond_loan_confirmation: {
         Args: { _status: string; _token: string }

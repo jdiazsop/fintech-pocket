@@ -33,7 +33,14 @@ interface Loan {
   confirmation_responded_at?: string | null;
   phone_country_code?: string | null;
   phone_number?: string | null;
+  operation_type?: string | null;
 }
+
+// Parse a YYYY-MM-DD date string as a local date (avoid UTC offset bugs in Lima)
+const parseLocalDate = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split("T")[0].split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+};
 
 interface Installment {
   id: string;
@@ -243,10 +250,15 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     // (iOS Safari blocks popups opened after an `await`).
     const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
     const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
-    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${loan.confirmation_token}`;
+    // Rotate token on each send so old links can't be reused
+    const newToken =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : loan.confirmation_token;
+    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${newToken}`;
     const sorted = [...installments].sort((a, b) => a.number - b.number);
     const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
-    const isSale = Number(loan.amount_lent) === Number(loan.amount_to_return);
+    const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
     const message = buildAgreementMessage({
       name: loan.name,
       operationType: isSale ? "sale" : "loan",
@@ -264,9 +276,16 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     const popup = window.open(waUrl, "_blank");
 
     try {
+      // Token expires in 30 days
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updErr } = await supabase
         .from("loans")
-        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+        .update({
+          confirmation_status: "pending",
+          confirmation_sent_at: new Date().toISOString(),
+          confirmation_token: newToken,
+          confirmation_token_expires_at: expiresAt,
+        } as any)
         .eq("id", loan.id);
       if (updErr) throw updErr;
 
@@ -397,6 +416,25 @@ export default function LoanDetail() {
     setDeleting(true);
 
     try {
+      // Best-effort: delete evidence files from storage before removing the loan
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const prefix = `${user.id}/${loan.id}`;
+          const { data: files } = await supabase.storage
+            .from("operation-evidences")
+            .list(prefix, { limit: 100 });
+          if (files && files.length > 0) {
+            await supabase.storage
+              .from("operation-evidences")
+              .remove(files.map((f) => `${prefix}/${f.name}`));
+          }
+        }
+      } catch (storageErr) {
+        console.warn("Storage cleanup failed (continuing with delete):", storageErr);
+      }
+
+      // DB cascade removes installments, payments and evidences rows
       const { error } = await supabase
         .from("loans")
         .delete()
@@ -447,52 +485,13 @@ export default function LoanDetail() {
     setSavingPayment(true);
 
     try {
-      // Register payment
-      const { error: paymentError } = await supabase
-        .from("payments_history")
-        .insert({
-          loan_id: loan.id,
-          amount_paid: amount,
-          notes: paymentNotes.trim() || null,
-        });
-
-      if (paymentError) throw paymentError;
-
-      // Update loan
-      const newAmountReturned = loan.amount_returned + amount;
-      const newStatus = newAmountReturned >= loan.amount_to_return ? "paid" : "partial";
-
-      const { error: loanError } = await supabase
-        .from("loans")
-        .update({
-          amount_returned: newAmountReturned,
-          status: newStatus,
-        })
-        .eq("id", loan.id);
-
-      if (loanError) throw loanError;
-
-      // Update installments (simple approach: mark as paid in order)
-      let remainingPayment = amount;
-      for (const inst of installments.filter(i => i.status !== "paid")) {
-        if (remainingPayment <= 0) break;
-
-        const instPending = inst.amount - inst.amount_paid;
-        const payForInst = Math.min(remainingPayment, instPending);
-
-        const newInstPaid = inst.amount_paid + payForInst;
-        const newInstStatus = newInstPaid >= inst.amount ? "paid" : "partial";
-
-        await supabase
-          .from("installments")
-          .update({
-            amount_paid: newInstPaid,
-            status: newInstStatus,
-          })
-          .eq("id", inst.id);
-
-        remainingPayment -= payForInst;
-      }
+      // Atomic: insert payment + update loan + distribute across installments in one transaction
+      const { error: rpcError } = await (supabase as any).rpc("register_payment", {
+        _loan_id: loan.id,
+        _amount: amount,
+        _notes: paymentNotes.trim() || null,
+      });
+      if (rpcError) throw rpcError;
 
       toast({
         title: "Pago registrado",
@@ -604,7 +603,7 @@ export default function LoanDetail() {
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4" />
-            <span>Inicio: {format(new Date(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es })}</span>
+            <span>Inicio: {format(parseLocalDate(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es })}</span>
           </div>
         </motion.div>
 
