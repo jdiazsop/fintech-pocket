@@ -121,10 +121,27 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       // Duplicate check (excludes current client row when editing).
       const { data: { user } } = await supabase.auth.getUser();
       if (user && (payload.dni || payload.phone_number)) {
+        // If we don't have a clientId yet, try to resolve it from the *original* values
+        // so we don't false-positive against the same contact.
+        let excludeId: string | null = clientId || null;
+        if (!excludeId && (initial.dni || initial.phone_number)) {
+          const filters: string[] = [];
+          if (initial.dni) filters.push(`dni.eq.${initial.dni}`);
+          if (initial.phone_number) filters.push(`phone_number.eq.${initial.phone_number}`);
+          const { data: self } = await supabase
+            .from("clients")
+            .select("id")
+            .eq("user_id", user.id)
+            .or(filters.join(","))
+            .limit(1)
+            .maybeSingle();
+          excludeId = (self as any)?.id || null;
+        }
+
         const dup = await findDuplicateClient(user.id, {
           dni: payload.dni,
           phone: payload.phone_number,
-          excludeId: clientId || null,
+          excludeId,
         });
         if (dup) {
           const fullName = `${dup.first_name} ${dup.last_name || ""}`.trim();
