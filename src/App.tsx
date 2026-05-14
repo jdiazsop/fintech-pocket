@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState } from "react";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { AcceptTermsGate } from "@/components/legal/AcceptTermsGate";
@@ -21,8 +21,6 @@ import ConfirmAgreement from "./pages/ConfirmAgreement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
-
-const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, acceptedTerms, profileLoading, signOut } = useAuth();
@@ -162,8 +160,7 @@ const AppRoutes = () => {
   );
 };
 
-// Use HashRouter for GitHub Pages, BrowserRouter for other environments
-const Router = isGitHubPages ? HashRouter : BrowserRouter;
+const Router = BrowserRouter;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

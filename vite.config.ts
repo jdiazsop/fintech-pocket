@@ -6,7 +6,7 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   // Only use base path for production builds (GitHub Pages)
-  base: mode === "production" ? "/fintech-pocket/" : "/",
+  base: "/",
   server: {
     host: "::",
     port: 8080,

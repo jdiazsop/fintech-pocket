@@ -54,7 +54,7 @@ export default function Profile() {
   };
 
   const handleShare = async () => {
-    const shareUrl = "https://fintech-pocket.lovable.app";
+    const shareUrl = "https://app.credify.pe";
     const shareText = "Te invito a usar Credify, tu cuaderno digital de préstamos y ventas al crédito.";
     const shareData = {
       title: "Credify",

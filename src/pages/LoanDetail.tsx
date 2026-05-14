@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff, FileEdit, ShieldCheck, Send, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
+import { buildPublicUrl } from "@/lib/publicUrl";
 import { EditOperationDialog } from "@/components/clients/EditOperationDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -248,14 +249,12 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
     setSending(true);
     // Build message + URL synchronously so we can open WhatsApp inside the user gesture
     // (iOS Safari blocks popups opened after an `await`).
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
     // Rotate token on each send so old links can't be reused
     const newToken =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : loan.confirmation_token;
-    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${newToken}`;
+    const confirmUrl = buildPublicUrl(`/confirm/${newToken}`);
     const sorted = [...installments].sort((a, b) => a.number - b.number);
     const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
     const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";

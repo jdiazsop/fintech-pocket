@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/useAuth";
+import { buildPublicUrl } from "@/lib/publicUrl";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { addDays, addWeeks, addMonths, format, parse } from "date-fns";
@@ -554,9 +555,7 @@ export default function NewLoan() {
     const lastDue = installments[installments.length - 1].due_date;
     const amount = parseFloat(formData.amountToReturn);
     const installmentAmount = installments[0].amount;
-    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
-    const isHashRouter = typeof window !== "undefined" && window.location.hash !== "" && window.location.hash.startsWith("#/");
-    const confirmUrl = `${baseUrl}/${isHashRouter ? "#/" : ""}confirm/${createdLoan.token}`;
+    const confirmUrl = buildPublicUrl(`/confirm/${createdLoan.token}`);
 
     const message = buildAgreementMessage({
       name: createdLoan.fullName,
