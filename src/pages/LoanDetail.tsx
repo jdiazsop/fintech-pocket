@@ -34,6 +34,7 @@ interface Loan {
   confirmation_responded_at?: string | null;
   phone_country_code?: string | null;
   phone_number?: string | null;
+  email?: string | null;
   operation_type?: string | null;
 }
 
@@ -234,8 +235,8 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
   const ctaLabel = status === "not_sent" ? "Solicitar consentimiento" : status === "pending" ? "Reenviar enlace" : "Reenviar solicitud";
 
   const handleSend = async () => {
-    if (!loan.phone_number || !loan.phone_country_code) {
-      toast({ title: "Falta teléfono", description: "Agrega un número de WhatsApp al cliente para enviar el acuerdo.", variant: "destructive" });
+    if (!loan.email && (!loan.phone_number || !loan.phone_country_code)) {
+      toast({ title: "Falta contacto", description: "Agrega un correo o número de WhatsApp al cliente para enviar el acuerdo.", variant: "destructive" });
       return;
     }
     if (!loan.confirmation_token) {
@@ -247,14 +248,12 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
       return;
     }
     setSending(true);
-    // Rotate token + generate OTP server-side so we can include both in the same WhatsApp message.
     const newToken =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : loan.confirmation_token;
 
     try {
-      // Persist new token first so the public RPC can find it
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updErr } = await supabase
         .from("loans")
@@ -267,18 +266,13 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
         .eq("id", loan.id);
       if (updErr) throw updErr;
 
-      // Generate OTP (valid 24h, only owner can request)
-      const { data: otpCode, error: otpErr } = await supabase
-        .rpc("request_confirmation_otp", { _loan_id: loan.id });
-      if (otpErr) throw otpErr;
-
       const confirmUrl = buildPublicUrl(`/confirm/${newToken}`);
       const sorted = [...installments].sort((a, b) => a.number - b.number);
       const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
       const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
-      const baseMessage = buildAgreementMessage({
+      const baseArgs = {
         name: loan.name,
-        operationType: isSale ? "sale" : "loan",
+        operationType: (isSale ? "sale" : "loan") as "loan" | "sale",
         amount: Number(loan.amount_to_return),
         numInstallments: sorted.length,
         installmentAmount: Number(sorted[0].amount),
@@ -286,16 +280,25 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
         endDate: lastDue,
         paymentType: loan.payment_type as "single" | "installments",
         confirmUrl,
-      });
-      const message = `${baseMessage}\n\n🔐 *Código de verificación:* ${otpCode}\n_Válido por 24 horas. No lo compartas._`;
-      const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message);
+      };
 
-      const popup = window.open(waUrl, "_blank");
-      if (!popup) {
-        toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
-        window.location.href = waUrl;
+      // Prefer email if available; otherwise WhatsApp.
+      if (loan.email) {
+        const { error: mailErr } = await supabase.functions.invoke("send-consent-email", {
+          body: { to: loan.email, clientName: loan.name, ...baseArgs },
+        });
+        if (mailErr) throw mailErr;
+        toast({ title: "Correo enviado", description: `Se envió el acuerdo a ${loan.email}.` });
       } else {
-        toast({ title: "Enlace + código enviados", description: "Se abrió WhatsApp con el acuerdo y el OTP." });
+        const message = buildAgreementMessage(baseArgs);
+        const waUrl = buildWhatsAppUrl(loan.phone_country_code!, loan.phone_number!, message);
+        const popup = window.open(waUrl, "_blank");
+        if (!popup) {
+          toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
+          window.location.href = waUrl;
+        } else {
+          toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
+        }
       }
       onSent();
     } catch (e) {
