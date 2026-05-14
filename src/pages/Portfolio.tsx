@@ -30,6 +30,7 @@ interface Loan {
   last_name: string | null;
   address: string | null;
   reference: string | null;
+  email: string | null;
 }
 
 interface Installment {
@@ -51,6 +52,7 @@ interface ClientRow {
   phone_number: string | null;
   address: string | null;
   reference: string | null;
+  email: string | null;
 }
 
 type ClientStatus = "overdue" | "upcoming" | "pending_confirm" | "on_time" | "no_ops";
@@ -101,6 +103,7 @@ export default function Portfolio() {
       phone_number: string | null;
       address: string | null;
       reference: string | null;
+      email: string | null;
     };
   } | null>(null);
 
@@ -330,6 +333,7 @@ export default function Portfolio() {
           phone_number: l.phone_number ?? contact?.phone_number ?? null,
           address: l.address ?? contact?.address ?? null,
           reference: l.reference ?? contact?.reference ?? null,
+          email: (l as any).email ?? (contact as any)?.email ?? null,
         },
       });
       return;
@@ -351,6 +355,7 @@ export default function Portfolio() {
         phone_number: contact.phone_number,
         address: contact.address,
         reference: contact.reference,
+        email: (contact as any).email ?? null,
       },
     });
   };
