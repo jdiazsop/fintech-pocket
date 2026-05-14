@@ -593,6 +593,41 @@ export default function NewLoan() {
     window.open(buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message), "_blank");
   };
 
+  const handleSendEmail = async () => {
+    if (!createdLoan?.email) return;
+    const installments = generateInstallments();
+    const lastDue = installments[installments.length - 1].due_date;
+    const amount = parseFloat(formData.amountToReturn);
+    const installmentAmount = installments[0].amount;
+    const confirmUrl = buildPublicUrl(`/confirm/${createdLoan.token}`);
+    try {
+      const { error } = await supabase.functions.invoke("send-consent-email", {
+        body: {
+          to: createdLoan.email,
+          clientName: createdLoan.fullName,
+          operationType,
+          amount,
+          numInstallments: installments.length,
+          installmentAmount,
+          startDate: formData.startDate,
+          endDate: lastDue,
+          paymentType: formData.paymentType,
+          confirmUrl,
+        },
+      });
+      if (error) throw error;
+      await supabase
+        .from("loans")
+        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+        .eq("id", createdLoan.id);
+      setConfirmSent(true);
+      toast({ title: "Correo enviado", description: `Se envió el acuerdo a ${createdLoan.email}.` });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "No se pudo enviar el correo", description: e?.message || "Intenta nuevamente o usa WhatsApp.", variant: "destructive" });
+    }
+  };
+
   const currentStepDisplay = step + 1;
 
   return (
