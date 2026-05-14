@@ -276,7 +276,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send email using Resend
     console.log("Sending email to:", user.email);
     const emailResponse = await resend.emails.send({
-      from: "Credify <onboarding@resend.dev>",
+      from: "Credify <noreply@credify.pe>",
       to: [user.email!],
       subject: `📊 Tu Reporte de Préstamos - ${formatDate(todayStr)}`,
       html: emailHtml,
