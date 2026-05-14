@@ -960,6 +960,29 @@ export default function NewLoan() {
                     <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
                   )}
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Correo electrónico (opcional)
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="cliente@correo.com"
+                    value={formData.email}
+                    onChange={(e) => updateForm("email", e.target.value)}
+                    className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isContactLocked}
+                    autoComplete="email"
+                    maxLength={120}
+                    aria-invalid={!!formData.email && !isValidEmail(formData.email)}
+                  />
+                  {!!formData.email && !isValidEmail(formData.email) && !isContactLocked && (
+                    <p className="text-[11px] text-destructive">{EMAIL_ERROR}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">Necesario para enviar el acuerdo digital por correo.</p>
+                </div>
               </div>
 
               {/* Section: Ubicación (progressive disclosure) */}
