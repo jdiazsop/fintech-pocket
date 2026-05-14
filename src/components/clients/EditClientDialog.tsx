@@ -24,9 +24,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { upsertClient, findDuplicateClient } from "@/lib/clientSync";
 import {
-  sanitizeName, sanitizeDigits, sanitizeDni,
-  isValidName, isValidPhone, isValidDni,
-  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+  sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
+  isValidName, isValidPhone, isValidDni, isValidEmail,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR, EMAIL_ERROR,
 } from "@/lib/validators";
 import { toast } from "sonner";
 
@@ -39,6 +39,7 @@ interface ClientFields {
   phone_number: string | null;
   address: string | null;
   reference: string | null;
+  email: string | null;
 }
 
 interface Props {
@@ -85,6 +86,10 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
       toast.error("Documento inválido", { description: DNI_ERROR });
       return;
     }
+    if (form.email && !isValidEmail(form.email)) {
+      toast.error("Correo inválido", { description: EMAIL_ERROR });
+      return;
+    }
     if (loanIds.length === 0 && !clientId) {
       toast.error("No se encontró el cliente para actualizar");
       return;
@@ -116,6 +121,7 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
         phone_number: form.phone_number?.trim() || null,
         address: form.address?.trim() || null,
         reference: form.reference?.trim() || null,
+        email: form.email ? sanitizeEmail(form.email) : null,
       };
 
       // Duplicate check (excludes current client row when editing).
@@ -171,6 +177,7 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
             phone_number: payload.phone_number,
             address: payload.address,
             reference: payload.reference,
+            email: payload.email,
           };
           if (clientId) {
             await supabase.from("clients").update(clientPayload).eq("id", clientId);
@@ -293,6 +300,24 @@ export function EditClientDialog({ open, onOpenChange, loanIds, clientId, initia
                 <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="c-email">Correo electrónico (opcional)</Label>
+            <Input
+              id="c-email"
+              type="email"
+              value={form.email || ""}
+              onChange={(e) => update("email", e.target.value)}
+              className="bg-muted/50"
+              placeholder="cliente@correo.com"
+              autoComplete="email"
+              aria-invalid={!!form.email && !isValidEmail(form.email)}
+            />
+            {!!form.email && !isValidEmail(form.email) && (
+              <p className="text-[11px] text-destructive">{EMAIL_ERROR}</p>
+            )}
+            <p className="text-[10px] text-muted-foreground">Necesario para enviar el acuerdo digital por correo.</p>
           </div>
 
           <div className="space-y-1.5">
