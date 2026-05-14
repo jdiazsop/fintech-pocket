@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, User, Phone, IdCard, MapPin, Loader2, Check, UserPlus, Plus, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, User, Phone, IdCard, MapPin, Loader2, Check, UserPlus, Plus, ChevronsUpDown, Mail } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
