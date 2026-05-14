@@ -77,6 +77,10 @@ export default function NewClient() {
       toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
+    if (email.trim() && !isValidEmail(email)) {
+      toast({ title: "Correo inválido", description: EMAIL_ERROR, variant: "destructive" });
+      return false;
+    }
     return true;
   };
 
