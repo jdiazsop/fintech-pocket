@@ -34,6 +34,7 @@ export default function NewClient() {
   const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dni, setDni] = useState("");
+  const [email, setEmail] = useState("");
   const [reference, setReference] = useState("");
 
   const [department, setDepartment] = useState("");
