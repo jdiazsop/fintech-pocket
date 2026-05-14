@@ -24,6 +24,9 @@ interface LoanSummary {
   confirmation_responded_at: string | null;
   operation_type?: string | null;
   expired?: boolean;
+  phone_masked?: string | null;
+  otp_verified?: boolean;
+  otp_active?: boolean;
 }
 
 interface InstallmentRow {
