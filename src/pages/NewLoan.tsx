@@ -160,12 +160,12 @@ export default function NewLoan() {
       const [{ data: loansData }, { data: clientsData }] = await Promise.all([
         supabase
           .from("loans")
-          .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .select("name, first_name, last_name, phone_country_code, phone_number, dni, email, address, reference, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
           .from("clients")
-          .select("first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .select("first_name, last_name, phone_country_code, phone_number, dni, email, address, reference, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
       ]);
@@ -181,6 +181,7 @@ export default function NewLoan() {
             phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
             phoneNumber: l.phone_number || "",
             dni: l.dni || "",
+            email: l.email || "",
             address: l.address || "",
             reference: l.reference || "",
           });
@@ -198,6 +199,7 @@ export default function NewLoan() {
             phoneCountryCode: c.phone_country_code || DEFAULT_COUNTRY_CODE,
             phoneNumber: c.phone_number || "",
             dni: c.dni || "",
+            email: c.email || "",
             address: c.address || "",
             reference: c.reference || "",
           });
@@ -232,6 +234,7 @@ export default function NewLoan() {
       phoneCountryCode: d.phoneCountryCode || DEFAULT_COUNTRY_CODE,
       phoneNumber: d.phoneNumber,
       dni: d.dni,
+      email: d.email || "",
       address: d.address,
       reference: d.reference,
     }));
