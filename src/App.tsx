@@ -18,6 +18,7 @@ import ClientDetail from "./pages/ClientDetail";
 import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
 import ConfirmAgreement from "./pages/ConfirmAgreement";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
