@@ -8,6 +8,7 @@ export interface ClientSyncPayload {
   dni: string | null;
   address: string | null;
   reference: string | null;
+  email?: string | null;
 }
 
 /**
