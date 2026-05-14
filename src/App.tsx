@@ -160,8 +160,7 @@ const AppRoutes = () => {
   );
 };
 
-// Use HashRouter for GitHub Pages, BrowserRouter for other environments
-const Router = isGitHubPages ? HashRouter : BrowserRouter;
+const Router = BrowserRouter;
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
