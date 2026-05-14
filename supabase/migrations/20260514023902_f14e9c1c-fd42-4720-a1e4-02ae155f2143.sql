@@ -1,0 +1,10 @@
+REVOKE EXECUTE ON FUNCTION public.admin_get_metrics() FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.admin_list_users() FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.admin_list_clients() FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.admin_list_operations() FROM anon, public;
+REVOKE EXECUTE ON FUNCTION public.admin_list_payments() FROM anon, public;
+GRANT EXECUTE ON FUNCTION public.admin_get_metrics() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_clients() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_operations() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.admin_list_payments() TO authenticated;
