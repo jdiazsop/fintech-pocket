@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Loader2, ShieldCheck, HandCoins, ShoppingCart, Calendar, FileText, KeyRound } from "lucide-react";
+import { Check, X, Loader2, ShieldCheck, HandCoins, ShoppingCart, Calendar, FileText, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
