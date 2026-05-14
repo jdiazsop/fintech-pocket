@@ -10,6 +10,7 @@ import {
   Clock,
   CheckCircle2,
   MailQuestion,
+  Mail,
   Wallet,
   ShoppingBag,
   Plus,
@@ -52,6 +53,7 @@ interface Loan {
   last_name: string | null;
   address: string | null;
   reference: string | null;
+  email: string | null;
 }
 
 interface Installment {
@@ -238,6 +240,11 @@ export default function ClientDetail() {
             <p className="text-xs text-muted-foreground truncate">
               {client.dni ? `DNI ${client.dni}` : fullPhone ? `+${fullPhone}` : "Sin contacto"}
             </p>
+            {client.email && (
+              <p className="text-[11px] text-muted-foreground truncate flex items-center gap-1 mt-0.5">
+                <Mail className="w-3 h-3" /> {client.email}
+              </p>
+            )}
           </div>
           <button
             onClick={() => setEditOpen(true)}
@@ -262,6 +269,7 @@ export default function ClientDetail() {
             phone_number: client.phone_number,
             address: client.address,
             reference: client.reference,
+            email: client.email,
           }}
           onSaved={fetchData}
         />

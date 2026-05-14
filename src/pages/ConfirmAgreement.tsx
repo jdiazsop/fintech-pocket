@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Check, X, Loader2, ShieldCheck, HandCoins, ShoppingCart, Calendar, FileText, KeyRound } from "lucide-react";
+import { Check, X, Loader2, ShieldCheck, HandCoins, ShoppingCart, Calendar, FileText, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ interface LoanSummary {
   phone_masked?: string | null;
   otp_verified?: boolean;
   otp_active?: boolean;
+  email_masked?: string | null;
+  dni_required?: boolean;
 }
 
 interface InstallmentRow {
@@ -51,9 +53,9 @@ export default function ConfirmAgreement() {
   const [loan, setLoan] = useState<LoanSummary | null>(null);
   const [schedule, setSchedule] = useState<InstallmentRow[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [otpCode, setOtpCode] = useState("");
-  const [verifyingOtp, setVerifyingOtp] = useState(false);
-  const [otpError, setOtpError] = useState<string | null>(null);
+  const [dniInput, setDniInput] = useState("");
+  const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
 
   const fetchLoan = async () => {
     if (!token) return;
@@ -78,21 +80,22 @@ export default function ConfirmAgreement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const verifyOtp = async () => {
+  const verifyDni = async () => {
     if (!token) return;
-    setOtpError(null);
-    if (!/^\d{6}$/.test(otpCode)) {
-      setOtpError("Ingresa los 6 dígitos del código.");
+    setVerifyError(null);
+    const cleaned = dniInput.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (cleaned.length < 6) {
+      setVerifyError("Ingresa tu DNI o CE completo.");
       return;
     }
-    setVerifyingOtp(true);
-    const { data, error } = await supabase.rpc("verify_confirmation_otp", { _token: token, _code: otpCode });
-    setVerifyingOtp(false);
+    setVerifying(true);
+    const { data, error } = await supabase.rpc("verify_confirmation_dni", { _token: token, _dni: cleaned });
+    setVerifying(false);
     if (error || !data) {
-      setOtpError("Código incorrecto o expirado. Solicita un nuevo código al remitente.");
+      setVerifyError("El documento no coincide con el registrado para esta operación.");
       return;
     }
-    setOtpCode("");
+    setDniInput("");
     toast({ title: "Identidad verificada", description: "Ya puedes aceptar o rechazar el acuerdo." });
     await fetchLoan();
   };
@@ -225,39 +228,32 @@ export default function ConfirmAgreement() {
         ) : !loan.otp_verified ? (
           <div className="fintech-card p-4 space-y-3 sticky bottom-3 border border-primary/30">
             <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-primary" />
+              <IdCard className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold">Verifica tu identidad</h2>
             </div>
             <p className="text-xs text-muted-foreground">
-              Por seguridad, ingresa el código de 6 dígitos que recibiste por WhatsApp
-              {loan.phone_masked ? ` al número ${loan.phone_masked}` : ""}.
-              Solo así podrás aceptar o rechazar el acuerdo.
+              Por seguridad, ingresa tu <strong>DNI o CE</strong> tal como fue registrado en esta operación. Solo así podrás aceptar o rechazar el acuerdo.
             </p>
             <Input
-              inputMode="numeric"
-              pattern="\d*"
-              maxLength={6}
-              value={otpCode}
-              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(null); }}
-              placeholder="------"
-              className="text-center text-2xl tracking-[0.5em] font-mono h-12"
-              autoComplete="one-time-code"
+              inputMode="text"
+              autoCapitalize="characters"
+              maxLength={12}
+              value={dniInput}
+              onChange={(e) => { setDniInput(e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(0, 12)); setVerifyError(null); }}
+              placeholder="Tu DNI o CE"
+              className="text-center text-lg tracking-widest font-mono h-12"
+              autoComplete="off"
             />
-            {otpError && <p className="text-xs text-red-400">{otpError}</p>}
+            {verifyError && <p className="text-xs text-red-400">{verifyError}</p>}
             <Button
-              onClick={verifyOtp}
-              disabled={verifyingOtp || otpCode.length !== 6}
+              onClick={verifyDni}
+              disabled={verifying || dniInput.length < 6}
               className="w-full bg-primary hover:bg-primary/90 h-11"
             >
-              {verifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Validar código"}
+              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : "Validar identidad"}
             </Button>
-            {!loan.otp_active && (
-              <p className="text-[11px] text-amber-400 text-center">
-                No hay un código activo. Solicita al remitente que te reenvíe uno nuevo.
-              </p>
-            )}
             <p className="text-[11px] text-muted-foreground text-center">
-              El código es de un solo uso y vence en 24 horas. Tienes 5 intentos.
+              Tu documento se compara solo con el registrado en esta operación. Tienes 8 intentos.
             </p>
           </div>
         ) : (
@@ -281,7 +277,7 @@ export default function ConfirmAgreement() {
               <X className="w-4 h-4 mr-2" /> Rechazar
             </Button>
             <p className="text-[11px] text-center text-muted-foreground pt-1">
-              Tu respuesta quedará registrada con fecha, hora y número validado.
+              Tu respuesta quedará registrada con fecha, hora y documento validado.
             </p>
           </div>
         )}

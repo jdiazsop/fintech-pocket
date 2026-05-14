@@ -24,9 +24,9 @@ import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUp
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 import { upsertClient } from "@/lib/clientSync";
 import {
-  sanitizeName, sanitizeDigits, sanitizeDni,
-  isValidName, isValidPhone, isValidDni,
-  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+  sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
+  isValidName, isValidPhone, isValidDni, isValidEmail,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR, EMAIL_ERROR,
 } from "@/lib/validators";
 
 type PaymentType = "single" | "installments";
@@ -39,6 +39,7 @@ interface LoanFormData {
   phoneCountryCode: string;
   phoneNumber: string;
   dni: string;
+  email: string;
   address: string;
   reference: string;
   concept: string;
@@ -57,6 +58,7 @@ interface ExistingDebtor {
   phoneCountryCode: string;
   phoneNumber: string;
   dni: string;
+  email: string;
   address: string;
   reference: string;
 }
@@ -87,7 +89,7 @@ export default function NewLoan() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>(hasPresetType ? (presetType as OperationType) : "loan");
   const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
-  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
+  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string; email: string | null } | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
   const [reviewing, setReviewing] = useState(false);
 
@@ -108,6 +110,7 @@ export default function NewLoan() {
     phoneCountryCode: DEFAULT_COUNTRY_CODE,
     phoneNumber: "",
     dni: "",
+    email: "",
     address: "",
     reference: "",
     concept: "",
@@ -157,12 +160,12 @@ export default function NewLoan() {
       const [{ data: loansData }, { data: clientsData }] = await Promise.all([
         supabase
           .from("loans")
-          .select("name, first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .select("name, first_name, last_name, phone_country_code, phone_number, dni, email, address, reference, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
           .from("clients")
-          .select("first_name, last_name, phone_country_code, phone_number, dni, address, reference, created_at")
+          .select("first_name, last_name, phone_country_code, phone_number, dni, email, address, reference, created_at")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
       ]);
@@ -178,6 +181,7 @@ export default function NewLoan() {
             phoneCountryCode: l.phone_country_code || DEFAULT_COUNTRY_CODE,
             phoneNumber: l.phone_number || "",
             dni: l.dni || "",
+            email: l.email || "",
             address: l.address || "",
             reference: l.reference || "",
           });
@@ -195,6 +199,7 @@ export default function NewLoan() {
             phoneCountryCode: c.phone_country_code || DEFAULT_COUNTRY_CODE,
             phoneNumber: c.phone_number || "",
             dni: c.dni || "",
+            email: c.email || "",
             address: c.address || "",
             reference: c.reference || "",
           });
@@ -229,6 +234,7 @@ export default function NewLoan() {
       phoneCountryCode: d.phoneCountryCode || DEFAULT_COUNTRY_CODE,
       phoneNumber: d.phoneNumber,
       dni: d.dni,
+      email: d.email || "",
       address: d.address,
       reference: d.reference,
     }));
@@ -257,6 +263,10 @@ export default function NewLoan() {
     }
     if (!formData.dni.trim() || !isValidDni(formData.dni)) {
       toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
+      return false;
+    }
+    if (formData.email.trim() && !isValidEmail(formData.email)) {
+      toast({ title: "Correo inválido", description: EMAIL_ERROR, variant: "destructive" });
       return false;
     }
     // Compare as YYYY-MM-DD in Lima time to avoid UTC drift near midnight.
@@ -379,6 +389,7 @@ export default function NewLoan() {
           phone_country_code: formData.phoneCountryCode,
           phone_number: formData.phoneNumber.trim(),
           dni: formData.dni.trim(),
+          email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
@@ -414,6 +425,7 @@ export default function NewLoan() {
           phone_country_code: formData.phoneCountryCode,
           phone_number: formData.phoneNumber.trim() || null,
           dni: formData.dni.trim() || null,
+          email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
         });
@@ -461,6 +473,7 @@ export default function NewLoan() {
         phoneCountryCode: formData.phoneCountryCode,
         phoneNumber: formData.phoneNumber.trim(),
         fullName,
+        email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
       });
 
       toast({
@@ -530,6 +543,7 @@ export default function NewLoan() {
         phoneCountryCode: DEFAULT_COUNTRY_CODE,
         phoneNumber: "",
         dni: "",
+        email: "",
         address: "",
         reference: "",
       }));
@@ -577,6 +591,41 @@ export default function NewLoan() {
 
     setConfirmSent(true);
     window.open(buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message), "_blank");
+  };
+
+  const handleSendEmail = async () => {
+    if (!createdLoan?.email) return;
+    const installments = generateInstallments();
+    const lastDue = installments[installments.length - 1].due_date;
+    const amount = parseFloat(formData.amountToReturn);
+    const installmentAmount = installments[0].amount;
+    const confirmUrl = buildPublicUrl(`/confirm/${createdLoan.token}`);
+    try {
+      const { error } = await supabase.functions.invoke("send-consent-email", {
+        body: {
+          to: createdLoan.email,
+          clientName: createdLoan.fullName,
+          operationType,
+          amount,
+          numInstallments: installments.length,
+          installmentAmount,
+          startDate: formData.startDate,
+          endDate: lastDue,
+          paymentType: formData.paymentType,
+          confirmUrl,
+        },
+      });
+      if (error) throw error;
+      await supabase
+        .from("loans")
+        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
+        .eq("id", createdLoan.id);
+      setConfirmSent(true);
+      toast({ title: "Correo enviado", description: `Se envió el acuerdo a ${createdLoan.email}.` });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "No se pudo enviar el correo", description: e?.message || "Intenta nuevamente o usa WhatsApp.", variant: "destructive" });
+    }
   };
 
   const currentStepDisplay = step + 1;
@@ -721,6 +770,7 @@ export default function NewLoan() {
                       phoneCountryCode: DEFAULT_COUNTRY_CODE,
                       phoneNumber: "",
                       dni: "",
+                      email: "",
                       address: "",
                       reference: "",
                     }));
@@ -944,6 +994,29 @@ export default function NewLoan() {
                   {!!formData.phoneNumber && !isValidPhone(formData.phoneNumber) && !isContactLocked && (
                     <p className="text-[11px] text-destructive">{PHONE_ERROR}</p>
                   )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    Correo electrónico (opcional)
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="cliente@correo.com"
+                    value={formData.email}
+                    onChange={(e) => updateForm("email", e.target.value)}
+                    className={`bg-muted/40 h-11 ${isContactLocked ? "opacity-70 cursor-not-allowed" : ""}`}
+                    disabled={isContactLocked}
+                    autoComplete="email"
+                    maxLength={120}
+                    aria-invalid={!!formData.email && !isValidEmail(formData.email)}
+                  />
+                  {!!formData.email && !isValidEmail(formData.email) && !isContactLocked && (
+                    <p className="text-[11px] text-destructive">{EMAIL_ERROR}</p>
+                  )}
+                  <p className="text-[10px] text-muted-foreground">Necesario para enviar el acuerdo digital por correo.</p>
                 </div>
               </div>
 
@@ -1807,12 +1880,22 @@ export default function NewLoan() {
 
               {/* Actions */}
               <div className="space-y-2 pt-1">
+                {createdLoan.email && (
+                  <Button
+                    onClick={handleSendEmail}
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Enviar acuerdo por correo
+                  </Button>
+                )}
                 <Button
                   onClick={handleSendWhatsApp}
-                  className="w-full bg-emerald-500 hover:bg-emerald-500/90"
+                  variant={createdLoan.email ? "outline" : "default"}
+                  className={createdLoan.email ? "w-full" : "w-full bg-emerald-500 hover:bg-emerald-500/90"}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
+                  {confirmSent ? "Reenviar por WhatsApp" : createdLoan.email ? "Enviar también por WhatsApp" : "Enviar acuerdo por WhatsApp"}
                 </Button>
 
                 <Button
