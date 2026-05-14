@@ -111,6 +111,7 @@ export default function NewClient() {
           phone_country_code: phoneCountryCode,
           phone_number: phoneNumber.trim(),
           dni: dni.trim().toUpperCase() || null,
+          email: email.trim().toLowerCase() || null,
           address: composedAddress || null,
           reference: reference.trim() || null,
         } as any)
