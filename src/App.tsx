@@ -22,8 +22,6 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const isGitHubPages = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
-
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading, acceptedTerms, profileLoading, signOut } = useAuth();
   const [acceptedNow, setAcceptedNow] = useState(false);
