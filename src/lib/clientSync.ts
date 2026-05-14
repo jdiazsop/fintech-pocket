@@ -8,6 +8,7 @@ export interface ClientSyncPayload {
   dni: string | null;
   address: string | null;
   reference: string | null;
+  email?: string | null;
 }
 
 /**
@@ -30,6 +31,7 @@ export async function upsertClient(
     dni: raw.dni?.trim() || null,
     address: raw.address?.trim() || null,
     reference: raw.reference?.trim() || null,
+    email: raw.email?.trim().toLowerCase() || null,
   };
   if (!payload.first_name) return null;
 

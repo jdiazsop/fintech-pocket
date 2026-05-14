@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, User, Phone, IdCard, MapPin, Loader2, Check, UserPlus, Plus, ChevronsUpDown } from "lucide-react";
+import { ArrowLeft, User, Phone, IdCard, MapPin, Loader2, Check, UserPlus, Plus, ChevronsUpDown, Mail } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
 import {
-  sanitizeName, sanitizeDigits, sanitizeDni,
-  isValidName, isValidPhone, isValidDni,
-  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+  sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
+  isValidName, isValidPhone, isValidDni, isValidEmail,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR, EMAIL_ERROR,
 } from "@/lib/validators";
 import { findDuplicateClient } from "@/lib/clientSync";
 
@@ -34,6 +34,7 @@ export default function NewClient() {
   const [phoneCountryCode, setPhoneCountryCode] = useState(DEFAULT_COUNTRY_CODE);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [dni, setDni] = useState("");
+  const [email, setEmail] = useState("");
   const [reference, setReference] = useState("");
 
   const [department, setDepartment] = useState("");
@@ -76,6 +77,10 @@ export default function NewClient() {
       toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
+    if (email.trim() && !isValidEmail(email)) {
+      toast({ title: "Correo inválido", description: EMAIL_ERROR, variant: "destructive" });
+      return false;
+    }
     return true;
   };
 
@@ -106,6 +111,7 @@ export default function NewClient() {
           phone_country_code: phoneCountryCode,
           phone_number: phoneNumber.trim(),
           dni: dni.trim().toUpperCase() || null,
+          email: email.trim().toLowerCase() || null,
           address: composedAddress || null,
           reference: reference.trim() || null,
         } as any)
@@ -275,6 +281,22 @@ export default function NewClient() {
             />
             {dni.length > 0 && !isValidDni(dni) && (
               <p className="text-[11px] text-destructive mt-1">{DNI_ERROR}</p>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="email" className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Correo electrónico <span className="text-muted-foreground normal-case">(opcional · requerido para consentimiento digital)</span></Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+              placeholder="cliente@correo.com"
+              autoComplete="email"
+              aria-invalid={email.length > 0 && !isValidEmail(email)}
+            />
+            {email.length > 0 && !isValidEmail(email) && (
+              <p className="text-[11px] text-destructive mt-1">{EMAIL_ERROR}</p>
             )}
           </div>
 

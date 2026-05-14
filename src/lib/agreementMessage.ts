@@ -36,8 +36,10 @@ export function buildAgreementMessage(a: BuildArgs): string {
   lines.push(`*Inicio:* ${format(parseLocal(a.startDate), "dd 'de' MMMM, yyyy", { locale: es })}`);
   lines.push(`*Vencimiento final:* ${format(parseLocal(a.endDate), "dd 'de' MMMM, yyyy", { locale: es })}`);
   lines.push("");
-  lines.push(`Por favor confirma o rechaza el acuerdo aquí:`);
+  lines.push(`Por favor revisa y confirma o rechaza el acuerdo aquí:`);
   lines.push(a.confirmUrl);
+  lines.push("");
+  lines.push(`🔒 Para aceptar/rechazar deberás validar tu DNI o CE registrado.`);
   lines.push("");
   lines.push(`Gracias 🙌`);
   return lines.join("\n");
