@@ -247,35 +247,14 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
       return;
     }
     setSending(true);
-    // Build message + URL synchronously so we can open WhatsApp inside the user gesture
-    // (iOS Safari blocks popups opened after an `await`).
-    // Rotate token on each send so old links can't be reused
+    // Rotate token + generate OTP server-side so we can include both in the same WhatsApp message.
     const newToken =
       typeof crypto !== "undefined" && "randomUUID" in crypto
         ? crypto.randomUUID()
         : loan.confirmation_token;
-    const confirmUrl = buildPublicUrl(`/confirm/${newToken}`);
-    const sorted = [...installments].sort((a, b) => a.number - b.number);
-    const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
-    const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
-    const message = buildAgreementMessage({
-      name: loan.name,
-      operationType: isSale ? "sale" : "loan",
-      amount: Number(loan.amount_to_return),
-      numInstallments: sorted.length,
-      installmentAmount: Number(sorted[0].amount),
-      startDate: loan.start_date,
-      endDate: lastDue,
-      paymentType: loan.payment_type as "single" | "installments",
-      confirmUrl,
-    });
-    const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message);
-
-    // Open in the same tick as the click — must happen before any await.
-    const popup = window.open(waUrl, "_blank");
 
     try {
-      // Token expires in 30 days
+      // Persist new token first so the public RPC can find it
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: updErr } = await supabase
         .from("loans")
@@ -288,17 +267,40 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
         .eq("id", loan.id);
       if (updErr) throw updErr;
 
+      // Generate OTP (valid 24h, only owner can request)
+      const { data: otpCode, error: otpErr } = await supabase
+        .rpc("request_confirmation_otp", { _loan_id: loan.id });
+      if (otpErr) throw otpErr;
+
+      const confirmUrl = buildPublicUrl(`/confirm/${newToken}`);
+      const sorted = [...installments].sort((a, b) => a.number - b.number);
+      const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
+      const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
+      const baseMessage = buildAgreementMessage({
+        name: loan.name,
+        operationType: isSale ? "sale" : "loan",
+        amount: Number(loan.amount_to_return),
+        numInstallments: sorted.length,
+        installmentAmount: Number(sorted[0].amount),
+        startDate: loan.start_date,
+        endDate: lastDue,
+        paymentType: loan.payment_type as "single" | "installments",
+        confirmUrl,
+      });
+      const message = `${baseMessage}\n\n🔐 *Código de verificación:* ${otpCode}\n_Válido por 24 horas. No lo compartas._`;
+      const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, message);
+
+      const popup = window.open(waUrl, "_blank");
       if (!popup) {
-        // Popup was blocked: fall back to in-page navigation so the link still reaches WhatsApp.
         toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
         window.location.href = waUrl;
       } else {
-        toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
+        toast({ title: "Enlace + código enviados", description: "Se abrió WhatsApp con el acuerdo y el OTP." });
       }
       onSent();
     } catch (e) {
       console.error(e);
-      toast({ title: "Error", description: "No se pudo registrar el envío.", variant: "destructive" });
+      toast({ title: "Error", description: "No se pudo enviar el acuerdo.", variant: "destructive" });
     } finally {
       setSending(false);
     }
@@ -334,6 +336,34 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
               className="mt-3 bg-primary hover:bg-primary/90"
             >
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
+            </Button>
+          )}
+          {status === "pending" && (
+            <Button
+              onClick={async () => {
+                if (!loan.phone_number || !loan.phone_country_code) return;
+                setSending(true);
+                try {
+                  const { data: otpCode, error } = await supabase.rpc("request_confirmation_otp", { _loan_id: loan.id });
+                  if (error) throw error;
+                  const msg = `🔐 Tu nuevo código de verificación Credify es: *${otpCode}*\n_Válido por 24 horas. No lo compartas._`;
+                  const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, msg);
+                  const popup = window.open(waUrl, "_blank");
+                  if (!popup) window.location.href = waUrl;
+                  toast({ title: "Nuevo código generado", description: "Se abrió WhatsApp con el OTP." });
+                } catch (e) {
+                  console.error(e);
+                  toast({ title: "Error", description: "No se pudo generar el código.", variant: "destructive" });
+                } finally {
+                  setSending(false);
+                }
+              }}
+              disabled={sending}
+              size="sm"
+              variant="outline"
+              className="mt-2 ml-2"
+            >
+              <ShieldCheck className="w-4 h-4 mr-1.5" />Reenviar código OTP
             </Button>
           )}
         </div>

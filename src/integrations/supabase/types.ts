@@ -170,6 +170,11 @@ export type Database = {
           last_name: string | null
           name: string
           operation_type: string
+          otp_attempts: number
+          otp_expires_at: string | null
+          otp_hash: string | null
+          otp_phone_validated: string | null
+          otp_verified_at: string | null
           payment_type: string
           phone_country_code: string | null
           phone_number: string | null
@@ -198,6 +203,11 @@ export type Database = {
           last_name?: string | null
           name: string
           operation_type?: string
+          otp_attempts?: number
+          otp_expires_at?: string | null
+          otp_hash?: string | null
+          otp_phone_validated?: string | null
+          otp_verified_at?: string | null
           payment_type: string
           phone_country_code?: string | null
           phone_number?: string | null
@@ -226,6 +236,11 @@ export type Database = {
           last_name?: string | null
           name?: string
           operation_type?: string
+          otp_attempts?: number
+          otp_expires_at?: string | null
+          otp_hash?: string | null
+          otp_phone_validated?: string | null
+          otp_verified_at?: string | null
           payment_type?: string
           phone_country_code?: string | null
           phone_number?: string | null
@@ -337,7 +352,10 @@ export type Database = {
           name: string
           num_installments: number
           operation_type: string
+          otp_active: boolean
+          otp_verified: boolean
           payment_type: string
+          phone_masked: string
           start_date: string
         }[]
       }
@@ -345,8 +363,13 @@ export type Database = {
         Args: { _amount: number; _loan_id: string; _notes?: string }
         Returns: string
       }
+      request_confirmation_otp: { Args: { _loan_id: string }; Returns: string }
       respond_loan_confirmation: {
         Args: { _status: string; _token: string }
+        Returns: boolean
+      }
+      verify_confirmation_otp: {
+        Args: { _code: string; _token: string }
         Returns: boolean
       }
     }
