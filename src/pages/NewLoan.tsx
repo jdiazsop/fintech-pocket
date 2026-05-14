@@ -1880,12 +1880,22 @@ export default function NewLoan() {
 
               {/* Actions */}
               <div className="space-y-2 pt-1">
+                {createdLoan.email && (
+                  <Button
+                    onClick={handleSendEmail}
+                    className="w-full bg-primary hover:bg-primary/90"
+                  >
+                    <ShieldCheck className="w-4 h-4 mr-2" />
+                    Enviar acuerdo por correo
+                  </Button>
+                )}
                 <Button
                   onClick={handleSendWhatsApp}
-                  className="w-full bg-emerald-500 hover:bg-emerald-500/90"
+                  variant={createdLoan.email ? "outline" : "default"}
+                  className={createdLoan.email ? "w-full" : "w-full bg-emerald-500 hover:bg-emerald-500/90"}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  {confirmSent ? "Reenviar por WhatsApp" : "Enviar acuerdo al cliente"}
+                  {confirmSent ? "Reenviar por WhatsApp" : createdLoan.email ? "Enviar también por WhatsApp" : "Enviar acuerdo por WhatsApp"}
                 </Button>
 
                 <Button
