@@ -208,188 +208,208 @@ export const QuickPaymentSheet = ({ open, onOpenChange, onPaymentRegistered }: Q
   };
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[92vh] min-h-[78vh] bg-card border-border">
-        <DrawerHeader className="text-left flex flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {step !== "search" && step !== "success" && (
-              <button
-                onClick={goBack}
-                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                aria-label="Volver"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-            )}
-            <div>
-              <DrawerTitle className="text-base">
-                {step === "search" && "Registrar pago"}
-                {step === "operation" && selectedClient?.displayName}
-                {step === "amount" && "Monto a registrar"}
-                {step === "success" && "Pago registrado"}
-              </DrawerTitle>
-              <DrawerDescription className="text-xs">
-                {step === "search" && "Selecciona el cliente"}
-                {step === "operation" && "Elige la operación"}
-                {step === "amount" && selectedLoan?.name}
-              </DrawerDescription>
-            </div>
-          </div>
-          <button
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={() => onOpenChange(false)}
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Cerrar"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+          />
+          <motion.div
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", damping: 28, stiffness: 280 }}
+            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-3xl max-w-lg mx-auto flex flex-col max-h-[85dvh] h-[85dvh]"
+            role="dialog"
+            aria-label="Registrar pago"
           >
-            <X className="w-4 h-4" />
-          </button>
-        </DrawerHeader>
-
-        <div className="px-4 pb-6 overflow-y-auto">
-          <AnimatePresence mode="wait">
-            {step === "search" && (
-              <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    autoFocus
-                    placeholder="Buscar cliente..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-10 bg-muted/50"
-                  />
-                </div>
-                {loading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-                  </div>
-                ) : clientGroups.length === 0 ? (
-                  <div className="text-center py-8 text-sm text-muted-foreground">
-                    {search ? "Sin coincidencias" : "No hay clientes con deudas pendientes"}
-                  </div>
-                ) : (
-                  <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-                    {clientGroups.map((c) => (
-                      <button
-                        key={c.key}
-                        onClick={() => handleSelectClient(c)}
-                        className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] transition-all"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="font-semibold truncate">{c.displayName}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
-                            </p>
-                          </div>
-                          <p className="text-sm font-semibold text-primary tabular-nums whitespace-nowrap">
-                            {formatCurrency(c.totalPending)}
-                          </p>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+            {/* Header */}
+            <div className="flex items-center justify-between gap-2 px-4 pt-4 pb-3 border-b border-border/60 flex-shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {step !== "search" && step !== "success" && (
+                  <button
+                    onClick={goBack}
+                    className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                    aria-label="Volver"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
                 )}
-              </motion.div>
-            )}
-
-            {step === "operation" && selectedClient && (
-              <motion.div key="op" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
-                {selectedClient.loans.map((l) => {
-                  const pending = Number(l.amount_to_return) - Number(l.amount_returned);
-                  const isLoan = l.amount_to_return !== l.amount_lent;
-                  const next = nextInstallmentInfo(l.id);
-                  const Icon = isLoan ? Wallet : ShoppingBag;
-                  const label = isLoan ? "Préstamo" : "Venta al crédito";
-                  return (
-                    <button
-                      key={l.id}
-                      onClick={() => { setSelectedLoan(l); setStep("amount"); }}
-                      className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] transition-all"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-muted-foreground">{label}</p>
-                          <p className="font-medium text-sm truncate">{l.concept || l.name}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {formatCurrency(pending)} pendiente
-                            {next ? ` · Cuota ${next.number}/${next.total}` : ""}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </motion.div>
-            )}
-
-            {step === "amount" && selectedLoan && (
-              <motion.div key="amt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-                <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
-                  <p className="text-xs text-muted-foreground">Pendiente</p>
-                  <p className="text-xl font-bold text-primary tabular-nums">
-                    {formatCurrency(Number(selectedLoan.amount_to_return) - Number(selectedLoan.amount_returned))}
+                <div className="min-w-0">
+                  <h2 className="text-base font-semibold leading-tight truncate">
+                    {step === "search" && "Registrar pago"}
+                    {step === "operation" && selectedClient?.displayName}
+                    {step === "amount" && "Monto a registrar"}
+                    {step === "success" && "Pago registrado"}
+                  </h2>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {step === "search" && "Selecciona el cliente"}
+                    {step === "operation" && "Elige la operación"}
+                    {step === "amount" && selectedLoan?.name}
                   </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="qpay-amount">Monto pagado</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
-                    <Input
-                      id="qpay-amount"
-                      type="number"
-                      inputMode="decimal"
-                      step="0.01"
-                      min="0"
-                      autoFocus
-                      placeholder="0.00"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="pl-9 bg-muted/50 text-lg h-12"
-                    />
-                  </div>
-                </div>
-                <Button
-                  onClick={handleSubmit}
-                  disabled={saving || !amount}
-                  className="w-full h-11 bg-primary hover:bg-primary/90"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar pago"}
-                </Button>
-              </motion.div>
-            )}
-
-            {step === "success" && (
-              <motion.div
-                key="ok"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-6 text-center space-y-3"
+              </div>
+              <button
+                onClick={() => onOpenChange(false)}
+                className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                aria-label="Cerrar"
               >
-                <div className="w-14 h-14 rounded-full bg-emerald-500/15 mx-auto flex items-center justify-center">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-                </div>
-                <div>
-                  <p className="font-semibold">Pago registrado correctamente</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Saldos y cuotas actualizados.
-                  </p>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" className="flex-1" onClick={() => { reset(); fetchPending(); }}>
-                    Otro pago
-                  </Button>
-                  <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={() => onOpenChange(false)}>
-                    Cerrar
-                  </Button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </DrawerContent>
-    </Drawer>
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable body */}
+            <div className="px-4 pt-4 pb-6 overflow-y-auto overscroll-contain flex-1 min-h-0">
+              <AnimatePresence mode="wait">
+                {step === "search" && (
+                  <motion.div key="search" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-3">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar cliente..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="pl-10 bg-muted/50"
+                      />
+                    </div>
+                    {loading ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : clientGroups.length === 0 ? (
+                      <div className="text-center py-8 text-sm text-muted-foreground">
+                        {search ? "Sin coincidencias" : "No hay clientes con deudas pendientes"}
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {clientGroups.map((c) => (
+                          <button
+                            key={c.key}
+                            onClick={() => handleSelectClient(c)}
+                            className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] transition-all"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-semibold truncate">{c.displayName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {c.loans.length} operación{c.loans.length === 1 ? "" : "es"}
+                                </p>
+                              </div>
+                              <p className="text-sm font-semibold text-primary tabular-nums whitespace-nowrap">
+                                {formatCurrency(c.totalPending)}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {step === "operation" && selectedClient && (
+                  <motion.div key="op" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-2">
+                    {selectedClient.loans.map((l) => {
+                      const pending = Number(l.amount_to_return) - Number(l.amount_returned);
+                      const isLoan = l.amount_to_return !== l.amount_lent;
+                      const next = nextInstallmentInfo(l.id);
+                      const Icon = isLoan ? Wallet : ShoppingBag;
+                      const label = isLoan ? "Préstamo" : "Venta al crédito";
+                      return (
+                        <button
+                          key={l.id}
+                          onClick={() => { setSelectedLoan(l); setStep("amount"); }}
+                          className="w-full text-left p-3 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-primary/5 active:scale-[0.99] transition-all"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-4 h-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs text-muted-foreground">{label}</p>
+                              <p className="font-medium text-sm truncate">{l.concept || l.name}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {formatCurrency(pending)} pendiente
+                                {next ? ` · Cuota ${next.number}/${next.total}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+
+                {step === "amount" && selectedLoan && (
+                  <motion.div key="amt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+                    <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
+                      <p className="text-xs text-muted-foreground">Pendiente</p>
+                      <p className="text-xl font-bold text-primary tabular-nums">
+                        {formatCurrency(Number(selectedLoan.amount_to_return) - Number(selectedLoan.amount_returned))}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="qpay-amount">Monto pagado</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">S/</span>
+                        <Input
+                          id="qpay-amount"
+                          type="number"
+                          inputMode="decimal"
+                          step="0.01"
+                          min="0"
+                          autoFocus
+                          placeholder="0.00"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          className="pl-9 bg-muted/50 text-lg h-12"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleSubmit}
+                      disabled={saving || !amount}
+                      className="w-full h-11 bg-primary hover:bg-primary/90"
+                    >
+                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar pago"}
+                    </Button>
+                  </motion.div>
+                )}
+
+                {step === "success" && (
+                  <motion.div
+                    key="ok"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="py-6 text-center space-y-3"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-emerald-500/15 mx-auto flex items-center justify-center">
+                      <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Pago registrado correctamente</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Saldos y cuotas actualizados.
+                      </p>
+                    </div>
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" className="flex-1" onClick={() => { reset(); fetchPending(); }}>
+                        Otro pago
+                      </Button>
+                      <Button className="flex-1 bg-primary hover:bg-primary/90" onClick={() => onOpenChange(false)}>
+                        Cerrar
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
