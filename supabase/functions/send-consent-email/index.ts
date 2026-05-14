@@ -3,7 +3,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-const FROM = 'Credify <onboarding@resend.dev>';
+const FROM = 'Credify <noreply@credify.pe>';
 
 interface Body {
   to: string;
