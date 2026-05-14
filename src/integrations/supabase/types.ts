@@ -330,11 +330,88 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_get_metrics: { Args: never; Returns: Json }
+      admin_list_clients: {
+        Args: never
+        Returns: {
+          created_at: string
+          dni: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          owner_email: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      admin_list_operations: {
+        Args: never
+        Returns: {
+          amount_lent: number
+          amount_returned: number
+          amount_to_return: number
+          confirmation_status: string
+          created_at: string
+          id: string
+          name: string
+          operation_type: string
+          owner_email: string
+          start_date: string
+          status: string
+          user_id: string
+        }[]
+      }
+      admin_list_payments: {
+        Args: never
+        Returns: {
+          amount_paid: number
+          created_at: string
+          id: string
+          loan_id: string
+          loan_name: string
+          notes: string
+          owner_email: string
+          payment_date: string
+        }[]
+      }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          accepted_terms: boolean
+          clients_count: number
+          created_at: string
+          email: string
+          loans_count: number
+          user_id: string
+        }[]
+      }
       get_installments_by_token: {
         Args: { _token: string }
         Returns: {
@@ -367,6 +444,13 @@ export type Database = {
           start_date: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       register_payment: {
         Args: { _amount: number; _loan_id: string; _notes?: string }
         Returns: string
@@ -386,7 +470,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -513,6 +597,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
