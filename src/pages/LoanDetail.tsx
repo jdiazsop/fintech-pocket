@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff, FileEdit, ShieldCheck, Send, CheckCircle2, XCircle, Clock } from "lucide-react";
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
+import { buildPublicUrl } from "@/lib/publicUrl";
 import { EditOperationDialog } from "@/components/clients/EditOperationDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
