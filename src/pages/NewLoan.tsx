@@ -24,9 +24,9 @@ import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUp
 import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
 import { upsertClient } from "@/lib/clientSync";
 import {
-  sanitizeName, sanitizeDigits, sanitizeDni,
-  isValidName, isValidPhone, isValidDni,
-  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+  sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
+  isValidName, isValidPhone, isValidDni, isValidEmail,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR, EMAIL_ERROR,
 } from "@/lib/validators";
 
 type PaymentType = "single" | "installments";
@@ -39,6 +39,7 @@ interface LoanFormData {
   phoneCountryCode: string;
   phoneNumber: string;
   dni: string;
+  email: string;
   address: string;
   reference: string;
   concept: string;
@@ -57,6 +58,7 @@ interface ExistingDebtor {
   phoneCountryCode: string;
   phoneNumber: string;
   dni: string;
+  email: string;
   address: string;
   reference: string;
 }
@@ -87,7 +89,7 @@ export default function NewLoan() {
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [operationType, setOperationType] = useState<OperationType>(hasPresetType ? (presetType as OperationType) : "loan");
   const [evidences, setEvidences] = useState<PendingEvidence[]>([]);
-  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string } | null>(null);
+  const [createdLoan, setCreatedLoan] = useState<{ id: string; token: string; phoneCountryCode: string; phoneNumber: string; fullName: string; email: string | null } | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
   const [reviewing, setReviewing] = useState(false);
 
@@ -108,6 +110,7 @@ export default function NewLoan() {
     phoneCountryCode: DEFAULT_COUNTRY_CODE,
     phoneNumber: "",
     dni: "",
+    email: "",
     address: "",
     reference: "",
     concept: "",
