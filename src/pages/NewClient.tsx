@@ -16,9 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
 import {
-  sanitizeName, sanitizeDigits, sanitizeDni,
-  isValidName, isValidPhone, isValidDni,
-  NAME_ERROR, PHONE_ERROR, DNI_ERROR,
+  sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
+  isValidName, isValidPhone, isValidDni, isValidEmail,
+  NAME_ERROR, PHONE_ERROR, DNI_ERROR, EMAIL_ERROR,
 } from "@/lib/validators";
 import { findDuplicateClient } from "@/lib/clientSync";
 
