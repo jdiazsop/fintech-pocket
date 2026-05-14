@@ -285,6 +285,22 @@ export default function NewClient() {
           </div>
 
           <div>
+            <Label htmlFor="email" className="text-xs flex items-center gap-1"><Mail className="w-3 h-3" /> Correo electrónico <span className="text-muted-foreground normal-case">(opcional · requerido para consentimiento digital)</span></Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(sanitizeEmail(e.target.value))}
+              placeholder="cliente@correo.com"
+              autoComplete="email"
+              aria-invalid={email.length > 0 && !isValidEmail(email)}
+            />
+            {email.length > 0 && !isValidEmail(email) && (
+              <p className="text-[11px] text-destructive mt-1">{EMAIL_ERROR}</p>
+            )}
+          </div>
+
+          <div>
             <Label htmlFor="reference" className="text-xs">Referencia <span className="text-muted-foreground">(opcional)</span></Label>
             <Input id="reference" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Vecino, compañero de trabajo..." />
           </div>
