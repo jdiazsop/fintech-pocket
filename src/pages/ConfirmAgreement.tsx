@@ -222,8 +222,49 @@ export default function ConfirmAgreement() {
               <p className="text-[11px] text-muted-foreground">Registrado el {respondedAt}</p>
             )}
           </div>
+        ) : !loan.otp_verified ? (
+          <div className="fintech-card p-4 space-y-3 sticky bottom-3 border border-primary/30">
+            <div className="flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-primary" />
+              <h2 className="text-sm font-semibold">Verifica tu identidad</h2>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Por seguridad, ingresa el código de 6 dígitos que recibiste por WhatsApp
+              {loan.phone_masked ? ` al número ${loan.phone_masked}` : ""}.
+              Solo así podrás aceptar o rechazar el acuerdo.
+            </p>
+            <Input
+              inputMode="numeric"
+              pattern="\d*"
+              maxLength={6}
+              value={otpCode}
+              onChange={(e) => { setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6)); setOtpError(null); }}
+              placeholder="------"
+              className="text-center text-2xl tracking-[0.5em] font-mono h-12"
+              autoComplete="one-time-code"
+            />
+            {otpError && <p className="text-xs text-red-400">{otpError}</p>}
+            <Button
+              onClick={verifyOtp}
+              disabled={verifyingOtp || otpCode.length !== 6}
+              className="w-full bg-primary hover:bg-primary/90 h-11"
+            >
+              {verifyingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : "Validar código"}
+            </Button>
+            {!loan.otp_active && (
+              <p className="text-[11px] text-amber-400 text-center">
+                No hay un código activo. Solicita al remitente que te reenvíe uno nuevo.
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground text-center">
+              El código es de un solo uso y vence en 24 horas. Tienes 5 intentos.
+            </p>
+          </div>
         ) : (
           <div className="space-y-2 sticky bottom-3">
+            <div className="flex items-center justify-center gap-2 text-xs text-emerald-400">
+              <ShieldCheck className="w-4 h-4" /> Identidad verificada
+            </div>
             <Button
               onClick={() => respond("confirmed")}
               disabled={acting}
@@ -240,7 +281,7 @@ export default function ConfirmAgreement() {
               <X className="w-4 h-4 mr-2" /> Rechazar
             </Button>
             <p className="text-[11px] text-center text-muted-foreground pt-1">
-              Tu respuesta quedará registrada con fecha y hora.
+              Tu respuesta quedará registrada con fecha, hora y número validado.
             </p>
           </div>
         )}
