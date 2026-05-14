@@ -21,6 +21,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 export const isValidName = (v: string) => v.trim().length >= 2 && NAME_RE.test(v.trim());
 export const isValidPhone = (v: string) => /^\d{6,15}$/.test(v.trim());
 export const isValidEmail = (v: string) => EMAIL_RE.test(v.trim());
+export const sanitizeEmail = (v: string) => v.replace(/\s/g, "").toLowerCase();
 /** DNI peruano 8 dígitos | CE 9–12 alfanumérico. Acepta ambos. */
 export const isValidDni = (v: string) => {
   const t = v.trim().toUpperCase();
