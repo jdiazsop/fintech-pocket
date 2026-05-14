@@ -156,6 +156,7 @@ const AppRoutes = () => {
         }
       />
       <Route path="/confirm/:token" element={<ConfirmAgreement />} />
+      <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
