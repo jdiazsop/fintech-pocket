@@ -20,6 +20,7 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           dni: string | null
+          email: string | null
           first_name: string
           id: string
           last_name: string | null
@@ -35,6 +36,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           dni?: string | null
+          email?: string | null
           first_name: string
           id?: string
           last_name?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           dni?: string | null
+          email?: string | null
           first_name?: string
           id?: string
           last_name?: string | null
@@ -164,6 +167,7 @@ export type Database = {
           confirmation_token_expires_at: string | null
           created_at: string
           dni: string | null
+          email: string | null
           first_name: string | null
           frequency: string | null
           id: string
@@ -197,6 +201,7 @@ export type Database = {
           confirmation_token_expires_at?: string | null
           created_at?: string
           dni?: string | null
+          email?: string | null
           first_name?: string | null
           frequency?: string | null
           id?: string
@@ -230,6 +235,7 @@ export type Database = {
           confirmation_token_expires_at?: string | null
           created_at?: string
           dni?: string | null
+          email?: string | null
           first_name?: string | null
           frequency?: string | null
           id?: string
@@ -346,6 +352,8 @@ export type Database = {
           confirmation_responded_at: string
           confirmation_sent_at: string
           confirmation_status: string
+          dni_required: boolean
+          email_masked: string
           expired: boolean
           frequency: string
           id: string
@@ -366,6 +374,10 @@ export type Database = {
       request_confirmation_otp: { Args: { _loan_id: string }; Returns: string }
       respond_loan_confirmation: {
         Args: { _status: string; _token: string }
+        Returns: boolean
+      }
+      verify_confirmation_dni: {
+        Args: { _dni: string; _token: string }
         Returns: boolean
       }
       verify_confirmation_otp: {
