@@ -341,34 +341,6 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
             </Button>
           )}
-          {status === "pending" && (
-            <Button
-              onClick={async () => {
-                if (!loan.phone_number || !loan.phone_country_code) return;
-                setSending(true);
-                try {
-                  const { data: otpCode, error } = await supabase.rpc("request_confirmation_otp", { _loan_id: loan.id });
-                  if (error) throw error;
-                  const msg = `🔐 Tu nuevo código de verificación Credify es: *${otpCode}*\n_Válido por 24 horas. No lo compartas._`;
-                  const waUrl = buildWhatsAppUrl(loan.phone_country_code, loan.phone_number, msg);
-                  const popup = window.open(waUrl, "_blank");
-                  if (!popup) window.location.href = waUrl;
-                  toast({ title: "Nuevo código generado", description: "Se abrió WhatsApp con el OTP." });
-                } catch (e) {
-                  console.error(e);
-                  toast({ title: "Error", description: "No se pudo generar el código.", variant: "destructive" });
-                } finally {
-                  setSending(false);
-                }
-              }}
-              disabled={sending}
-              size="sm"
-              variant="outline"
-              className="mt-2 ml-2"
-            >
-              <ShieldCheck className="w-4 h-4 mr-1.5" />Reenviar código OTP
-            </Button>
-          )}
         </div>
       </div>
     </div>
