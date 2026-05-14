@@ -265,6 +265,10 @@ export default function NewLoan() {
       toast({ title: "Documento inválido", description: DNI_ERROR, variant: "destructive" });
       return false;
     }
+    if (formData.email.trim() && !isValidEmail(formData.email)) {
+      toast({ title: "Correo inválido", description: EMAIL_ERROR, variant: "destructive" });
+      return false;
+    }
     // Compare as YYYY-MM-DD in Lima time to avoid UTC drift near midnight.
     const todayLima = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Lima",
@@ -385,6 +389,7 @@ export default function NewLoan() {
           phone_country_code: formData.phoneCountryCode,
           phone_number: formData.phoneNumber.trim(),
           dni: formData.dni.trim(),
+          email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
           concept: formData.concept.trim() || null,
@@ -420,6 +425,7 @@ export default function NewLoan() {
           phone_country_code: formData.phoneCountryCode,
           phone_number: formData.phoneNumber.trim() || null,
           dni: formData.dni.trim() || null,
+          email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
           address: formData.address.trim() || null,
           reference: formData.reference.trim() || null,
         });
@@ -467,6 +473,7 @@ export default function NewLoan() {
         phoneCountryCode: formData.phoneCountryCode,
         phoneNumber: formData.phoneNumber.trim(),
         fullName,
+        email: formData.email.trim() ? sanitizeEmail(formData.email) : null,
       });
 
       toast({
@@ -536,6 +543,7 @@ export default function NewLoan() {
         phoneCountryCode: DEFAULT_COUNTRY_CODE,
         phoneNumber: "",
         dni: "",
+        email: "",
         address: "",
         reference: "",
       }));
@@ -727,6 +735,7 @@ export default function NewLoan() {
                       phoneCountryCode: DEFAULT_COUNTRY_CODE,
                       phoneNumber: "",
                       dni: "",
+                      email: "",
                       address: "",
                       reference: "",
                     }));
