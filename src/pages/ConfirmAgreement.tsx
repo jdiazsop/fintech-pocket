@@ -45,11 +45,15 @@ const parseLocal = (ymd: string) => {
 
 export default function ConfirmAgreement() {
   const { token } = useParams<{ token: string }>();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
   const [loan, setLoan] = useState<LoanSummary | null>(null);
   const [schedule, setSchedule] = useState<InstallmentRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   const fetchLoan = async () => {
     if (!token) return;
@@ -74,12 +78,41 @@ export default function ConfirmAgreement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  const verifyOtp = async () => {
+    if (!token) return;
+    setOtpError(null);
+    if (!/^\d{6}$/.test(otpCode)) {
+      setOtpError("Ingresa los 6 dígitos del código.");
+      return;
+    }
+    setVerifyingOtp(true);
+    const { data, error } = await supabase.rpc("verify_confirmation_otp", { _token: token, _code: otpCode });
+    setVerifyingOtp(false);
+    if (error || !data) {
+      setOtpError("Código incorrecto o expirado. Solicita un nuevo código al remitente.");
+      return;
+    }
+    setOtpCode("");
+    toast({ title: "Identidad verificada", description: "Ya puedes aceptar o rechazar el acuerdo." });
+    await fetchLoan();
+  };
+
   const respond = async (status: "confirmed" | "rejected") => {
     if (!token) return;
     setActing(true);
     const { error } = await supabase.rpc("respond_loan_confirmation", { _token: token, _status: status });
     setActing(false);
-    if (!error) await fetchLoan();
+    if (error) {
+      const msg = (error as any).message || "";
+      if (msg.includes("OTP_NOT_VERIFIED")) {
+        toast({ title: "Verificación requerida", description: "Valida tu código antes de responder.", variant: "destructive" });
+        await fetchLoan();
+        return;
+      }
+      toast({ title: "Error", description: "No se pudo registrar tu respuesta.", variant: "destructive" });
+      return;
+    }
+    await fetchLoan();
   };
 
   if (loading) {
