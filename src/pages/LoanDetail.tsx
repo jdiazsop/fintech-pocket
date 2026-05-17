@@ -232,11 +232,11 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
   };
 
   const canSendOrResend = status === "not_sent" || status === "pending" || status === "rejected";
-  const ctaLabel = status === "not_sent" ? "Solicitar consentimiento" : status === "pending" ? "Reenviar enlace" : "Reenviar solicitud";
+  const ctaLabel = status === "not_sent" ? "Enviar acuerdo" : status === "pending" ? "Reenviar acuerdo" : "Reenviar acuerdo";
 
   const handleSend = async () => {
-    if (!loan.email && (!loan.phone_number || !loan.phone_country_code)) {
-      toast({ title: "Falta contacto", description: "Agrega un correo o número de WhatsApp al cliente para enviar el acuerdo.", variant: "destructive" });
+    if (!loan.phone_number || !loan.phone_country_code) {
+      toast({ title: "Falta WhatsApp", description: "Agrega un número de WhatsApp al cliente para enviar el acuerdo.", variant: "destructive" });
       return;
     }
     if (!loan.confirmation_token) {
@@ -270,35 +270,26 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
       const sorted = [...installments].sort((a, b) => a.number - b.number);
       const lastDue = sorted[sorted.length - 1].due_date.split("T")[0];
       const isSale = (loan.operation_type ?? (Number(loan.amount_lent) === Number(loan.amount_to_return) ? "sale" : "loan")) === "sale";
-      const baseArgs = {
+
+      const message = buildAgreementMessage({
         name: loan.name,
         operationType: (isSale ? "sale" : "loan") as "loan" | "sale",
         amount: Number(loan.amount_to_return),
+        amountLent: isSale ? undefined : Number(loan.amount_lent),
         numInstallments: sorted.length,
         installmentAmount: Number(sorted[0].amount),
         startDate: loan.start_date,
         endDate: lastDue,
         paymentType: loan.payment_type as "single" | "installments",
         confirmUrl,
-      };
-
-      // Prefer email if available; otherwise WhatsApp.
-      if (loan.email) {
-        const { error: mailErr } = await supabase.functions.invoke("send-consent-email", {
-          body: { to: loan.email, clientName: loan.name, ...baseArgs },
-        });
-        if (mailErr) throw mailErr;
-        toast({ title: "Correo enviado", description: `Se envió el acuerdo a ${loan.email}.` });
+      });
+      const waUrl = buildWhatsAppUrl(loan.phone_country_code!, loan.phone_number!, message);
+      const popup = window.open(waUrl, "_blank", "noopener,noreferrer");
+      if (!popup) {
+        toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
+        window.location.href = waUrl;
       } else {
-        const message = buildAgreementMessage(baseArgs);
-        const waUrl = buildWhatsAppUrl(loan.phone_country_code!, loan.phone_number!, message);
-        const popup = window.open(waUrl, "_blank");
-        if (!popup) {
-          toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
-          window.location.href = waUrl;
-        } else {
-          toast({ title: "Enlace enviado", description: "Se abrió WhatsApp con el acuerdo." });
-        }
+        toast({ title: "Acuerdo listo para enviar", description: "Se abrió WhatsApp con el resumen del acuerdo." });
       }
       onSent();
     } catch (e) {
@@ -332,14 +323,19 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
             {status === "not_sent" && <p>Aún no se ha solicitado al cliente.</p>}
           </div>
           {canSendOrResend && (
-            <Button
-              onClick={handleSend}
-              disabled={sending}
-              size="sm"
-              className="mt-3 bg-primary hover:bg-primary/90"
-            >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
-            </Button>
+            <>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
+                Se enviará por <strong>WhatsApp</strong> con el resumen de la operación y un enlace seguro. La identidad del cliente se valida con un <strong>código OTP enviado a su correo</strong>.
+              </p>
+              <Button
+                onClick={handleSend}
+                disabled={sending}
+                size="sm"
+                className="mt-3 bg-emerald-500 hover:bg-emerald-500/90"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
+              </Button>
+            </>
           )}
         </div>
       </div>

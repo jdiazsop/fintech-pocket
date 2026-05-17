@@ -564,17 +564,22 @@ export default function NewLoan() {
 
   const handleSendWhatsApp = async () => {
     if (!createdLoan) return;
-    const summary = getPaymentSummary();
+    if (!createdLoan.phoneCountryCode || !createdLoan.phoneNumber) {
+      toast({ title: "Falta WhatsApp", description: "Este cliente no tiene número de WhatsApp registrado.", variant: "destructive" });
+      return;
+    }
     const installments = generateInstallments();
     const lastDue = installments[installments.length - 1].due_date;
-    const amount = parseFloat(formData.amountToReturn);
+    const amountToReturn = parseFloat(formData.amountToReturn);
+    const amountLent = parseFloat(formData.amountLent);
     const installmentAmount = installments[0].amount;
     const confirmUrl = buildPublicUrl(`/confirm/${createdLoan.token}`);
 
     const message = buildAgreementMessage({
       name: createdLoan.fullName,
       operationType,
-      amount,
+      amount: amountToReturn,
+      amountLent: operationType === "loan" ? amountLent : undefined,
       numInstallments: installments.length,
       installmentAmount,
       startDate: formData.startDate,
@@ -590,41 +595,12 @@ export default function NewLoan() {
       .eq("id", createdLoan.id);
 
     setConfirmSent(true);
-    window.open(buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message), "_blank");
-  };
 
-  const handleSendEmail = async () => {
-    if (!createdLoan?.email) return;
-    const installments = generateInstallments();
-    const lastDue = installments[installments.length - 1].due_date;
-    const amount = parseFloat(formData.amountToReturn);
-    const installmentAmount = installments[0].amount;
-    const confirmUrl = buildPublicUrl(`/confirm/${createdLoan.token}`);
-    try {
-      const { error } = await supabase.functions.invoke("send-consent-email", {
-        body: {
-          to: createdLoan.email,
-          clientName: createdLoan.fullName,
-          operationType,
-          amount,
-          numInstallments: installments.length,
-          installmentAmount,
-          startDate: formData.startDate,
-          endDate: lastDue,
-          paymentType: formData.paymentType,
-          confirmUrl,
-        },
-      });
-      if (error) throw error;
-      await supabase
-        .from("loans")
-        .update({ confirmation_status: "pending", confirmation_sent_at: new Date().toISOString() } as any)
-        .eq("id", createdLoan.id);
-      setConfirmSent(true);
-      toast({ title: "Correo enviado", description: `Se envió el acuerdo a ${createdLoan.email}.` });
-    } catch (e: any) {
-      console.error(e);
-      toast({ title: "No se pudo enviar el correo", description: e?.message || "Intenta nuevamente o usa WhatsApp.", variant: "destructive" });
+    const waUrl = buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message);
+    const popup = window.open(waUrl, "_blank", "noopener,noreferrer");
+    if (!popup) {
+      // Fallback for browsers that block window.open
+      window.location.href = waUrl;
     }
   };
 
@@ -1016,7 +992,7 @@ export default function NewLoan() {
                   {!!formData.email && !isValidEmail(formData.email) && !isContactLocked && (
                     <p className="text-[11px] text-destructive">{EMAIL_ERROR}</p>
                   )}
-                  <p className="text-[10px] text-muted-foreground">Necesario para enviar el acuerdo digital por correo.</p>
+                  <p className="text-[10px] text-muted-foreground">Se usará para enviar el código OTP de validación de identidad.</p>
                 </div>
               </div>
 
@@ -1865,7 +1841,7 @@ export default function NewLoan() {
                       Enviar acuerdo al cliente
                     </h3>
                     <p className="text-[13px] text-muted-foreground leading-snug mt-1">
-                      Sirve como respaldo del acuerdo, mejora la trazabilidad y permite que el cliente confirme la operación desde un enlace seguro.
+                      El acuerdo se enviará por <strong>WhatsApp</strong> con un enlace seguro. La validación de identidad se realizará mediante un <strong>código OTP enviado al correo</strong> del cliente.
                     </p>
                   </div>
                 </div>
@@ -1880,22 +1856,12 @@ export default function NewLoan() {
 
               {/* Actions */}
               <div className="space-y-2 pt-1">
-                {createdLoan.email && (
-                  <Button
-                    onClick={handleSendEmail}
-                    className="w-full bg-primary hover:bg-primary/90"
-                  >
-                    <ShieldCheck className="w-4 h-4 mr-2" />
-                    Enviar acuerdo por correo
-                  </Button>
-                )}
                 <Button
                   onClick={handleSendWhatsApp}
-                  variant={createdLoan.email ? "outline" : "default"}
-                  className={createdLoan.email ? "w-full" : "w-full bg-emerald-500 hover:bg-emerald-500/90"}
+                  className="w-full bg-emerald-500 hover:bg-emerald-500/90 h-12 text-base"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {confirmSent ? "Reenviar por WhatsApp" : createdLoan.email ? "Enviar también por WhatsApp" : "Enviar acuerdo por WhatsApp"}
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  {confirmSent ? "Reenviar acuerdo" : "Enviar acuerdo"}
                 </Button>
 
                 <Button
