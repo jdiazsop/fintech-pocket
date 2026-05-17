@@ -1841,7 +1841,7 @@ export default function NewLoan() {
                       Enviar acuerdo al cliente
                     </h3>
                     <p className="text-[13px] text-muted-foreground leading-snug mt-1">
-                      Sirve como respaldo del acuerdo, mejora la trazabilidad y permite que el cliente confirme la operación desde un enlace seguro.
+                      El acuerdo se enviará por <strong>WhatsApp</strong> con un enlace seguro. La validación de identidad se realizará mediante un <strong>código OTP enviado al correo</strong> del cliente.
                     </p>
                   </div>
                 </div>
@@ -1856,22 +1856,12 @@ export default function NewLoan() {
 
               {/* Actions */}
               <div className="space-y-2 pt-1">
-                {createdLoan.email && (
-                  <Button
-                    onClick={handleSendEmail}
-                    className="w-full bg-primary hover:bg-primary/90"
-                  >
-                    <ShieldCheck className="w-4 h-4 mr-2" />
-                    Enviar acuerdo por correo
-                  </Button>
-                )}
                 <Button
                   onClick={handleSendWhatsApp}
-                  variant={createdLoan.email ? "outline" : "default"}
-                  className={createdLoan.email ? "w-full" : "w-full bg-emerald-500 hover:bg-emerald-500/90"}
+                  className="w-full bg-emerald-500 hover:bg-emerald-500/90 h-12 text-base"
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  {confirmSent ? "Reenviar por WhatsApp" : createdLoan.email ? "Enviar también por WhatsApp" : "Enviar acuerdo por WhatsApp"}
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  {confirmSent ? "Reenviar acuerdo" : "Enviar acuerdo"}
                 </Button>
 
                 <Button
