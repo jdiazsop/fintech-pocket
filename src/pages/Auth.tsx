@@ -317,15 +317,9 @@ export default function Auth() {
                   </div>
                 )}
 
-                {mode === "login" && (
-                  <button
-                    type="button"
-                    onClick={() => setMode("forgot")}
-                    className="text-sm text-primary hover:underline w-full text-right"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                )}
+                {/* Recuperación de contraseña temporalmente deshabilitada hasta habilitar
+                    el dominio de correo del workspace. Los correos transaccionales siguen
+                    funcionando vía Resend. */}
 
                 <Button
                   type="submit"
