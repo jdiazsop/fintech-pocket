@@ -992,7 +992,7 @@ export default function NewLoan() {
                   {!!formData.email && !isValidEmail(formData.email) && !isContactLocked && (
                     <p className="text-[11px] text-destructive">{EMAIL_ERROR}</p>
                   )}
-                  <p className="text-[10px] text-muted-foreground">Necesario para enviar el acuerdo digital por correo.</p>
+                  <p className="text-[10px] text-muted-foreground">Se usará para enviar el código OTP de validación de identidad.</p>
                 </div>
               </div>
 
