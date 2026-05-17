@@ -323,14 +323,19 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
             {status === "not_sent" && <p>Aún no se ha solicitado al cliente.</p>}
           </div>
           {canSendOrResend && (
-            <Button
-              onClick={handleSend}
-              disabled={sending}
-              size="sm"
-              className="mt-3 bg-primary hover:bg-primary/90"
-            >
-              {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
-            </Button>
+            <>
+              <p className="text-[11px] text-muted-foreground mt-2 leading-snug">
+                Se enviará por <strong>WhatsApp</strong> con el resumen de la operación y un enlace seguro. La identidad del cliente se valida con un <strong>código OTP enviado a su correo</strong>.
+              </p>
+              <Button
+                onClick={handleSend}
+                disabled={sending}
+                size="sm"
+                className="mt-3 bg-emerald-500 hover:bg-emerald-500/90"
+              >
+                {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4 mr-1.5" />{ctaLabel}</>}
+              </Button>
+            </>
           )}
         </div>
       </div>
