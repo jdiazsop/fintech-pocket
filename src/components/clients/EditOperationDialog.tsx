@@ -77,7 +77,7 @@ export function EditOperationDialog({
       return;
     }
     const msg = `Hola ${clientName}, te informo que actualicé los detalles de nuestra operación. Por favor revisa los nuevos datos cuando puedas. Gracias.`;
-    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+    openWhatsApp(fullPhone, msg);
     onOpenChange(false);
   };
 
