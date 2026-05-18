@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Users, Plus, MessageCircle, Phone, ChevronRight, AlertTriangle, Clock, CheckCircle2, MailQuestion, Wallet, ShoppingBag, Pencil } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
@@ -296,7 +297,7 @@ export default function Portfolio() {
     const message = c.overdueInstallments > 0
       ? `Hola ${c.displayName}, te recordamos que tienes ${c.overdueInstallments} cuota(s) vencida(s) por ${formatCurrency(c.totalPending)}. ¿Podrías regularizar el pago? Gracias.`
       : `Hola ${c.displayName}, te recordamos tu próximo pago por ${formatCurrency(c.totalPending)}. Gracias.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+    openWhatsApp(phone, message);
   };
 
   const handleCall = (c: ClientCard) => {

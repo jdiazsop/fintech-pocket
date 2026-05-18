@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { openWhatsApp } from "@/lib/whatsapp";
 export default function Profile() {
   const [isSendingReport, setIsSendingReport] = useState(false);
   const {
@@ -76,10 +77,7 @@ export default function Profile() {
         description: "Pégalo donde quieras compartir Credify.",
       });
     } catch {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-        "_blank"
-      );
+      openWhatsApp("", `${shareText} ${shareUrl}`);
     }
   };
 

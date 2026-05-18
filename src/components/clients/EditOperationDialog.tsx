@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { toast } from "sonner";
 
 interface OperationFields {
@@ -77,7 +78,7 @@ export function EditOperationDialog({
       return;
     }
     const msg = `Hola ${clientName}, te informo que actualicé los detalles de nuestra operación. Por favor revisa los nuevos datos cuando puedas. Gracias.`;
-    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+    openWhatsApp(fullPhone, msg);
     onOpenChange(false);
   };
 

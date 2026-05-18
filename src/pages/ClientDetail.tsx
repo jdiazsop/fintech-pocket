@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -182,7 +183,7 @@ export default function ClientDetail() {
     const msg = summary.totalOverdue > 0
       ? `Hola ${client.name}, te recordamos que tienes ${summary.totalOverdue} cuota(s) vencida(s) por ${formatCurrency(summary.totalPending)}. ¿Podrías regularizar el pago? Gracias.`
       : `Hola ${client.name}, te recordamos tu próximo pago por ${formatCurrency(summary.totalPending)}. Gracias.`;
-    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+    openWhatsApp(fullPhone, msg);
   };
 
   const handleCall = () => {
