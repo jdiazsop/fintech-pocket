@@ -296,7 +296,7 @@ export default function Portfolio() {
     const message = c.overdueInstallments > 0
       ? `Hola ${c.displayName}, te recordamos que tienes ${c.overdueInstallments} cuota(s) vencida(s) por ${formatCurrency(c.totalPending)}. ¿Podrías regularizar el pago? Gracias.`
       : `Hola ${c.displayName}, te recordamos tu próximo pago por ${formatCurrency(c.totalPending)}. Gracias.`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+    openWhatsApp(phone, message);
   };
 
   const handleCall = (c: ClientCard) => {
