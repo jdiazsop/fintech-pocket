@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { AlertTriangle, Clock, Wallet, CircleDollarSign, Sparkles, Calendar, PlusCircle, BadgeDollarSign, Phone, MessageCircle, ChevronDown, Flame, UserCircle2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
