@@ -52,3 +52,24 @@ export const DISTRICT_SUGGESTIONS: Record<string, string[]> = {
   "Piura|Piura": ["Castilla", "Catacaos", "Cura Mori", "La Arena", "La Unión", "Las Lomas", "Piura", "Tambo Grande", "Veintiséis de Octubre"],
   "Cusco|Cusco": ["Cusco", "San Jerónimo", "San Sebastián", "Santiago", "Wanchaq"],
 };
+
+/**
+ * Compone una dirección estructurada en el orden estándar peruano:
+ *   Departamento, Provincia, Distrito — Dirección exacta
+ * Cualquier campo vacío se omite. Si solo hay dirección exacta, se devuelve sola.
+ * Es el formato único usado para persistir en la columna `address`.
+ */
+export function composeAddress(
+  department?: string | null,
+  province?: string | null,
+  district?: string | null,
+  exactAddress?: string | null
+): string {
+  const loc = [department, province, district]
+    .map((v) => (v || "").trim())
+    .filter(Boolean)
+    .join(", ");
+  const exact = (exactAddress || "").trim();
+  if (loc && exact) return `${loc} — ${exact}`;
+  return loc || exact;
+}
