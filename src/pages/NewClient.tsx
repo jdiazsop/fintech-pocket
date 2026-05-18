@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
-import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
+import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS, composeAddress } from "@/lib/peruLocations";
 import {
   sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
   isValidName, isValidPhone, isValidDni, isValidEmail,
