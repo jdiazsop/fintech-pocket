@@ -76,10 +76,7 @@ export default function Profile() {
         description: "Pégalo donde quieras compartir Credify.",
       });
     } catch {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`,
-        "_blank"
-      );
+      openWhatsApp("", `${shareText} ${shareUrl}`);
     }
   };
 
