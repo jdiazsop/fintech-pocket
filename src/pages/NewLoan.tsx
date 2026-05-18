@@ -21,7 +21,8 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
 import { EvidenceUploader, PendingEvidence } from "@/components/loans/EvidenceUploader";
-import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
+import { buildAgreementMessage } from "@/lib/agreementMessage";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { upsertClient } from "@/lib/clientSync";
 import {
   sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
@@ -594,12 +595,7 @@ export default function NewLoan() {
 
     setConfirmSent(true);
 
-    const waUrl = buildWhatsAppUrl(createdLoan.phoneCountryCode, createdLoan.phoneNumber, message);
-    const popup = window.open(waUrl, "_blank", "noopener,noreferrer");
-    if (!popup) {
-      // Fallback for browsers that block window.open
-      window.location.href = waUrl;
-    }
+    openWhatsApp(`${createdLoan.phoneCountryCode}${createdLoan.phoneNumber}`, message);
   };
 
   const currentStepDisplay = step + 1;
