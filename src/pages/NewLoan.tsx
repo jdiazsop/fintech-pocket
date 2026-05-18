@@ -140,12 +140,10 @@ export default function NewLoan() {
     return DISTRICT_SUGGESTIONS[`${department}|${province}`] || [];
   }, [department, province]);
 
-  const composedAddress = useMemo(() => {
-    const loc = [district.trim(), province, department].filter(Boolean).join(", ");
-    const exact = exactAddress.trim();
-    if (exact && loc) return `${exact} — ${loc}`;
-    return exact || loc;
-  }, [exactAddress, district, province, department]);
+  const composedAddress = useMemo(
+    () => composeAddress(department, province, district, exactAddress),
+    [department, province, district, exactAddress]
+  );
 
   // Keep formData.address in sync so existing submit logic works untouched
   useEffect(() => {
