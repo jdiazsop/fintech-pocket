@@ -14,7 +14,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE } from "@/lib/countryCodes";
-import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS } from "@/lib/peruLocations";
+import { PERU_DEPARTMENTS, DISTRICT_SUGGESTIONS, composeAddress } from "@/lib/peruLocations";
 import {
   sanitizeName, sanitizeDigits, sanitizeDni, sanitizeEmail,
   isValidName, isValidPhone, isValidDni, isValidEmail,
@@ -41,7 +41,7 @@ export default function NewClient() {
   const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
   const [exactAddress, setExactAddress] = useState("");
-  const [showAddress, setShowAddress] = useState(false);
+  const [showExactAddress, setShowExactAddress] = useState(false);
   const [districtOpen, setDistrictOpen] = useState(false);
 
   const provincesForDept = useMemo(
@@ -53,12 +53,10 @@ export default function NewClient() {
     return DISTRICT_SUGGESTIONS[`${department}|${province}`] || [];
   }, [department, province]);
 
-  const composedAddress = useMemo(() => {
-    const loc = [district.trim(), province, department].filter(Boolean).join(", ");
-    const exact = exactAddress.trim();
-    if (exact && loc) return `${exact} — ${loc}`;
-    return exact || loc;
-  }, [exactAddress, district, province, department]);
+  const composedAddress = useMemo(
+    () => composeAddress(department, province, district, exactAddress),
+    [department, province, district, exactAddress]
+  );
 
   const validate = () => {
     if (!firstName.trim() || !isValidName(firstName)) {
@@ -312,74 +310,82 @@ export default function NewClient() {
           transition={{ delay: 0.05 }}
           className="fintech-card p-4 space-y-3"
         >
-          <Collapsible open={showAddress} onOpenChange={setShowAddress}>
-            <CollapsibleTrigger className="w-full flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <MapPin className="w-3.5 h-3.5" /> Ubicación <span className="normal-case lowercase">(opcional)</span>
-              </div>
-              <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <MapPin className="w-3.5 h-3.5" /> Ubicación <span className="normal-case lowercase">(opcional)</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Departamento</Label>
+              <Select value={department} onValueChange={(v) => { setDepartment(v); setProvince(""); setDistrict(""); }}>
+                <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {PERU_DEPARTMENTS.map((d) => (
+                    <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs">Provincia</Label>
+              <Select value={province} onValueChange={(v) => { setProvince(v); setDistrict(""); }} disabled={!department}>
+                <SelectTrigger><SelectValue placeholder={department ? "Selecciona" : "Elige depto."} /></SelectTrigger>
+                <SelectContent className="max-h-64">
+                  {provincesForDept.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs">Distrito</Label>
+            <Popover open={districtOpen} onOpenChange={setDistrictOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  disabled={!province}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-input bg-background text-sm disabled:opacity-50"
+                >
+                  <span className={district ? "" : "text-muted-foreground"}>{district || (province ? "Selecciona o escribe" : "Elige provincia")}</span>
+                  <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]">
+                <Command>
+                  <CommandInput placeholder="Buscar distrito..." value={district} onValueChange={setDistrict} />
+                  <CommandList>
+                    <CommandEmpty>Sin sugerencias. Usa lo escrito.</CommandEmpty>
+                    <CommandGroup>
+                      {districtSuggestions.map((d) => (
+                        <CommandItem key={d} value={d} onSelect={(v) => { setDistrict(v); setDistrictOpen(false); }}>
+                          {d}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <Collapsible open={showExactAddress} onOpenChange={setShowExactAddress}>
+            <CollapsibleTrigger className="w-full flex items-center justify-between pt-1 text-xs text-primary hover:text-primary/80">
+              <span>{showExactAddress ? "Ocultar dirección exacta" : "Agregar dirección exacta (privada)"}</span>
+              <ChevronsUpDown className="w-4 h-4" />
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">Departamento</Label>
-                  <Select value={department} onValueChange={(v) => { setDepartment(v); setProvince(""); setDistrict(""); }}>
-                    <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      {PERU_DEPARTMENTS.map((d) => (
-                        <SelectItem key={d.name} value={d.name}>{d.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-xs">Provincia</Label>
-                  <Select value={province} onValueChange={(v) => { setProvince(v); setDistrict(""); }} disabled={!department}>
-                    <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      {provincesForDept.map((p) => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-xs">Distrito</Label>
-                <Popover open={districtOpen} onOpenChange={setDistrictOpen}>
-                  <PopoverTrigger asChild>
-                    <button
-                      type="button"
-                      disabled={!province}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-md border border-input bg-background text-sm disabled:opacity-50"
-                    >
-                      <span className={district ? "" : "text-muted-foreground"}>{district || "Selecciona o escribe"}</span>
-                      <ChevronsUpDown className="w-4 h-4 text-muted-foreground" />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)]">
-                    <Command>
-                      <CommandInput placeholder="Buscar distrito..." value={district} onValueChange={setDistrict} />
-                      <CommandList>
-                        <CommandEmpty>Sin sugerencias. Usa lo escrito.</CommandEmpty>
-                        <CommandGroup>
-                          {districtSuggestions.map((d) => (
-                            <CommandItem key={d} value={d} onSelect={(v) => { setDistrict(v); setDistrictOpen(false); }}>
-                              {d}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label className="text-xs">Dirección exacta</Label>
-                <Input value={exactAddress} onChange={(e) => setExactAddress(e.target.value)} placeholder="Av. siempre viva 123" />
-              </div>
+            <CollapsibleContent className="pt-3 space-y-1.5">
+              <Label className="text-xs">Dirección exacta</Label>
+              <Input
+                value={exactAddress}
+                onChange={(e) => setExactAddress(e.target.value)}
+                placeholder="Av. Principal 123, Dpto. 4B"
+                maxLength={200}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Solo dirección específica. Se guarda como parte privada de la ubicación.
+              </p>
             </CollapsibleContent>
           </Collapsible>
         </motion.section>
