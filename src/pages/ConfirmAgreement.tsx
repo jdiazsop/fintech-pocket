@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Check, X, Loader2, ShieldCheck, HandCoins, ShoppingCart, Calendar,
-  FileText, Mail, KeyRound, ArrowRight,
+  FileText, Mail, KeyRound, ArrowRight, Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -156,7 +156,7 @@ export default function ConfirmAgreement() {
       return;
     }
     toast({
-      title: status === "confirmed" ? "Acuerdo validado" : "Acuerdo rechazado",
+      title: status === "confirmed" ? "Acuerdo aceptado" : "Acuerdo rechazado",
       description: status === "confirmed" ? "La operación quedó registrada como Validada." : "Tu rechazo fue registrado.",
     });
     await fetchLoan();
@@ -186,6 +186,9 @@ export default function ConfirmAgreement() {
   const startDate = format(parseLocal(loan.start_date), "dd 'de' MMMM, yyyy", { locale: es });
   const installmentAmount = schedule[0]?.amount ?? 0;
   const lastDue = schedule.length > 0 ? schedule[schedule.length - 1].due_date.split("T")[0] : null;
+  const totalScheduled = schedule.reduce((s, i) => s + Number(i.amount || 0), 0);
+  const totalToReturn = Number(loan.amount_to_return);
+  const interestOrFee = !isSale ? Math.max(0, totalToReturn - Number(loan.amount_lent)) : 0;
 
   const alreadyAnswered = loan.confirmation_status === "confirmed" || loan.confirmation_status === "rejected";
   const isConfirmed = loan.confirmation_status === "confirmed";
@@ -195,8 +198,18 @@ export default function ConfirmAgreement() {
 
   const frequencyLabel = loan.frequency ? FREQ_LABEL[loan.frequency] || loan.frequency : null;
 
+  // Single source of truth for the action area state
+  type Stage = "answered" | "verified" | "enter_code" | "request_code";
+  const stage: Stage = alreadyAnswered
+    ? "answered"
+    : loan.otp_verified
+    ? "verified"
+    : otpRequested || loan.otp_active
+    ? "enter_code"
+    : "request_code";
+
   return (
-    <div className="min-h-screen bg-background px-4 py-8 flex justify-center">
+    <div className="min-h-screen bg-background px-4 py-8 pb-32 flex justify-center">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -214,50 +227,77 @@ export default function ConfirmAgreement() {
           </p>
         </div>
 
-        {/* Operation summary */}
-        <div className="fintech-card p-5 space-y-4">
+        {/* 1. Partes y concepto */}
+        <section className="fintech-card p-5 space-y-3">
           <div className="flex items-center gap-2">
             {isSale ? <ShoppingCart className="w-5 h-5 text-primary" /> : <HandCoins className="w-5 h-5 text-primary" />}
             <span className="font-semibold">{isSale ? "Venta al crédito" : "Préstamo"}</span>
           </div>
-
           <div className="space-y-2 text-sm">
             <Row k="Cliente" v={loan.name} />
             {loan.concept && <Row k="Concepto" v={loan.concept} />}
+          </div>
+        </section>
+
+        {/* 2. Totales */}
+        <section className="fintech-card p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold">Totales</h2>
+          </div>
+          <div className="space-y-2 text-sm">
             {!isSale && (
-              <Row k="Monto prestado" v={formatPEN(Number(loan.amount_lent))} />
+              <>
+                <Row k="Monto prestado" v={formatPEN(Number(loan.amount_lent))} />
+                {interestOrFee > 0 && (
+                  <Row k="Intereses / cargos" v={formatPEN(interestOrFee)} />
+                )}
+              </>
             )}
+            <div className="h-px bg-border/60 my-1" />
             <Row
-              k={isSale ? "Monto total" : "Monto total a devolver"}
-              v={formatPEN(Number(loan.amount_to_return))}
+              k={isSale ? "Monto total" : "Total a devolver"}
+              v={formatPEN(totalToReturn)}
               strong
             />
-            <Row
-              k="Modalidad"
-              v={
-                loan.payment_type === "installments"
-                  ? `${loan.num_installments} cuota${loan.num_installments === 1 ? "" : "s"} de ${formatPEN(installmentAmount)}`
-                  : "Pago único"
-              }
-            />
-            {frequencyLabel && loan.payment_type === "installments" && (
-              <Row k="Frecuencia" v={frequencyLabel} />
-            )}
-            <Row k="Primer pago" v={startDate} />
-            {lastDue && <Row k="Vencimiento final" v={format(parseLocal(lastDue), "dd 'de' MMMM, yyyy", { locale: es })} />}
           </div>
-        </div>
+        </section>
 
-        {/* Schedule */}
+        {/* 3. Modalidad y fechas */}
+        <section className="fintech-card p-5 space-y-2 text-sm">
+          <Row
+            k="Modalidad"
+            v={
+              loan.payment_type === "installments"
+                ? `${loan.num_installments} cuota${loan.num_installments === 1 ? "" : "s"} de ${formatPEN(installmentAmount)}`
+                : "Pago único"
+            }
+          />
+          {frequencyLabel && loan.payment_type === "installments" && (
+            <Row k="Frecuencia" v={frequencyLabel} />
+          )}
+          <Row k="Primer pago" v={startDate} />
+          {lastDue && (
+            <Row
+              k="Vencimiento final"
+              v={format(parseLocal(lastDue), "dd 'de' MMMM, yyyy", { locale: es })}
+            />
+          )}
+        </section>
+
+        {/* 4. Cronograma */}
         {schedule.length > 0 && loan.payment_type === "installments" && (
-          <div className="fintech-card p-4 space-y-3">
+          <section className="fintech-card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-primary" />
               <h2 className="text-sm font-semibold">Cronograma de pagos</h2>
             </div>
-            <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-0 max-h-72 overflow-y-auto pr-1">
               {schedule.map((inst) => (
-                <div key={inst.number} className="flex items-center justify-between text-xs py-1.5 border-b border-border/40 last:border-0">
+                <div
+                  key={inst.number}
+                  className="flex items-center justify-between text-xs py-2 border-b border-border/40 last:border-0"
+                >
                   <div>
                     <p className="font-medium">Cuota {inst.number}</p>
                     <p className="text-muted-foreground">
@@ -268,140 +308,150 @@ export default function ConfirmAgreement() {
                 </div>
               ))}
             </div>
-          </div>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-muted-foreground">Suma del cronograma</span>
+              <span className="font-semibold tabular-nums">{formatPEN(totalScheduled)}</span>
+            </div>
+          </section>
         )}
 
-        {/* Main conditions */}
-        <div className="fintech-card p-4 space-y-2">
+        {/* 5. Condiciones */}
+        <section className="fintech-card p-4 space-y-2">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-primary" />
-            <h2 className="text-sm font-semibold">Condiciones del acuerdo</h2>
+            <h2 className="text-sm font-semibold">Condiciones principales</h2>
           </div>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
-            <li>Al aceptar, dejas constancia digital de que conoces y estás de acuerdo con los términos descritos.</li>
-            <li>El cronograma y los montos forman parte integrante de este acuerdo.</li>
-            <li>Tu respuesta queda registrada con fecha, hora, dispositivo y validación de identidad.</li>
-            <li>Si rechazas, el acuerdo no tendrá efecto y el otro participante será notificado.</li>
-            <li>Esta confirmación no reemplaza ningún acuerdo legal adicional que las partes decidan firmar.</li>
+            <li>Al aceptar, dejas constancia digital de que conoces y estás de acuerdo con los montos, plazos y cronograma descritos arriba.</li>
+            <li>Los pagos se realizan según el cronograma; los retrasos pueden generar recordatorios y registros de mora.</li>
+            <li>Tu respuesta se registra con fecha, hora y validación de identidad por correo.</li>
+            <li>Si rechazas, el acuerdo no tendrá efecto y el remitente será notificado.</li>
+            <li>Esta confirmación es una constancia digital y no reemplaza acuerdos legales adicionales que las partes decidan firmar.</li>
           </ul>
-        </div>
+        </section>
 
-        {/* Result / Action area */}
-        {alreadyAnswered ? (
-          <div
-            className={`fintech-card p-4 text-center text-sm space-y-1 ${
-              isConfirmed ? "text-emerald-400" : "text-red-400"
-            }`}
-          >
-            <p className="font-semibold">
-              {isConfirmed ? "✓ Acuerdo validado y aceptado" : "✕ Acuerdo rechazado"}
-            </p>
-            {respondedAt && (
-              <p className="text-[11px] text-muted-foreground">Registrado el {respondedAt}</p>
-            )}
-          </div>
-        ) : !loan.otp_verified ? (
-          <div className="fintech-card p-4 space-y-3 sticky bottom-3 border border-primary/30">
-            <div className="flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-primary" />
-              <h2 className="text-sm font-semibold">Validación de identidad</h2>
+        {/* 6. Acción única (OTP → Aceptar/Rechazar) */}
+        <section className="fintech-card p-4 space-y-3 border border-primary/30">
+          {stage === "answered" && (
+            <div className={`text-center text-sm space-y-1 ${isConfirmed ? "text-emerald-400" : "text-red-400"}`}>
+              <p className="font-semibold">
+                {isConfirmed ? "✓ Acuerdo aceptado" : "✕ Acuerdo rechazado"}
+              </p>
+              {respondedAt && (
+                <p className="text-[11px] text-muted-foreground">Registrado el {respondedAt}</p>
+              )}
             </div>
+          )}
 
-            {!otpRequested && !loan.otp_active ? (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Para aceptar o rechazar este acuerdo enviaremos un <strong>código de 6 dígitos</strong> a tu correo{" "}
-                  {otpEmailMasked ? <strong>{otpEmailMasked}</strong> : "registrado"}.
-                </p>
-                <Button
-                  onClick={requestOtp}
-                  disabled={requestingOtp || !otpEmailMasked}
-                  className="w-full bg-primary hover:bg-primary/90 h-11"
-                >
-                  {requestingOtp ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Mail className="w-4 h-4 mr-2" />
-                      Enviar código a mi correo
-                    </>
-                  )}
-                </Button>
-                {!otpEmailMasked && (
-                  <p className="text-[11px] text-red-400 text-center">
-                    Esta operación no tiene correo registrado. Pide al remitente que lo agregue.
-                  </p>
+          {stage === "request_code" && (
+            <>
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold">Paso 1 · Validar identidad</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Enviaremos un <strong>código de 6 dígitos</strong> a tu correo{" "}
+                {otpEmailMasked ? <strong>{otpEmailMasked}</strong> : "registrado"}. Es necesario para aceptar o rechazar este acuerdo.
+              </p>
+              <Button
+                onClick={requestOtp}
+                disabled={requestingOtp || !otpEmailMasked}
+                className="w-full bg-primary hover:bg-primary/90 h-11"
+              >
+                {requestingOtp ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <Mail className="w-4 h-4 mr-2" />
+                    Enviar código a mi correo
+                  </>
                 )}
-              </>
-            ) : (
-              <>
-                <p className="text-xs text-muted-foreground">
-                  Ingresa el código de 6 dígitos que enviamos a{" "}
-                  {otpEmailMasked ? <strong>{otpEmailMasked}</strong> : "tu correo"}. Vence en 15 minutos.
+              </Button>
+              {!otpEmailMasked && (
+                <p className="text-[11px] text-red-400 text-center">
+                  Esta operación no tiene correo registrado. Pide al remitente que lo agregue.
                 </p>
-                <Input
-                  inputMode="numeric"
-                  maxLength={6}
-                  value={otpCode}
-                  onChange={(e) => {
-                    setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                    setVerifyError(null);
-                  }}
-                  placeholder="000000"
-                  className="text-center text-2xl tracking-[0.5em] font-mono h-14"
-                  autoComplete="one-time-code"
-                />
-                {verifyError && <p className="text-xs text-red-400">{verifyError}</p>}
-                <Button
-                  onClick={verifyOtp}
-                  disabled={verifying || otpCode.length !== 6}
-                  className="w-full bg-primary hover:bg-primary/90 h-11"
-                >
-                  {verifying ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      Validar código
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-                <button
-                  type="button"
-                  onClick={requestOtp}
-                  disabled={requestingOtp}
-                  className="w-full text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
-                >
-                  {requestingOtp ? "Enviando…" : "Reenviar código"}
-                </button>
-              </>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-2 sticky bottom-3">
-            <div className="flex items-center justify-center gap-2 text-xs text-emerald-400">
-              <ShieldCheck className="w-4 h-4" /> Identidad validada por correo
-            </div>
-            <Button
-              onClick={() => respond("confirmed")}
-              disabled={acting}
-              className="w-full bg-emerald-500 hover:bg-emerald-500/90 h-12 text-base"
-            >
-              {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-5 h-5 mr-2" /> Acepto el acuerdo</>}
-            </Button>
-            <Button
-              onClick={() => respond("rejected")}
-              disabled={acting}
-              variant="outline"
-              className="w-full h-11"
-            >
-              <X className="w-4 h-4 mr-2" /> Rechazar
-            </Button>
-            <p className="text-[11px] text-center text-muted-foreground pt-1">
-              Tu respuesta quedará registrada con fecha, hora y validación por correo.
-            </p>
-          </div>
-        )}
+              )}
+            </>
+          )}
+
+          {stage === "enter_code" && (
+            <>
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-primary" />
+                <h2 className="text-sm font-semibold">Paso 1 · Ingresar código</h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Ingresa el código que enviamos a{" "}
+                {otpEmailMasked ? <strong>{otpEmailMasked}</strong> : "tu correo"}. Vence en 15 minutos.
+              </p>
+              <Input
+                inputMode="numeric"
+                maxLength={6}
+                value={otpCode}
+                onChange={(e) => {
+                  setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  setVerifyError(null);
+                }}
+                placeholder="000000"
+                className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                autoComplete="one-time-code"
+              />
+              {verifyError && <p className="text-xs text-red-400">{verifyError}</p>}
+              <Button
+                onClick={verifyOtp}
+                disabled={verifying || otpCode.length !== 6}
+                className="w-full bg-primary hover:bg-primary/90 h-11"
+              >
+                {verifying ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    Validar código
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+              <button
+                type="button"
+                onClick={requestOtp}
+                disabled={requestingOtp}
+                className="w-full text-[11px] text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                {requestingOtp ? "Enviando…" : "Reenviar código"}
+              </button>
+            </>
+          )}
+
+          {stage === "verified" && (
+            <>
+              <div className="flex items-center justify-center gap-2 text-xs text-emerald-400">
+                <ShieldCheck className="w-4 h-4" /> Identidad validada por correo
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Paso 2 · Aceptar o rechazar el acuerdo
+              </p>
+              <Button
+                onClick={() => respond("confirmed")}
+                disabled={acting}
+                className="w-full bg-emerald-500 hover:bg-emerald-500/90 h-12 text-base"
+              >
+                {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-5 h-5 mr-2" /> Acepto el acuerdo</>}
+              </Button>
+              <Button
+                onClick={() => respond("rejected")}
+                disabled={acting}
+                variant="outline"
+                className="w-full h-11"
+              >
+                <X className="w-4 h-4 mr-2" /> Rechazar
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground pt-1">
+                Tu respuesta queda registrada con fecha, hora y validación por correo.
+              </p>
+            </>
+          )}
+        </section>
       </motion.div>
     </div>
   );
