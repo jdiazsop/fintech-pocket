@@ -2,8 +2,9 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Trash2, Edit2, Plus, History, Loader2, Eye, EyeOff, FileEdit, ShieldCheck, Send, CheckCircle2, XCircle, Clock } from "lucide-react";
-import { buildAgreementMessage, buildWhatsAppUrl } from "@/lib/agreementMessage";
+import { buildAgreementMessage } from "@/lib/agreementMessage";
 import { buildPublicUrl } from "@/lib/publicUrl";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { EditOperationDialog } from "@/components/clients/EditOperationDialog";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -283,14 +284,8 @@ const ConsentCard = ({ loan, installments, onSent }: ConsentCardProps) => {
         paymentType: loan.payment_type as "single" | "installments",
         confirmUrl,
       });
-      const waUrl = buildWhatsAppUrl(loan.phone_country_code!, loan.phone_number!, message);
-      const popup = window.open(waUrl, "_blank", "noopener,noreferrer");
-      if (!popup) {
-        toast({ title: "Abriendo WhatsApp…", description: "Si no se abre, toca de nuevo el botón." });
-        window.location.href = waUrl;
-      } else {
-        toast({ title: "Acuerdo listo para enviar", description: "Se abrió WhatsApp con el resumen del acuerdo." });
-      }
+      openWhatsApp(`${loan.phone_country_code}${loan.phone_number}`, message);
+      toast({ title: "Acuerdo listo para enviar", description: "Se abrió WhatsApp con el resumen del acuerdo." });
       onSent();
     } catch (e) {
       console.error(e);
