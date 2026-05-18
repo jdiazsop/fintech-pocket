@@ -56,7 +56,9 @@ export function buildAgreementMessage(a: BuildArgs): string {
   return lines.join("\n");
 }
 
+import { buildWhatsAppLink } from "./whatsapp";
+
 export function buildWhatsAppUrl(phoneCountryCode: string, phoneNumber: string, message: string): string {
   const digits = `${phoneCountryCode}${phoneNumber}`.replace(/\D/g, "");
-  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+  return buildWhatsAppLink(digits, message);
 }
