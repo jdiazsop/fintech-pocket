@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Search, Users, Plus, MessageCircle, Phone, ChevronRight, AlertTriangle, Clock, CheckCircle2, MailQuestion, Wallet, ShoppingBag, Pencil } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { openWhatsApp } from "@/lib/whatsapp";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { EditClientDialog } from "@/components/clients/EditClientDialog";
