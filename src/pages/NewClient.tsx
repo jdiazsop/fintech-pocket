@@ -41,7 +41,7 @@ export default function NewClient() {
   const [province, setProvince] = useState("");
   const [district, setDistrict] = useState("");
   const [exactAddress, setExactAddress] = useState("");
-  const [showAddress, setShowAddress] = useState(false);
+  const [showExactAddress, setShowExactAddress] = useState(false);
   const [districtOpen, setDistrictOpen] = useState(false);
 
   const provincesForDept = useMemo(
@@ -53,12 +53,10 @@ export default function NewClient() {
     return DISTRICT_SUGGESTIONS[`${department}|${province}`] || [];
   }, [department, province]);
 
-  const composedAddress = useMemo(() => {
-    const loc = [district.trim(), province, department].filter(Boolean).join(", ");
-    const exact = exactAddress.trim();
-    if (exact && loc) return `${exact} — ${loc}`;
-    return exact || loc;
-  }, [exactAddress, district, province, department]);
+  const composedAddress = useMemo(
+    () => composeAddress(department, province, district, exactAddress),
+    [department, province, district, exactAddress]
+  );
 
   const validate = () => {
     if (!firstName.trim() || !isValidName(firstName)) {
