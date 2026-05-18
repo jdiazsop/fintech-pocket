@@ -24,14 +24,7 @@ export function buildWhatsAppLink(phoneDigits: string, message: string): string 
 
 export function openWhatsApp(phoneDigits: string, message: string): void {
   const url = buildWhatsAppLink(phoneDigits, message);
-  // Always open as external new tab — never inside iframe/modal.
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (!win) {
-    // Popup blocked fallback: navigate top frame
-    try {
-      window.top!.location.href = url;
-    } catch {
-      window.location.href = url;
-    }
-  }
+  // Always open as an external tab. Never fallback to window.location,
+  // because that can navigate the Lovable Preview/app iframe and trigger blocking errors.
+  window.open(url, "_blank", "noopener,noreferrer");
 }
