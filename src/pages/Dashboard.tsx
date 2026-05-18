@@ -193,7 +193,7 @@ export default function Dashboard() {
       const message = overdueCount > 0
         ? `Hola ${group.name}, te recordamos que tienes ${overdueCount} cuota(s) vencida(s) por un total de ${formatCurrency(group.totalDue)}. ¿Podrías regularizar el pago? Gracias.`
         : `Hola ${group.name}, te recordamos que tienes una cuota próxima a vencer por ${formatCurrency(group.totalDue)}. Gracias.`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+      openWhatsApp(phone, message);
     }
   };
 
