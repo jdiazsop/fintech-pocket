@@ -50,9 +50,9 @@ export function buildAgreementMessage(a: BuildArgs): string {
   lines.push(`Revisa, acepta o rechaza el acuerdo aquí:`);
   lines.push(a.confirmUrl);
   lines.push("");
-  lines.push(`🔒 Para aceptar o rechazar deberás validar tu identidad con un *código OTP* que te enviaremos a tu correo registrado.`);
+  lines.push(`Por seguridad, antes de aceptar o rechazar esta operacion, deberas validar tu identidad con un *codigo de seguridad* que Credify enviara al correo registrado en esta operacion.`);
   lines.push("");
-  lines.push(`Gracias 🙌`);
+  lines.push(`Gracias`);
   return lines.join("\n");
 }
 
