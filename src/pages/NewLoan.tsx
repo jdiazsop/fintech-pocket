@@ -1690,7 +1690,7 @@ export default function NewLoan() {
                     <Row label="Forma de pago" value={paymentLabel} onEdit={() => setReviewing(false)} />
                     {next && (
                       <Row
-                        label="Próxima cuota"
+                        label="Primera cuota"
                         accent
                         value={
                           <span className="capitalize">
