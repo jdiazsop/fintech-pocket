@@ -25,6 +25,15 @@ const maskEmail = (email: string) => {
   return email[0] + '***' + email.slice(at);
 };
 
+const escHtml = (s: string) =>
+  String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   try {
@@ -100,11 +109,12 @@ Deno.serve(async (req) => {
 <div style="max-width:520px;margin:0 auto;background:#1E293B;border-radius:16px;padding:28px;border:1px solid #334155">
   <h1 style="margin:0 0 4px;font-size:18px;color:#3B82F6">Credify</h1>
   <p style="margin:0 0 18px;color:#94A3B8;font-size:13px">Código de validación de identidad</p>
-  <p style="margin:0 0 12px">Hola <strong>${firstName}</strong>,</p>
+  <p style="margin:0 0 12px">Hola <strong>${escHtml(firstName)}</strong>,</p>
   <p style="margin:0 0 16px">Usa el siguiente código para validar tu identidad y poder aceptar o rechazar el acuerdo:</p>
   <div style="text-align:center;background:#0F172A;border:1px solid #334155;border-radius:12px;padding:18px;margin:0 0 16px">
     <p style="margin:0;font-size:32px;font-weight:700;letter-spacing:10px;color:#3B82F6;font-family:'Courier New',monospace">${code}</p>
   </div>
+
   <p style="margin:0 0 12px;font-size:12px;color:#CBD5E1">Este código vence en <strong>15 minutos</strong> y solo puede usarse en esta operación.</p>
   <p style="margin:0;color:#64748B;font-size:11px;line-height:1.5">Si no solicitaste este código, ignora este correo. Nadie de Credify te pedirá nunca este código por WhatsApp, llamada o mensaje.</p>
 </div>
