@@ -9,7 +9,7 @@ interface AuthContextType {
   loading: boolean;
   acceptedTerms: boolean | null;
   profileLoading: boolean;
-  signUp: (email: string, password: string, acceptedTerms: boolean) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, acceptedTerms: boolean, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
@@ -65,7 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, 0);
   }, [user?.id]);
 
-  const signUp = async (email: string, password: string, acceptedTerms: boolean) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    acceptedTerms: boolean,
+    metadata: Record<string, unknown> = {},
+  ) => {
     const redirectUrl = `${window.location.origin}/dashboard`;
 
     const { error } = await supabase.auth.signUp({
@@ -75,6 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         emailRedirectTo: redirectUrl,
         data: {
           accepted_terms: acceptedTerms,
+          ...metadata,
         },
       },
     });
