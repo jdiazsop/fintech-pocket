@@ -1,9 +1,20 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { scrollToTop } from "@/lib/scroll";
+
+// Disable browser scroll restoration as early as possible so back/forward
+// navigation never restores old scroll positions in this SPA.
+if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
+  try {
+    window.history.scrollRestoration = "manual";
+  } catch {
+    /* noop */
+  }
+}
 
 /**
  * Resets scroll to the top on every route change (path or search).
- * - Targets window plus common scrollable containers (html, body, #root).
+ * - Uses the shared scrollToTop utility for consistency.
  * - Uses 'auto' so the jump is instant and feels native on mobile.
  * - Skips when the URL contains a hash (anchor navigation).
  */
@@ -13,30 +24,9 @@ const ScrollToTop = () => {
   useEffect(() => {
     if (hash) return;
 
-    // Disable browser scroll restoration (back/forward) for SPA feel.
-    if (typeof window !== "undefined" && "scrollRestoration" in window.history) {
-      try {
-        window.history.scrollRestoration = "manual";
-      } catch {
-        /* noop */
-      }
-    }
-
-    const scrollAll = () => {
-      try {
-        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-      } catch {
-        window.scrollTo(0, 0);
-      }
-      if (document.documentElement) document.documentElement.scrollTop = 0;
-      if (document.body) document.body.scrollTop = 0;
-      const root = document.getElementById("root");
-      if (root) root.scrollTop = 0;
-    };
-
-    // Run now and on next frame (covers layouts that mount after route change).
-    scrollAll();
-    const raf = requestAnimationFrame(scrollAll);
+    // Run immediately and again on next frame (covers layouts that mount after route change).
+    scrollToTop("auto");
+    const raf = requestAnimationFrame(() => scrollToTop("auto"));
     return () => cancelAnimationFrame(raf);
   }, [pathname, search, hash]);
 
