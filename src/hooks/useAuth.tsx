@@ -9,8 +9,9 @@ interface AuthContextType {
   loading: boolean;
   acceptedTerms: boolean | null;
   profileLoading: boolean;
-  signUp: (email: string, password: string, acceptedTerms: boolean) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, acceptedTerms: boolean, metadata?: Record<string, unknown>) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
 }
 
