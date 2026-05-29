@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2, Share2 } from "lucide-react";
+import { User, Mail, LogOut, Shield, Sparkles, Send, Loader2, Share2, ShieldCheck } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,11 +16,11 @@ export default function Profile() {
     user,
     signOut
   } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const {
     toast
   } = useToast();
-
   const handleSignOut = async () => {
     await signOut();
     toast({
@@ -203,6 +204,24 @@ export default function Profile() {
             Compartir Credify
           </Button>
         </motion.div>
+
+        {/* Admin Panel access — only for admins */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38 }}
+          >
+            <Button
+              onClick={() => navigate("/admin")}
+              variant="outline"
+              className="w-full border-primary/40 text-primary hover:bg-primary/10"
+            >
+              <ShieldCheck className="w-4 h-4 mr-2" />
+              Panel administrador
+            </Button>
+          </motion.div>
+        )}
 
         {/* Sign Out */}
         <motion.div initial={{
