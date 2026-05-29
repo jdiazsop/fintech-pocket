@@ -308,7 +308,12 @@ export type Database = {
           accepted_terms: boolean
           created_at: string
           email: string
+          first_name: string | null
           id: string
+          last_name_maternal: string | null
+          last_name_paternal: string | null
+          phone_country_code: string | null
+          phone_number: string | null
           updated_at: string
           user_id: string
         }
@@ -316,7 +321,12 @@ export type Database = {
           accepted_terms?: boolean
           created_at?: string
           email: string
+          first_name?: string | null
           id?: string
+          last_name_maternal?: string | null
+          last_name_paternal?: string | null
+          phone_country_code?: string | null
+          phone_number?: string | null
           updated_at?: string
           user_id: string
         }
@@ -324,7 +334,12 @@ export type Database = {
           accepted_terms?: boolean
           created_at?: string
           email?: string
+          first_name?: string | null
           id?: string
+          last_name_maternal?: string | null
+          last_name_paternal?: string | null
+          phone_country_code?: string | null
+          phone_number?: string | null
           updated_at?: string
           user_id?: string
         }
