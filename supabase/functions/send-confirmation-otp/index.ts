@@ -127,7 +127,7 @@ Deno.serve(async (req) => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${RESEND_API_KEY}` },
       body: JSON.stringify({
-        from: FROM,
+        subject: 'Tu código de validación Credify',
         to: [loan.email],
         subject: `Tu código de validación Credify: ${code}`,
         html,
