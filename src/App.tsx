@@ -18,7 +18,16 @@ import ClientDetail from "./pages/ClientDetail";
 import Profile from "./pages/Profile";
 import Subscription from "./pages/Subscription";
 import ConfirmAgreement from "./pages/ConfirmAgreement";
-import Admin from "./pages/Admin";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
+import AdminClients from "./pages/admin/AdminClients";
+import AdminClientDetail from "./pages/admin/AdminClientDetail";
+import AdminOperations from "./pages/admin/AdminOperations";
+import AdminOperationDetail from "./pages/admin/AdminOperationDetail";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminConsents from "./pages/admin/AdminConsents";
 import NotFound from "./pages/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -157,7 +166,17 @@ const AppRoutes = () => {
         }
       />
       <Route path="/confirm/:token" element={<ConfirmAgreement />} />
-      <Route path="/admin" element={<Admin />} />
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<AdminUsers />} />
+        <Route path="users/:id" element={<AdminUserDetail />} />
+        <Route path="clients" element={<AdminClients />} />
+        <Route path="clients/:id" element={<AdminClientDetail />} />
+        <Route path="operations" element={<AdminOperations />} />
+        <Route path="operations/:id" element={<AdminOperationDetail />} />
+        <Route path="payments" element={<AdminPayments />} />
+        <Route path="consents" element={<AdminConsents />} />
+      </Route>
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

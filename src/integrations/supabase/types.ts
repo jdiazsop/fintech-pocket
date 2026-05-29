@@ -356,7 +356,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_get_client_detail: { Args: { _client_id: string }; Returns: Json }
       admin_get_metrics: { Args: never; Returns: Json }
+      admin_get_operation_detail: { Args: { _loan_id: string }; Returns: Json }
+      admin_get_user_detail: { Args: { _user_id: string }; Returns: Json }
+      admin_global_search: { Args: { _q: string }; Returns: Json }
       admin_list_clients: {
         Args: never
         Returns: {
@@ -366,21 +370,43 @@ export type Database = {
           first_name: string
           id: string
           last_name: string
+          operations_count: number
           owner_email: string
           phone: string
+          total_pending: number
           user_id: string
+        }[]
+      }
+      admin_list_consents: {
+        Args: never
+        Returns: {
+          client_name: string
+          confirmation_responded_at: string
+          confirmation_sent_at: string
+          confirmation_status: string
+          created_at: string
+          email_used: string
+          expires_at: string
+          loan_id: string
+          loan_name: string
+          operation_type: string
+          owner_email: string
         }[]
       }
       admin_list_operations: {
         Args: never
         Returns: {
           amount_lent: number
+          amount_pending: number
           amount_returned: number
           amount_to_return: number
           confirmation_status: string
           created_at: string
           id: string
+          installments_count: number
           name: string
+          next_due_amount: number
+          next_due_date: string
           operation_type: string
           owner_email: string
           start_date: string
@@ -392,11 +418,14 @@ export type Database = {
         Args: never
         Returns: {
           amount_paid: number
+          balance_after: number
+          client_name: string
           created_at: string
           id: string
           loan_id: string
           loan_name: string
           notes: string
+          operation_type: string
           owner_email: string
           payment_date: string
         }[]
@@ -409,6 +438,9 @@ export type Database = {
           created_at: string
           email: string
           loans_count: number
+          role: string
+          total_lent: number
+          total_pending: number
           user_id: string
         }[]
       }
