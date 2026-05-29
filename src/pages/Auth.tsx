@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, ArrowRight, Loader2, CheckCircle2, User as UserIcon, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,21 @@ const passwordSchema = z
   .refine((v) => /\d/.test(v), "Debe incluir al menos un número")
   .refine((v) => !/^\s|\s$/.test(v), "No debe tener espacios al inicio o al final");
 
+const NAME_RE = /^[A-Za-zÀ-ÿÑñ' .\-]+$/;
+const nameSchema = (label: string) =>
+  z
+    .string()
+    .trim()
+    .min(2, `${label} debe tener al menos 2 caracteres`)
+    .max(60, `${label} es demasiado largo`)
+    .regex(NAME_RE, `${label} solo puede contener letras`);
+
+const phoneSchema = z
+  .string()
+  .trim()
+  .min(1, "Ingresa tu número celular")
+  .regex(/^\d{9,15}$/, "Celular inválido (solo dígitos, 9 a 15)");
+
 const validateField = (schema: z.ZodTypeAny, value: string): string | null => {
   const r = schema.safeParse(value);
   return r.success ? null : r.error.errors[0].message;
@@ -38,41 +53,52 @@ export default function Auth() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastNamePaternal, setLastNamePaternal] = useState("");
+  const [lastNameMaternal, setLastNameMaternal] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("+51");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [termsError, setTermsError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
 
   const { signIn, signUp, resetPassword } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const validateForm = () => {
-    const eErr = validateField(emailSchema, email);
-    setEmailError(eErr);
-    let pErr: string | null = null;
-    if (mode === "register") {
-      pErr = validateField(passwordSchema, password);
-      setPasswordError(pErr);
-    } else if (mode === "login") {
-      if (!password) pErr = "Ingresa tu contraseña";
-      setPasswordError(pErr);
-    } else {
-      setPasswordError(null);
-    }
-    let tErr: string | null = null;
-    if (mode === "register" && !acceptedTerms) {
-      tErr = "Debes aceptar los Términos y Condiciones y la Política de Privacidad";
-      setTermsError(tErr);
-    } else {
-      setTermsError(null);
-    }
-    return !eErr && !pErr && !tErr;
-  };
+  const setErr = (k: string, v: string | null) =>
+    setErrors((prev) => ({ ...prev, [k]: v }));
 
+  const validateForm = () => {
+    const next: Record<string, string | null> = {};
+    next.email = validateField(emailSchema, email);
+
+    if (mode === "register") {
+      next.firstName = validateField(nameSchema("Nombres"), firstName);
+      next.lastNamePaternal = validateField(nameSchema("Apellido paterno"), lastNamePaternal);
+      next.lastNameMaternal = validateField(nameSchema("Apellido materno"), lastNameMaternal);
+      next.phoneNumber = validateField(phoneSchema, phoneNumber);
+      next.password = validateField(passwordSchema, password);
+      next.confirmPassword =
+        !confirmPassword
+          ? "Confirma tu contraseña"
+          : confirmPassword !== password
+          ? "Las contraseñas no coinciden"
+          : null;
+      next.terms = acceptedTerms
+        ? null
+        : "Debes aceptar los Términos y Condiciones y la Política de Privacidad";
+    } else if (mode === "login") {
+      next.password = password ? null : "Ingresa tu contraseña";
+    }
+
+    setErrors(next);
+    return Object.values(next).every((v) => !v);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +121,13 @@ export default function Auth() {
           navigate("/dashboard");
         }
       } else if (mode === "register") {
-        const { error } = await signUp(email, password, acceptedTerms);
+        const { error } = await signUp(email, password, acceptedTerms, {
+          first_name: firstName.trim(),
+          last_name_paternal: lastNamePaternal.trim(),
+          last_name_maternal: lastNameMaternal.trim(),
+          phone_country_code: phoneCountry.trim(),
+          phone_number: phoneNumber.trim(),
+        });
         if (error) {
           let message = "Error al crear cuenta";
           if (error.message.includes("already registered")) {
@@ -103,11 +135,21 @@ export default function Auth() {
           }
           toast({ title: "Error", description: message, variant: "destructive" });
         } else {
+          // Intentar iniciar sesión automáticamente
+          const { error: signInErr } = await signIn(email, password);
           toast({
-            title: "¡Cuenta creada!",
-            description: "Bienvenido a Credify",
+            title: "¡Bienvenido a Credify!",
+            description: "Tu cuenta fue creada exitosamente.",
           });
-          navigate("/dashboard");
+          if (!signInErr) {
+            navigate("/dashboard");
+          } else {
+            // Si requiere confirmación de email, lo informamos
+            toast({
+              title: "Verifica tu correo",
+              description: "Te enviamos un enlace de confirmación a tu email.",
+            });
+          }
         }
       } else if (mode === "forgot") {
         const { error } = await resetPassword(email);
@@ -128,7 +170,7 @@ export default function Auth() {
 
   const handleGoogle = async () => {
     if (mode === "register" && !acceptedTerms) {
-      setTermsError("Debes aceptar los Términos y Condiciones y la Política de Privacidad");
+      setErr("terms", "Debes aceptar los Términos y Condiciones y la Política de Privacidad");
       return;
     }
     setLoading(true);
@@ -147,6 +189,9 @@ export default function Auth() {
       setLoading(false);
     }
   };
+
+  const inputCls = (hasErr: boolean) =>
+    `pl-10 bg-muted/50 border-border ${hasErr ? "border-destructive focus-visible:ring-destructive" : ""}`;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -212,6 +257,98 @@ export default function Auth() {
                   </h2>
                 </div>
 
+                {mode === "register" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Nombres</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="firstName"
+                          autoComplete="given-name"
+                          placeholder="Ej: Juan Carlos"
+                          value={firstName}
+                          onChange={(e) => {
+                            setFirstName(e.target.value);
+                            if (errors.firstName) setErr("firstName", null);
+                          }}
+                          onBlur={() => setErr("firstName", validateField(nameSchema("Nombres"), firstName))}
+                          className={inputCls(!!errors.firstName)}
+                        />
+                      </div>
+                      {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastP">Apellido paterno</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="lastP"
+                          autoComplete="family-name"
+                          placeholder="Ej: Pérez"
+                          value={lastNamePaternal}
+                          onChange={(e) => {
+                            setLastNamePaternal(e.target.value);
+                            if (errors.lastNamePaternal) setErr("lastNamePaternal", null);
+                          }}
+                          onBlur={() => setErr("lastNamePaternal", validateField(nameSchema("Apellido paterno"), lastNamePaternal))}
+                          className={inputCls(!!errors.lastNamePaternal)}
+                        />
+                      </div>
+                      {errors.lastNamePaternal && <p className="text-xs text-destructive mt-1">{errors.lastNamePaternal}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="lastM">Apellido materno</Label>
+                      <div className="relative">
+                        <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="lastM"
+                          placeholder="Ej: Gómez"
+                          value={lastNameMaternal}
+                          onChange={(e) => {
+                            setLastNameMaternal(e.target.value);
+                            if (errors.lastNameMaternal) setErr("lastNameMaternal", null);
+                          }}
+                          onBlur={() => setErr("lastNameMaternal", validateField(nameSchema("Apellido materno"), lastNameMaternal))}
+                          className={inputCls(!!errors.lastNameMaternal)}
+                        />
+                      </div>
+                      {errors.lastNameMaternal && <p className="text-xs text-destructive mt-1">{errors.lastNameMaternal}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Número celular</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          aria-label="Código país"
+                          value={phoneCountry}
+                          onChange={(e) => setPhoneCountry(e.target.value.replace(/[^\d+]/g, "").slice(0, 4))}
+                          className="w-20 bg-muted/50 border-border text-center"
+                        />
+                        <div className="relative flex-1">
+                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="phone"
+                            inputMode="numeric"
+                            autoComplete="tel"
+                            placeholder="987654321"
+                            value={phoneNumber}
+                            onChange={(e) => {
+                              setPhoneNumber(e.target.value.replace(/\D/g, "").slice(0, 15));
+                              if (errors.phoneNumber) setErr("phoneNumber", null);
+                            }}
+                            onBlur={() => setErr("phoneNumber", validateField(phoneSchema, phoneNumber))}
+                            className={inputCls(!!errors.phoneNumber)}
+                          />
+                        </div>
+                      </div>
+                      {errors.phoneNumber && <p className="text-xs text-destructive mt-1">{errors.phoneNumber}</p>}
+                    </div>
+                  </>
+                )}
+
                 <div className="space-y-2">
                   <Label htmlFor="email">Correo electrónico</Label>
                   <div className="relative">
@@ -225,17 +362,14 @@ export default function Auth() {
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
-                        if (emailError) setEmailError(null);
+                        if (errors.email) setErr("email", null);
                       }}
-                      onBlur={() => setEmailError(validateField(emailSchema, email))}
-                      aria-invalid={!!emailError}
-                      className={`pl-10 bg-muted/50 border-border ${emailError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      onBlur={() => setErr("email", validateField(emailSchema, email))}
+                      className={inputCls(!!errors.email)}
                       required
                     />
                   </div>
-                  {emailError && (
-                    <p className="text-xs text-destructive mt-1">{emailError}</p>
-                  )}
+                  {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
                 </div>
 
                 {mode !== "forgot" && (
@@ -251,11 +385,10 @@ export default function Auth() {
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
-                          if (passwordError) setPasswordError(null);
+                          if (errors.password) setErr("password", null);
                         }}
-                        onBlur={() => mode === "register" && setPasswordError(validateField(passwordSchema, password))}
-                        aria-invalid={!!passwordError}
-                        className={`pl-10 pr-10 bg-muted/50 border-border ${passwordError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        onBlur={() => mode === "register" && setErr("password", validateField(passwordSchema, password))}
+                        className={`pl-10 pr-10 bg-muted/50 border-border ${errors.password ? "border-destructive focus-visible:ring-destructive" : ""}`}
                         required
                       />
                       <button
@@ -266,13 +399,55 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    {passwordError ? (
-                      <p className="text-xs text-destructive mt-1">{passwordError}</p>
+                    {errors.password ? (
+                      <p className="text-xs text-destructive mt-1">{errors.password}</p>
                     ) : mode === "register" ? (
                       <p className="text-xs text-muted-foreground mt-1">
                         Mínimo 8 caracteres, con al menos una letra y un número.
                       </p>
                     ) : null}
+                  </div>
+                )}
+
+                {mode === "register" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirm ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="••••••••"
+                        value={confirmPassword}
+                        onChange={(e) => {
+                          setConfirmPassword(e.target.value);
+                          if (errors.confirmPassword) setErr("confirmPassword", null);
+                        }}
+                        onBlur={() =>
+                          setErr(
+                            "confirmPassword",
+                            !confirmPassword
+                              ? "Confirma tu contraseña"
+                              : confirmPassword !== password
+                              ? "Las contraseñas no coinciden"
+                              : null,
+                          )
+                        }
+                        className={`pl-10 pr-10 bg-muted/50 border-border ${errors.confirmPassword ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirm(!showConfirm)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.confirmPassword && (
+                      <p className="text-xs text-destructive mt-1">{errors.confirmPassword}</p>
+                    )}
                   </div>
                 )}
 
@@ -285,10 +460,9 @@ export default function Auth() {
                         onCheckedChange={(checked) => {
                           const v = checked === true;
                           setAcceptedTerms(v);
-                          if (v) setTermsError(null);
+                          if (v) setErr("terms", null);
                         }}
                         className="mt-0.5"
-                        aria-invalid={!!termsError}
                       />
                       <Label htmlFor="terms" className="text-sm text-muted-foreground leading-tight cursor-pointer">
                         Acepto los{" "}
@@ -311,15 +485,9 @@ export default function Auth() {
                         />
                       </Label>
                     </div>
-                    {termsError && (
-                      <p className="text-xs text-destructive ml-6">{termsError}</p>
-                    )}
+                    {errors.terms && <p className="text-xs text-destructive ml-6">{errors.terms}</p>}
                   </div>
                 )}
-
-                {/* Recuperación de contraseña temporalmente deshabilitada hasta habilitar
-                    el dominio de correo del workspace. Los correos transaccionales siguen
-                    funcionando vía Resend. */}
 
                 <Button
                   type="submit"
