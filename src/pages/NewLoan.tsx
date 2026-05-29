@@ -133,6 +133,9 @@ export default function NewLoan() {
   const [districtOpen, setDistrictOpen] = useState(false);
   const [showAddressDetails, setShowAddressDetails] = useState(false);
 
+  // Reset scroll to top on every step change in the multi-step flow
+  useScrollToTop([step]);
+
   const provincesForDept = useMemo(
     () => PERU_DEPARTMENTS.find((d) => d.name === department)?.provinces || [],
     [department]
