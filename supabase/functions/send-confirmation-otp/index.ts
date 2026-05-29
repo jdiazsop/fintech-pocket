@@ -82,7 +82,9 @@ Deno.serve(async (req) => {
     }
 
     // Generate 6-digit OTP
-    const code = String(Math.floor(Math.random() * 1_000_000)).padStart(6, '0');
+    const _otpBuf = new Uint32Array(1);
+    crypto.getRandomValues(_otpBuf);
+    const code = String(_otpBuf[0] % 1_000_000).padStart(6, '0');
     const hash = await sha256Hex(code);
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 minutes
 
